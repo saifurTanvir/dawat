@@ -16,6 +16,13 @@ set -euo pipefail
 
 DOMAIN="${1:?Usage: setup-server.sh <domain> <email>}"
 EMAIL="${2:?Usage: setup-server.sh <domain> <email>}"
+# Accept "https://dawat.cloud/" too; keep only the host name.
+DOMAIN="${DOMAIN#http://}"; DOMAIN="${DOMAIN#https://}"; DOMAIN="${DOMAIN%%/*}"
+DOMAIN="$(printf '%s' "$DOMAIN" | tr 'A-Z' 'a-z')"
+if ! printf '%s' "$DOMAIN" | grep -Eq '^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$'; then
+    echo "Not a domain name: '$DOMAIN' (example: sudo bash setup-server.sh dawat.cloud you@example.com)" >&2
+    exit 1
+fi
 APP_DIR=/var/www/dawat
 DEPLOY_USER=deploy
 PHP=8.3
