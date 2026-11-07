@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Controllers\Admin\QrCodeController;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -16,6 +17,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -35,7 +37,7 @@ class AdminPanelProvider extends PanelProvider
                 'danger' => Color::hex('#b8322a'),
             ])
             ->font('Noto Sans Bengali')
-            ->navigationGroups(['রাঁধুনি ও খাবার', 'নিরাপত্তা'])
+            ->navigationGroups(['রাঁধুনি ও খাবার', 'নিরাপত্তা', 'সেটিংস'])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -45,6 +47,10 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 AccountWidget::class,
             ])
+            ->authenticatedRoutes(function () {
+                Route::get('qr/{qr}/poster', [QrCodeController::class, 'poster'])->name('qr.poster');
+                Route::get('qr/{qr}/png', [QrCodeController::class, 'png'])->name('qr.png');
+            })
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

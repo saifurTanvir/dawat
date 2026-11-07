@@ -25,7 +25,11 @@ class QrCode extends Model
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return [
+            'is_active' => 'boolean',
+            'scans' => 'integer',
+            'last_scanned_at' => 'datetime',
+        ];
     }
 
     /** Short, unambiguous code for printed URLs (no 0/O, 1/l). */
