@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'kitchen_id', 'area_id', 'title', 'price_paisa', 'plates_total', 'plates_left',
@@ -82,6 +83,13 @@ class Post extends Model
         return $query->where('status', PostStatus::Live)
             ->where('available_until', '>', now())
             ->where('plates_left', '>', 0);
+    }
+
+    public function shareImageUrl(): ?string
+    {
+        return $this->share_image_path
+            ? Storage::disk(config('filesystems.media_disk'))->url($this->share_image_path)
+            : null;
     }
 
     public function priceTaka(): float

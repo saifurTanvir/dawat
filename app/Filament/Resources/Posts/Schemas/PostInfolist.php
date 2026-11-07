@@ -31,6 +31,12 @@ class PostInfolist
                         TextEntry::make('tags.name')->label('ট্যাগ')->badge()->color('gray')->placeholder('—'),
                         TextEntry::make('available_until')->label('পাওয়া যাবে')->dateTime(),
                         TextEntry::make('note')->label('গৃহিণীর নোট')->placeholder('—')->columnSpanFull(),
+                        ImageEntry::make('share_image_path')
+                            ->label('শেয়ার কার্ড')
+                            ->disk(config('filesystems.media_disk'))
+                            ->imageHeight(320)
+                            ->placeholder('এখনো তৈরি হয়নি')
+                            ->columnSpanFull(),
                     ]),
             ]);
     }

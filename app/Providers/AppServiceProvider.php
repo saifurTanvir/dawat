@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Models\User;
 use App\Services\Otp\LogOtpSender;
 use App\Services\Otp\OtpSender;
+use App\Services\ShareCards\BrowsershotRenderer;
+use App\Services\ShareCards\ShareCardRenderer;
 use Filament\Support\Facades\FilamentTimezone;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Middleware\TrustProxies;
@@ -18,6 +20,8 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(ShareCardRenderer::class, BrowsershotRenderer::class);
+
         $this->app->bind(OtpSender::class, function () {
             return match (config('services.otp.driver')) {
                 'log' => new LogOtpSender,

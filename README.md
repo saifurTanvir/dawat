@@ -44,6 +44,16 @@ composer run dev                    # Laravel + Vite একসাথে
 - অ্যাডমিন: http://localhost:8000/admin
 - **OTP কোড:** লোকালে যেকোনো ৬ অঙ্কের কোড চলে (যেমন `123456`), লগইন আর শাহিদারের নম্বর যাচাই দুটোতেই। এটা চালু থাকে `.env`-এর `OTP_ANY_CODE=true` দিয়ে, আর কাজ করে শুধু `APP_ENV=local` হলে; প্রোডাকশন, স্টেজিং বা টেস্টে সেটিং থাকলেও উপেক্ষা হয়। আসল কোডটাও লেখা থাকে `storage/logs/laravel.log`-এ (`[OTP] 017…: 948609`), বন্ধ করে দেখতে চাইলে `OTP_ANY_CODE=false` দিন।
 
+### শেয়ার কার্ড (F19) লোকালি
+
+কার্ড বানায় headless Chrome। লোকালে চাইলে চালু করুন (না করলেও অ্যাপ চলে, শুধু কার্ড তৈরি হয় না):
+
+```bash
+mkdir -p ~/browsershot && cd ~/browsershot && npm init -y && PUPPETEER_SKIP_DOWNLOAD=1 npm i puppeteer@25
+```
+
+তারপর `.env`-এ: `SHARE_CARDS_ENABLED=true`, `SHARE_CARD_CHROME_PATH=` (আপনার Chrome-এর পথ), `SHARE_CARD_NODE_MODULES=$HOME/browsershot/node_modules`। কার্ড কিউতে তৈরি হয়, তাই `php artisan queue:work` চালু রাখুন (`composer run dev` নিজেই চালায়)। সার্ভারে `setup-server.sh` এসব নিজে করে।
+
 ### টেস্ট ও কোড স্টাইল
 
 ```bash
@@ -174,7 +184,7 @@ sudo -u deploy bash /var/www/dawat/current/deploy/rollback.sh /var/www/dawat
 | F15 | প্রিন্ট করা QR থেকে এলাকার ফিড, স্ক্যান গণনা | ✅ |
 | F16, F18 | কল / হোয়াটসঅ্যাপ / শেয়ার বাটন ও যোগাযোগের লগ | ✅ |
 | F17 | পোস্টের পেজ, কমেন্ট, রিপোর্ট (৩ জন রিপোর্ট করলে লুকানো) | ✅ |
-| F19 | বাংলা শেয়ার কার্ড (PNG) | ধাপ ৪ |
+| F19 | বাংলা শেয়ার কার্ড, লিংকের প্রিভিউ (Open Graph) | ✅ |
 | F20 | AI সহায়তা (নাম ও ট্যাগ সাজেস্ট) | ধাপ ৪ |
 | F21 | অ্যাডমিন: অনুমোদন, পোস্ট লুকানো, রিপোর্ট, ইউজার বন্ধ | ✅ |
 | F22 | অ্যাডমিন: এলাকা, ট্যাগ, প্রিন্টযোগ্য QR | ✅ |

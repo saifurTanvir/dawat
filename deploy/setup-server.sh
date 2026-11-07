@@ -38,6 +38,17 @@ apt-get install -y -q \
     php$PHP-fpm php$PHP-cli php$PHP-mysql php$PHP-mbstring php$PHP-xml php$PHP-curl \
     php$PHP-zip php$PHP-gd php$PHP-intl php$PHP-bcmath php$PHP-redis php$PHP-opcache
 
+log "Share cards (F19): Google Chrome, Node.js 22 and Puppeteer"
+if ! command -v google-chrome >/dev/null 2>&1; then
+    curl -fsSL https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o /tmp/chrome.deb
+    apt-get install -y -q /tmp/chrome.deb
+    rm -f /tmp/chrome.deb
+fi
+if ! node --version 2>/dev/null | grep -qE '^v(2[2-9]|[3-9][0-9])'; then
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+    apt-get install -y -q nodejs
+fi
+
 log "Firewall: allow SSH, HTTP, HTTPS"
 ufw allow OpenSSH >/dev/null
 ufw allow 'Nginx Full' >/dev/null
@@ -80,6 +91,10 @@ install -d -o "$DEPLOY_USER" -g www-data -m 775 "$APP_DIR" "$APP_DIR/releases" "
 for d in app/public app/private framework/cache/data framework/sessions framework/views logs; do
     install -d -o "$DEPLOY_USER" -g www-data -m 775 "$APP_DIR/shared/storage/$d"
 done
+
+log "Puppeteer for share cards (uses the system Chrome, outside the app releases)"
+install -d -o "$DEPLOY_USER" -g www-data -m 775 "$APP_DIR/shared/browsershot"
+sudo -u "$DEPLOY_USER" -H bash -c "cd '$APP_DIR/shared/browsershot' && { [ -f package.json ] || npm init -y >/dev/null; } && PUPPETEER_SKIP_DOWNLOAD=1 npm install --omit=dev puppeteer@25 >/dev/null"
 
 log "MySQL database and user"
 DB_PASS=""
@@ -138,6 +153,12 @@ SANCTUM_TOKEN_EXPIRATION_DAYS=90
 
 # Set when the site goes behind Cloudflare or a load balancer
 TRUSTED_PROXIES=
+
+# F19 share cards (headless Chrome)
+SHARE_CARDS_ENABLED=true
+SHARE_CARD_CHROME_PATH=/usr/bin/google-chrome
+SHARE_CARD_NODE_BINARY=/usr/bin/node
+SHARE_CARD_NODE_MODULES=$APP_DIR/shared/browsershot/node_modules
 EOF
     chown "$DEPLOY_USER:www-data" "$APP_DIR/shared/.env"
     chmod 640 "$APP_DIR/shared/.env"

@@ -34,6 +34,7 @@ class OwnPostResource extends JsonResource
                 'height' => $img->height,
             ])),
             'tags' => TagResource::collection($this->whenLoaded('tags')),
+            'share_image_url' => $this->shareImageUrl(),
             'contact_counts' => $this->when(isset($this->contact_events_count), fn () => $this->contact_events_count),
         ];
     }

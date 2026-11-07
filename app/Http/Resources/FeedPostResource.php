@@ -44,6 +44,7 @@ class FeedPostResource extends JsonResource
                 'message' => $kitchen->allow_message,
                 'comment' => $kitchen->allow_comment,
             ],
+            'share_image_url' => $this->shareImageUrl(),
             'comments_count' => (int) ($this->comments_count ?? 0),
             // Lets the app show the cook their own controls; no id is exposed.
             'is_mine' => auth('sanctum')->id() !== null && auth('sanctum')->id() === $kitchen->user_id,

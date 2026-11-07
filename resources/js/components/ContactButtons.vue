@@ -77,6 +77,19 @@ async function contact(type) {
     }
 }
 
+/** The post's share card as a File, or null if there is none yet or it can't be fetched. */
+async function cardFile() {
+    if (!props.post.share_image_url) return null;
+    try {
+        const res = await fetch(props.post.share_image_url);
+        if (!res.ok) return null;
+        const blob = await res.blob();
+        return new File([blob], `dawat-${props.post.id}.jpg`, { type: blob.type || 'image/jpeg' });
+    } catch {
+        return null;
+    }
+}
+
 async function share() {
     error.value = '';
     let url = `${window.location.origin}/p/${props.post.id}`;
@@ -87,6 +100,12 @@ async function share() {
     }
     const text = `${props.post.title} — ${props.post.kitchen.name}, দাওয়াতে`;
     try {
+        // Best: send the share card itself (F19), so the picture shows even where links don't preview.
+        const card = await cardFile();
+        if (card && navigator.canShare?.({ files: [card] })) {
+            await navigator.share({ files: [card], title: props.post.title, text: `${text}\n${url}` });
+            return;
+        }
         if (navigator.share) {
             await navigator.share({ title: props.post.title, text, url });
             return;

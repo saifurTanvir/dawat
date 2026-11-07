@@ -26,4 +26,17 @@ return [
     | see the visitor's real IP. Empty = trust no proxy (nginx faces the internet).
     */
     'trusted_proxies' => array_values(array_filter(array_map('trim', explode(',', (string) env('TRUSTED_PROXIES', ''))))),
+
+    /*
+    | F19 share cards: a Bangla PNG/JPEG made with headless Chrome. Puppeteer
+    | lives outside the app (setup-server.sh installs it), so `npm ci` stays small.
+    */
+    'share_cards' => [
+        'enabled' => (bool) env('SHARE_CARDS_ENABLED', false),
+        'chrome_path' => env('SHARE_CARD_CHROME_PATH', '/usr/bin/google-chrome'),
+        'node_binary' => env('SHARE_CARD_NODE_BINARY', 'node'),
+        'node_modules' => env('SHARE_CARD_NODE_MODULES'),
+        'width' => 1080,
+        'height' => 1350,
+    ],
 ];
