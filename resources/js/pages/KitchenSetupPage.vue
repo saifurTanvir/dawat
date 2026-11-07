@@ -37,6 +37,41 @@
                 <p v-if="fieldError('area_id')" class="error-text" role="alert">{{ fieldError('area_id') }}</p>
             </fieldset>
 
+            <fieldset>
+                <legend class="font-semibold">ক্রেতা কীভাবে যোগাযোগ করবেন</legend>
+                <p class="mt-1 text-sm text-muted">পোস্টের নিচে শুধু এই বাটনগুলো দেখাবে।</p>
+                <div class="mt-3 divide-y divide-rule rounded-[var(--radius-plate)] bg-plate">
+                    <label v-for="opt in contactOptions" :key="opt.key" class="flex items-start gap-3 p-4">
+                        <input v-model="contact[opt.key]" type="checkbox" class="mt-1.5 size-5 accent-leaf" />
+                        <span>
+                            <span class="block font-semibold">{{ opt.label }}</span>
+                            <span class="block text-sm text-muted">{{ opt.help }}</span>
+                        </span>
+                    </label>
+                </div>
+                <p v-if="fieldError('allow_comment')" class="error-text" role="alert">{{ fieldError('allow_comment') }}</p>
+
+                <label class="mt-5 flex items-start gap-3">
+                    <input v-model="useOtherNumber" type="checkbox" class="mt-1.5 size-5 accent-leaf" />
+                    <span>
+                        <span class="block font-semibold">আমার নম্বরের বদলে অন্য নম্বর দেব</span>
+                        <span class="block text-sm text-muted">যেমন এলাকার শাহিদার বা পরিবারের কেউ। কল আর মেসেজ সেই নম্বরে যাবে।</span>
+                    </span>
+                </label>
+                <div v-if="useOtherNumber" class="mt-3 space-y-3 pl-8">
+                    <div>
+                        <label for="contact_name" class="mb-1 block text-sm font-semibold">নাম</label>
+                        <input id="contact_name" v-model="contact.contact_name" class="field" type="text" maxlength="60" placeholder="যেমন: করিম ভাই (শাহিদার)" />
+                        <p v-if="fieldError('contact_name')" class="error-text" role="alert">{{ fieldError('contact_name') }}</p>
+                    </div>
+                    <div>
+                        <label for="contact_phone" class="mb-1 block text-sm font-semibold">মোবাইল নম্বর</label>
+                        <input id="contact_phone" v-model="contact.contact_phone" class="field" type="tel" inputmode="tel" placeholder="018XXXXXXXX" />
+                        <p v-if="fieldError('contact_phone')" class="error-text" role="alert">{{ fieldError('contact_phone') }}</p>
+                    </div>
+                </div>
+            </fieldset>
+
             <p v-if="error" class="error-text" role="alert">{{ error }}</p>
             <button type="submit" class="btn-primary" :disabled="busy || !(point || hasLocation) || !areaId">
                 {{ busy ? 'সংরক্ষণ হচ্ছে…' : 'সংরক্ষণ করুন' }}
@@ -64,6 +99,14 @@ const point = ref(null);
 const hasLocation = ref(false);
 const locating = ref(false);
 const locateError = ref('');
+const useOtherNumber = ref(false);
+const contact = ref({ allow_call: false, allow_message: true, allow_comment: true, contact_name: '', contact_phone: '' });
+
+const contactOptions = [
+    { key: 'allow_message', label: 'হোয়াটসঅ্যাপে মেসেজ', help: 'ক্রেতা আগে থেকে লেখা একটা মেসেজ পাঠাবেন।' },
+    { key: 'allow_comment', label: 'পোস্টে কমেন্ট', help: 'সবাই দেখতে পাবেন। নম্বর দেখা যায় না।' },
+    { key: 'allow_call', label: 'ফোন কল', help: 'ক্রেতা সরাসরি কল করবেন। নম্বর তাঁর ফোনে থেকে যাবে।' },
+];
 
 const mapFallback = computed(() => areas.value.find((a) => a.id === areaId.value)?.center ?? undefined);
 
@@ -82,6 +125,15 @@ onMounted(async () => {
         areaId.value = kitchen.data.area?.id ?? null;
         // The server never sends saved coordinates back; the cook re-pins only to move house.
         hasLocation.value = kitchen.data.has_location;
+        const k = kitchen.data;
+        contact.value = {
+            allow_call: k.allow_call,
+            allow_message: k.allow_message,
+            allow_comment: k.allow_comment,
+            contact_name: k.contact_name ?? '',
+            contact_phone: k.contact_phone ?? '',
+        };
+        useOtherNumber.value = Boolean(k.contact_phone);
     } catch (e) {
         error.value = errorMessage(e);
     } finally {
@@ -127,7 +179,14 @@ async function save() {
     errors.value = {};
     busy.value = true;
     try {
-        await api.patch('/kitchen', { area_id: areaId.value, ...(point.value ?? {}) });
+        const { contact_name, contact_phone, ...toggles } = contact.value;
+        await api.patch('/kitchen', {
+            area_id: areaId.value,
+            ...(point.value ?? {}),
+            ...toggles,
+            contact_name: useOtherNumber.value ? contact_name : null,
+            contact_phone: useOtherNumber.value ? contact_phone : null,
+        });
         router.push({ name: 'cook' });
     } catch (e) {
         errors.value = e.response?.data?.errors ?? {};
