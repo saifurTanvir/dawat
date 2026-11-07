@@ -11,3 +11,6 @@ Artisan::command('inspire', function () {
 
 // Delete OTP codes older than a day.
 Schedule::command('model:prune', ['--model' => [OtpCode::class]])->daily();
+
+// F11: close posts whose time is up.
+Schedule::command('posts:expire')->everyFiveMinutes()->withoutOverlapping();
