@@ -15,10 +15,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 #[Fillable([
-    'user_id', 'display_name', 'area_id', 'location', 'status',
+    'user_id', 'display_name', 'area_id', 'pickup_address', 'location', 'status',
     'allow_call', 'allow_message', 'allow_comment', 'contact_phone', 'contact_name', 'max_regular_customers',
 ])]
-#[Hidden(['location', 'public_location'])]
+#[Hidden(['location', 'public_location', 'pickup_address'])]
 class Kitchen extends Model
 {
     /** @use HasFactory<KitchenFactory> */

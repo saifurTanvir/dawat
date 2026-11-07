@@ -20,6 +20,8 @@ class KitchenForm
                     ->schema([
                         TextInput::make('display_name')->label('নাম')->required()->maxLength(60),
                         Select::make('area_id')->label('এলাকা')->relationship('area', 'name'),
+                        TextInput::make('pickup_address')->label('পিকআপের ঠিকানা')->maxLength(255)
+                            ->helperText('শাহিদার এই ঠিকানা থেকে নিয়মিত গ্রাহকের খাবার তুলবেন। ক্রেতারা কখনো দেখেন না।'),
                         TextInput::make('bfsa_reg_no')->label('BFSA রেজিস্ট্রেশন নম্বর')->maxLength(50),
                         TextInput::make('max_regular_customers')->label('সর্বোচ্চ নিয়মিত গ্রাহক')
                             ->numeric()->minValue(0)->maxValue(50)->required()

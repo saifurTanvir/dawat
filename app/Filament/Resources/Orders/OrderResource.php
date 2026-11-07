@@ -56,7 +56,14 @@ class OrderResource extends Resource
                 TextColumn::make('total')->label('মোট')->state(fn (Order $record) => '৳'.number_format($record->totalPaisa() / 100)),
                 TextColumn::make('status')->label('অবস্থা')->badge()
                     ->description(fn (Order $record) => $record->cancel_reason ?? $record->failure_reason),
-                TextColumn::make('confirm_method')->label('নিশ্চিত')->placeholder('—'),
+                TextColumn::make('confirm_method')->label('নিশ্চিত')->placeholder('—')
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'customer_scan' => 'গ্রাহক স্ক্যান',
+                        'shahidar_code' => 'কোড দিয়ে',
+                        'shahidar_tap' => 'যাচাই বাকি',
+                        default => $state,
+                    })
+                    ->badge()->color(fn (?string $state) => $state === 'shahidar_tap' ? 'warning' : 'success'),
             ])
             ->filters([
                 Filter::make('service_date')
@@ -65,6 +72,8 @@ class OrderResource extends Resource
                     ->indicateUsing(fn (array $data) => ($data['date'] ?? null) ? 'তারিখ: '.$data['date'] : null),
                 SelectFilter::make('status')->label('অবস্থা')->options(OrderStatus::class),
                 SelectFilter::make('meal_slot')->label('বেলা')->options(MealSlot::class),
+                Filter::make('unverified')->label('যাচাই বাকি (কোড/স্ক্যান ছাড়া)')
+                    ->query(fn (Builder $query) => $query->where('confirm_method', 'shahidar_tap')),
                 SelectFilter::make('shahidar_id')->label('শাহিদার')->relationship('shahidar', 'name'),
                 SelectFilter::make('kitchen_id')->label('গৃহিণী')->relationship('kitchen', 'display_name'),
             ])

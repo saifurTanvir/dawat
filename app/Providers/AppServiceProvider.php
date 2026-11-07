@@ -77,6 +77,9 @@ class AppServiceProvider extends ServiceProvider
         ]));
 
         // F3: only approved cooks who finished kitchen setup may publish food.
+        // F27: shahidar pages and actions
+        Gate::define('work-as-shahidar', fn (User $user): bool => $user->isShahidar() && ! $user->isBlocked());
+
         Gate::define('publish-posts', function (User $user): bool {
             $kitchen = $user->kitchen;
 

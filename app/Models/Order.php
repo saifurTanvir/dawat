@@ -7,6 +7,7 @@ use App\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /** One box for one regular customer on one day and meal (F26). */
 class Order extends Model
@@ -45,6 +46,11 @@ class Order extends Model
     public function shahidar(): BelongsTo
     {
         return $this->belongsTo(User::class, 'shahidar_id');
+    }
+
+    public function sticker(): HasOne
+    {
+        return $this->hasOne(Sticker::class);
     }
 
     public function scopeOpen(Builder $query): Builder

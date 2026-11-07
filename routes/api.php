@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\V1\PostShowController;
 use App\Http\Controllers\Api\V1\QrController;
 use App\Http\Controllers\Api\V1\RegularController;
 use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\ShahidarController;
+use App\Http\Controllers\Api\V1\StickerController;
 use App\Http\Controllers\Api\V1\TagController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +43,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     // F17: one post (shared links) and its comments
     Route::get('/posts/{post}', PostShowController::class)->middleware('throttle:feed')->name('posts.show');
     Route::get('/posts/{post}/comments', [CommentController::class, 'index'])->middleware('throttle:feed')->name('posts.comments.index');
+
+    // F27: scanning a box sticker (sign-in optional; strangers see nothing personal)
+    Route::get('/stickers/{code}', [StickerController::class, 'show'])->middleware('throttle:feed')->name('stickers.show');
 
     // F1: phone + OTP sign-in
     Route::middleware('throttle:otp')->prefix('auth')->name('auth.')->group(function () {
@@ -80,6 +85,16 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         // F26: the cook's regular bookings today
         Route::get('/my/bookings', [MyBookingController::class, 'index'])->name('my.bookings.index');
         Route::post('/my/bookings/off', [MyBookingController::class, 'off'])->middleware('can:publish-posts')->name('my.bookings.off');
+
+        // F27: the shahidar's day
+        Route::middleware('can:work-as-shahidar')->prefix('shahidar')->name('shahidar.')->group(function () {
+            Route::get('/today', [ShahidarController::class, 'today'])->name('today');
+            Route::post('/orders/{order}/pickup', [ShahidarController::class, 'pickup'])->name('orders.pickup');
+            Route::post('/orders/{order}/deliver', [ShahidarController::class, 'deliver'])->middleware('throttle:otp')->name('orders.deliver');
+            Route::post('/orders/{order}/fail', [ShahidarController::class, 'fail'])->name('orders.fail');
+            Route::post('/orders/{order}/skip', [ShahidarController::class, 'skip'])->name('orders.skip');
+        });
+        Route::post('/stickers/{code}/received', [StickerController::class, 'received'])->name('stickers.received');
 
         // F25: regular home food (customer side)
         Route::get('/regular', [RegularController::class, 'show'])->name('regular.show');
