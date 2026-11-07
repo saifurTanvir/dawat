@@ -1,6 +1,6 @@
 <template>
     <label
-        class="inline-flex min-h-11 cursor-pointer items-center rounded-full border px-4 select-none has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-turmeric"
+        class="relative inline-flex min-h-11 cursor-pointer items-center rounded-full border px-4 select-none has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-turmeric"
         :class="checked ? 'border-leaf bg-leaf text-white' : 'border-rule bg-plate text-ink'"
     >
         <input

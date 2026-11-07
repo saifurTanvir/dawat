@@ -31,12 +31,12 @@
                     </figure>
 
                     <template v-if="photos.length < maxPhotos">
-                        <label class="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-leaf/40 bg-plate text-center text-leaf">
+                        <label class="relative flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-leaf/40 bg-plate text-center text-leaf">
                             <span class="text-3xl leading-none" aria-hidden="true">+</span>
                             <span class="mt-1 font-semibold">ছবি তুলুন</span>
                             <input type="file" accept="image/*" capture="environment" class="sr-only" @change="addPhotos" />
                         </label>
-                        <label class="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-rule bg-plate text-center text-muted">
+                        <label class="relative flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-rule bg-plate text-center text-muted">
                             <span class="font-semibold">গ্যালারি থেকে</span>
                             <input type="file" accept="image/*" multiple class="sr-only" @change="addPhotos" />
                         </label>
