@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\Ai\AnthropicFoodAssistant;
 use App\Services\Ai\FoodAssistant;
 use App\Services\Ai\NullFoodAssistant;
+use App\Services\Otp\BulkSmsBdSender;
 use App\Services\Otp\LogOtpSender;
 use App\Services\Otp\OtpSender;
 use App\Services\ShareCards\BrowsershotRenderer;
@@ -33,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(OtpSender::class, function () {
             return match (config('services.otp.driver')) {
                 'log' => new LogOtpSender,
+                'bulksmsbd' => new BulkSmsBdSender,
                 default => throw new InvalidArgumentException('Unknown OTP_DRIVER: '.config('services.otp.driver')),
             };
         });

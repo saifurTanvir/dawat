@@ -35,8 +35,14 @@ return [
         ],
     ],
 
+    'bulksmsbd' => [
+        'base_url' => env('BULKSMSBD_BASE_URL', 'https://bulksmsbd.net'),
+        'api_key' => env('BULKSMSBD_API_KEY'),
+        'sender_id' => env('BULKSMSBD_SENDER_ID'),
+    ],
+
     'otp' => [
-        // log = write codes to the log (development). Add a real SMS gateway driver later.
+        // log = write codes to the log (development); bulksmsbd = real SMS.
         'driver' => env('OTP_DRIVER', 'log'),
         'ttl_minutes' => (int) env('OTP_TTL_MINUTES', 5),
         'length' => (int) env('OTP_LENGTH', 6),

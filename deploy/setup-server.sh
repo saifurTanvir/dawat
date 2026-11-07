@@ -144,7 +144,10 @@ REDIS_PORT=6379
 FILESYSTEM_DISK=local
 MEDIA_DISK=public
 
-OTP_DRIVER=log
+# SMS: put the key and sender id from the BulkSMSBD panel here.
+OTP_DRIVER=bulksmsbd
+BULKSMSBD_API_KEY=
+BULKSMSBD_SENDER_ID=
 OTP_TTL_MINUTES=5
 OTP_LENGTH=6
 OTP_PER_IP_PER_DAY=30
@@ -263,8 +266,10 @@ Next steps (also in README → Deployment):
   2. Add the repository secrets in GitHub (DEPLOY_HOST, DEPLOY_USER=$DEPLOY_USER,
      DEPLOY_SSH_KEY, DEPLOY_PATH=$APP_DIR, DEPLOY_KNOWN_HOSTS)
   3. Merge to main (or run the Deploy workflow by hand)
-  4. After the first deploy, create your admin:
+  4. Put BULKSMSBD_API_KEY and BULKSMSBD_SENDER_ID in $APP_DIR/shared/.env
+  5. After the first deploy, create your admin and test SMS:
        sudo -u $DEPLOY_USER php $APP_DIR/current/artisan dawat:make-admin 017XXXXXXXX you@example.com
+       sudo -u $DEPLOY_USER php $APP_DIR/current/artisan dawat:sms-test 017XXXXXXXX
 
 EOF
 if [ -n "$DB_PASS" ]; then

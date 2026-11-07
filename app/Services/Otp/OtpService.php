@@ -24,6 +24,7 @@ class OtpService
      * Creates and sends a new code.
      *
      * @throws OtpThrottledException
+     * @throws OtpDeliveryFailedException
      */
     public function request(string $phone, ?string $ip = null, OtpPurpose $purpose = OtpPurpose::Login, array $context = []): void
     {
@@ -39,11 +40,11 @@ class OtpService
 
         $code = $this->generateCode();
 
-        DB::transaction(function () use ($phone, $code, $ip) {
+        $otp = DB::transaction(function () use ($phone, $code, $ip) {
             // Only the newest code works.
             OtpCode::where('phone', $phone)->whereNull('consumed_at')->update(['consumed_at' => now()]);
 
-            OtpCode::create([
+            return OtpCode::create([
                 'phone' => $phone,
                 'code_hash' => Hash::make($code),
                 'expires_at' => now()->addMinutes((int) config('services.otp.ttl_minutes', 5)),
@@ -51,7 +52,13 @@ class OtpService
             ]);
         });
 
-        $this->sender->send($phone, $code, $purpose, $context);
+        try {
+            $this->sender->send($phone, $code, $purpose, $context);
+        } catch (OtpDeliveryFailedException $e) {
+            // Not delivered: let the person ask again straight away.
+            $otp->delete();
+            throw $e;
+        }
     }
 
     /**

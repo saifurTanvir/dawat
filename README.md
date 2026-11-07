@@ -119,7 +119,7 @@ npm run build             # প্রোডাকশন বিল্ড, PWA স
 
 ### ১. সার্ভার একবার সেটআপ
 
-Ubuntu 24.04 VPS (কমপক্ষে ২ GB RAM; সিঙ্গাপুর রিজিয়ন বাংলাদেশ থেকে দ্রুত)। ডোমেইনের A রেকর্ড সার্ভারের IP-তে দিন। তারপর সার্ভারে:
+Ubuntu 24.04 VPS (কমপক্ষে ২ GB RAM; Hostinger KVM 1, India লোকেশন)। ডোমেইনের A রেকর্ড সার্ভারের IP-তে দিন। তারপর সার্ভারে:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/saifurTanvir/dawat/main/deploy/setup-server.sh -o setup-server.sh
@@ -180,7 +180,7 @@ sudo -u deploy bash /var/www/dawat/current/deploy/rollback.sh /var/www/dawat
 
 | কী | কখন |
 | --- | --- |
-| `OTP_DRIVER` | SMS গেটওয়ে ঠিক হলে (`app/Services/Otp`-এ নতুন ড্রাইভার যোগ হবে) |
+| `BULKSMSBD_API_KEY`, `BULKSMSBD_SENDER_ID` | প্রথম ডিপ্লয়ের আগেই (BulkSMSBD প্যানেল থেকে)। যাচাই: `php artisan dawat:sms-test 017XXXXXXXX`। প্যানেলে IP whitelist চালু থাকলে সার্ভারের IP যোগ করুন |
 | `MEDIA_DISK=s3` + `AWS_*` | ছবি Cloudflare R2 / DigitalOcean Spaces-এ রাখতে চাইলে |
 | `AI_DRIVER=anthropic` + `ANTHROPIC_API_KEY` | F20 AI সাজেশন চালু করতে (না দিলে বোতামগুলো দেখায় না, বাকি সব চলে) |
 
