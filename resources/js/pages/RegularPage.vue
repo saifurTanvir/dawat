@@ -31,6 +31,10 @@
                 <div v-for="o in booking.today" :key="o.id" class="mt-3 border-t border-rule pt-3 first:border-0 first:pt-0">
                     <p class="font-semibold">{{ o.meal_slot_label }}<template v-if="o.title"> · {{ o.title }}</template></p>
                     <p class="text-sm text-muted">বক্স {{ o.code }} · {{ bn(o.plates) }} প্লেট · {{ taka(o.total_paisa) }} · {{ o.status_label }}</p>
+                    <div v-if="o.can_accept" class="mt-2 rounded-lg bg-turmeric-soft p-3 text-sm">
+                        <p>আজকের দাম আপনার সীমার বেশি। {{ clockText(o.ask_until) }}-এর মধ্যে না জানালে আজ আসবে না।</p>
+                        <button type="button" class="btn-primary mt-2" :disabled="busy" @click="accept(o)">নেব ({{ taka(o.total_paisa) }})</button>
+                    </div>
                     <button v-if="o.can_skip" type="button" class="btn-quiet -ml-4 mt-1 text-chili" :disabled="busy" @click="skip(o)">আজ লাগবে না</button>
                 </div>
                 <p class="mt-3 text-sm text-muted">খাবার হাতে পেলে SMS-এ পাওয়া ৪ অঙ্কের কোডটা শাহিদারকে বলবেন।</p>
@@ -124,6 +128,13 @@
                 </div>
             </div>
 
+            <div>
+                <label for="r-max" class="mb-1 block font-semibold">প্রতি প্লেট সর্বোচ্চ দাম (ইচ্ছা হলে)</label>
+                <input id="r-max" v-model.number="form.max_price_taka" class="field w-44" type="number" inputmode="numeric" min="20" max="2000" placeholder="যেমন ১৮০" />
+                <p class="mt-1 text-sm text-muted">কোনো দিন দাম এর বেশি হলে নিজে থেকে বুক হবে না, আগে আপনাকে জিজ্ঞেস করা হবে।</p>
+                <p v-if="err('max_price_taka')" class="error-text">{{ err('max_price_taka') }}</p>
+            </div>
+
             <fieldset>
                 <legend class="mb-2 font-semibold">কোন দিন</legend>
                 <div class="flex flex-wrap gap-2">
@@ -165,7 +176,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import ChoiceChip from '@/components/ChoiceChip.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
-import { taka } from '@/lib/format';
+import { clockText, taka } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
 
 const auth = useAuthStore();
@@ -211,6 +222,10 @@ async function act(request) {
     }
 }
 
+function accept(order) {
+    act(() => api.post(`/regular/orders/${order.id}/accept`));
+}
+
 function skip(order) {
     if (!window.confirm(`আজ ${order.meal_slot_label} খাবার লাগবে না?`)) return;
     act(() => api.post(`/regular/orders/${order.id}/skip`));
@@ -227,7 +242,7 @@ function unpause(p) {
     act(() => api.delete(`/regular/pauses/${p.id}`));
 }
 
-const form = reactive({ name: '', area_id: null, address: '', note: '', meal_slots: ['lunch'], plates: 1, weekdays: [0, 1, 2, 3, 4, 5, 6] });
+const form = reactive({ name: '', area_id: null, address: '', note: '', meal_slots: ['lunch'], plates: 1, max_price_taka: null, weekdays: [0, 1, 2, 3, 4, 5, 6] });
 
 const statusMessage = computed(() => ({
     waiting: 'দাওয়াত টিম আপনার এলাকার একজন গৃহিণী আর শাহিদার ঠিক করে ফোন দেবে।',
@@ -253,6 +268,7 @@ function fill(b) {
         note: b?.note ?? '',
         meal_slots: [...(b?.meal_slots ?? ['lunch'])],
         plates: b?.plates ?? 1,
+        max_price_taka: b?.max_price_paisa ? b.max_price_paisa / 100 : null,
         weekdays: [...(b?.weekdays ?? [0, 1, 2, 3, 4, 5, 6])],
     });
 }
@@ -281,7 +297,7 @@ async function save() {
     error.value = '';
     errors.value = {};
     try {
-        const { data } = await api.put('/regular', { ...form, note: form.note || null });
+        const { data } = await api.put('/regular', { ...form, note: form.note || null, max_price_taka: form.max_price_taka || null });
         booking.value = data.data;
         notice.value = data.message === statusMessage.value ? '' : data.message;
         editing.value = false;

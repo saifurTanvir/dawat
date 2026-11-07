@@ -94,6 +94,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/orders/{order}/fail', [ShahidarController::class, 'fail'])->name('orders.fail');
             Route::post('/orders/{order}/paid', [ShahidarController::class, 'paid'])->name('orders.paid');
             Route::post('/orders/{order}/skip', [ShahidarController::class, 'skip'])->name('orders.skip');
+            Route::post('/orders/{order}/accept', [ShahidarController::class, 'accept'])->name('orders.accept');
         });
         Route::post('/stickers/{code}/received', [StickerController::class, 'received'])->name('stickers.received');
 
@@ -102,6 +103,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::put('/regular', [RegularController::class, 'save'])->middleware('throttle:comments')->name('regular.save');
         // F26: skip today's box, days off
         Route::post('/regular/orders/{order}/skip', [RegularController::class, 'skip'])->name('regular.orders.skip');
+        Route::post('/regular/orders/{order}/accept', [RegularController::class, 'accept'])->name('regular.orders.accept');
         Route::post('/regular/pauses', [RegularController::class, 'pause'])->middleware('throttle:comments')->name('regular.pauses.store');
         Route::delete('/regular/pauses/{pause}', [RegularController::class, 'unpause'])->name('regular.pauses.destroy');
 

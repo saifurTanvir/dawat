@@ -25,6 +25,7 @@ class Order extends Model
             'picked_at' => 'datetime',
             'delivered_at' => 'datetime',
             'paid_at' => 'datetime',
+            'ask_until' => 'datetime',
         ];
     }
 
@@ -55,7 +56,7 @@ class Order extends Model
 
     public function scopeOpen(Builder $query): Builder
     {
-        return $query->whereIn('status', [OrderStatus::Booked, OrderStatus::PickedUp]);
+        return $query->whereIn('status', [OrderStatus::Asking, OrderStatus::Booked, OrderStatus::PickedUp]);
     }
 
     public function totalPaisa(): int

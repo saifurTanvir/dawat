@@ -69,6 +69,9 @@
                         <label for="price" class="mb-1 block font-semibold">এক প্লেটের দাম (৳)</label>
                         <input id="price" v-model.number="form.price_taka" class="field" type="number" inputmode="numeric" min="20" max="2000" placeholder="১৫০" />
                         <p v-if="err('price_taka')" class="error-text">{{ err('price_taka') }}</p>
+                        <p v-if="overLimit" class="mt-1 text-sm text-chili" role="status">
+                            {{ bn(priceLimit.count) }} জন নিয়মিত গ্রাহকের সীমা ৳{{ bn(priceLimit.paisa / 100) }}। এর বেশি দামে তাঁদের আগে জিজ্ঞেস করা হবে।
+                        </p>
                     </div>
                     <div>
                         <span id="plates-label" class="mb-1 block font-semibold">কয় প্লেট</span>
@@ -208,6 +211,7 @@ const photos = ref([]); // { file, url }
 const tags = ref([]);
 const kitchenName = ref('');
 const bookings = ref({}); // meal_slot => plates still to be booked today (F26)
+const limits = ref({}); // meal_slot => { paisa, count } lowest price limit (F30)
 const aiAvailable = ref(false);
 
 // F20: suggestions only. Nothing here overwrites what the cook typed.
@@ -240,6 +244,8 @@ const tagGroups = computed(() =>
 );
 
 const bookedPlates = computed(() => bookings.value[form.meal_slot] ?? 0);
+const priceLimit = computed(() => limits.value[form.meal_slot] ?? null);
+const overLimit = computed(() => priceLimit.value && form.price_taka * 100 > priceLimit.value.paisa);
 const slotLabel = computed(() => mealSlots.find((m) => m.value === form.meal_slot)?.label ?? '');
 watch(bookedPlates, (n) => {
     if (form.plates_total < n) form.plates_total = n;
@@ -276,6 +282,7 @@ onMounted(async () => {
         aiAvailable.value = !!k.data.ai_available;
         api.get('/my/bookings').then(({ data: b }) => {
             bookings.value = Object.fromEntries(b.data.slots.map((x) => [x.meal_slot, x.waiting_plates]));
+            limits.value = Object.fromEntries(b.data.slots.filter((x) => x.price_limit_paisa).map((x) => [x.meal_slot, { paisa: x.price_limit_paisa, count: x.limited_customers }]));
         }).catch(() => {});
         if (!k.data.can_post) {
             router.replace({ name: 'cook' });

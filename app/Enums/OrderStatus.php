@@ -7,6 +7,8 @@ use Filament\Support\Contracts\HasLabel;
 
 enum OrderStatus: string implements HasColor, HasLabel
 {
+    /** F30: price above the customer's limit; held while they are asked. */
+    case Asking = 'asking';
     case Booked = 'booked';
     case PickedUp = 'picked_up';
     case Delivered = 'delivered';
@@ -16,6 +18,7 @@ enum OrderStatus: string implements HasColor, HasLabel
     public function label(): string
     {
         return match ($this) {
+            self::Asking => 'দাম বেশি, জিজ্ঞেস করা হচ্ছে',
             self::Booked => 'বুক হয়েছে',
             self::PickedUp => 'পিকআপ হয়েছে',
             self::Delivered => 'পৌঁছেছে',
@@ -32,6 +35,7 @@ enum OrderStatus: string implements HasColor, HasLabel
     public function getColor(): string
     {
         return match ($this) {
+            self::Asking => 'warning',
             self::Booked => 'info',
             self::PickedUp => 'primary',
             self::Delivered => 'success',
@@ -42,6 +46,6 @@ enum OrderStatus: string implements HasColor, HasLabel
     /** Still on its way: counts against the cook's plates. */
     public function isOpen(): bool
     {
-        return in_array($this, [self::Booked, self::PickedUp], true);
+        return in_array($this, [self::Asking, self::Booked, self::PickedUp], true);
     }
 }

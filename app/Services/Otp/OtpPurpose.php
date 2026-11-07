@@ -9,6 +9,8 @@ enum OtpPurpose: string
     case ContactNumber = 'contact_number';
     /** F26: today's box is booked; $code is the 4-digit delivery code. */
     case OrderBooked = 'order_booked';
+    /** F30: today's price is above the customer's limit; asks yes/no. */
+    case PriceAsk = 'price_ask';
     /** F26: the paired cook is not cooking this meal today. */
     case CookOff = 'cook_off';
 
@@ -34,6 +36,14 @@ enum OtpPurpose: string
                 $context['total'] ?? '',
                 $context['box'] ?? '',
                 $code,
+            ),
+            self::PriceAsk => sprintf(
+                'দাওয়াত: আজ %s — %s, প্লেট ৳%s (আপনার সীমা ৳%s)। নিতে চাইলে অ্যাপে "নেব" চাপুন বা শাহিদারকে বলুন, %s মিনিটের মধ্যে। না জানালে আজ আসবে না।',
+                $context['slot'] ?? '',
+                $context['title'] ?? '',
+                $context['price'] ?? '',
+                $context['limit'] ?? '',
+                $context['minutes'] ?? '৪৫',
             ),
             self::CookOff => sprintf(
                 'দাওয়াত: আজ %s %s-এর রান্না নেই। আপনার শাহিদার যোগাযোগ করবেন।',

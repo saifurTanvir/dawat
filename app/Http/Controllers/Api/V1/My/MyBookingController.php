@@ -45,6 +45,9 @@ class MyBookingController extends Controller
                 'label' => $slot->label(),
                 // Still to be booked: they get plates from the next post for this meal.
                 'waiting_plates' => (int) $waiting->sum(fn (Pairing $p) => $p->customer->plates),
+                // F30: the lowest price limit among them; above it they are asked first.
+                'price_limit_paisa' => $waiting->map(fn (Pairing $p) => $p->customer->max_price_paisa)->filter()->min(),
+                'limited_customers' => $waiting->filter(fn (Pairing $p) => $p->customer->max_price_paisa !== null)->count(),
                 'waiting' => $waiting->map(fn (Pairing $p) => ['name' => self::firstName($p->customer->user->name), 'plates' => $p->customer->plates])->values(),
                 'orders' => $done->map(fn (Order $o) => [
                     'code' => $o->code(),

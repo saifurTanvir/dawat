@@ -29,6 +29,7 @@ class RegularResource extends JsonResource
             'note' => $this->note,
             'meal_slots' => $this->meal_slots,
             'plates' => $this->plates,
+            'max_price_paisa' => $this->max_price_paisa,
             'weekdays' => $this->weekdays,
             'booking_summary' => $this->bookingSummary(),
             'kitchen' => $pairing ? ['name' => $pairing->kitchen->display_name] : null,
@@ -42,7 +43,10 @@ class RegularResource extends JsonResource
                 'total_paisa' => $o->totalPaisa(),
                 'status' => $o->status->value,
                 'status_label' => $o->cancelled_by === 'cook' ? 'আজ রান্না নেই' : $o->status->label(),
-                'can_skip' => $o->status === OrderStatus::Booked,
+                'can_skip' => in_array($o->status, [OrderStatus::Booked, OrderStatus::Asking], true),
+                // F30: today's price is above the limit; "নেব" until ask_until.
+                'can_accept' => $o->status === OrderStatus::Asking,
+                'ask_until' => $o->ask_until?->toIso8601String(),
             ])->values()),
             'pauses' => $this->whenLoaded('upcomingPauses', fn () => $this->upcomingPauses->map(fn ($p) => [
                 'id' => $p->id,

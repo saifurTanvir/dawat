@@ -110,6 +110,14 @@ class ShahidarController extends Controller
         return $this->done($this->planner->cancel($order, 'shahidar', $data['reason'] ?? 'গ্রাহক শাহিদারকে জানিয়েছেন'), 'আজকের জন্য বাদ দেওয়া হয়েছে।');
     }
 
+    /** The customer said yes on the phone to today's higher price (F30). */
+    public function accept(Request $request, Order $order): JsonResponse
+    {
+        $this->mine($request, $order);
+
+        return $this->done($this->planner->accept($order), 'গ্রাহক নেবেন, বুক হয়েছে।');
+    }
+
     private function mine(Request $request, Order $order): void
     {
         abort_unless($order->shahidar_id === $request->user()->id, 404);
@@ -135,6 +143,9 @@ class ShahidarController extends Controller
             'status' => $o->status->value,
             'status_label' => $o->cancelled_by === 'cook' ? 'আজ রান্না নেই' : $o->status->label(),
             'cancel_reason' => $o->cancel_reason,
+            'ask_until' => $o->ask_until?->toIso8601String(),
+            'price_paisa' => intdiv($o->food_paisa, max(1, $o->plates)),
+            'max_price_paisa' => $o->customer->max_price_paisa,
             'confirm_method' => $o->confirm_method,
             'sticker' => $o->sticker?->displayCode(),
             'kitchen' => [

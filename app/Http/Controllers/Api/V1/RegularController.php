@@ -42,6 +42,17 @@ class RegularController extends Controller
         return RegularResource::make($customer->fresh(self::WITH))->additional(['message' => 'আজকের খাবার বাদ দেওয়া হয়েছে।']);
     }
 
+    /** POST /api/v1/regular/orders/{order}/accept — "নেব" at today's higher price (F30). */
+    public function accept(Request $request, Order $order, BookingPlanner $planner): RegularResource
+    {
+        $customer = Customer::where('user_id', $request->user()->id)->firstOrFail();
+        abort_unless($order->customer_id === $customer->id, 404);
+
+        $planner->accept($order);
+
+        return RegularResource::make($customer->fresh(self::WITH))->additional(['message' => 'বুক হয়েছে। ডেলিভারি কোড SMS-এ আসছে।']);
+    }
+
     /** POST /api/v1/regular/pauses {starts_on, ends_on} — days off. */
     public function pause(Request $request, BookingPlanner $planner): RegularResource
     {
@@ -89,6 +100,7 @@ class RegularController extends Controller
                 'note' => filled($data['note'] ?? null) ? trim($data['note']) : null,
                 'meal_slots' => array_values($data['meal_slots']),
                 'plates' => $data['plates'],
+                'max_price_paisa' => isset($data['max_price_taka']) ? (int) $data['max_price_taka'] * 100 : null,
                 'weekdays' => array_map('intval', array_values($data['weekdays'])),
             ];
 

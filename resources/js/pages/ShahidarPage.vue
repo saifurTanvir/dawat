@@ -24,6 +24,24 @@
                 </ul>
             </div>
 
+            <!-- F30: price above the customer's limit: call and ask -->
+            <div v-if="asking.length" class="mt-4 rounded-[var(--radius-plate)] border-2 border-turmeric bg-plate p-4">
+                <p class="font-semibold">ফোন করুন: আজ দাম বেশি</p>
+                <div v-for="o in asking" :key="o.id" class="mt-3 border-t border-rule pt-3 first:border-0 first:pt-0">
+                    <div class="flex items-start justify-between gap-3">
+                        <p>
+                            <span class="font-semibold">{{ o.customer.name }}</span> · {{ o.meal_slot_label }} · {{ o.kitchen.name }}
+                            <span class="block text-sm text-muted">প্লেট {{ taka(o.price_paisa) }}, সীমা {{ taka(o.max_price_paisa) }} · {{ clockText(o.ask_until) }} পর্যন্ত</span>
+                        </p>
+                        <a :href="`tel:${o.customer.phone}`" class="shrink-0 font-semibold text-leaf">ফোন</a>
+                    </div>
+                    <div class="mt-2 flex gap-4 text-sm">
+                        <button type="button" class="font-semibold text-leaf" :disabled="busy" @click="act(o, 'accept')">নেবেন</button>
+                        <button type="button" class="font-semibold text-chili" :disabled="busy" @click="act(o, 'skip', { reason: 'দাম বেশি, নেবেন না' })">নেবেন না</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Pickups, cook by cook -->
             <h2 class="mt-6 text-lg font-semibold">পিকআপ</h2>
             <p v-if="!pickups.length" class="mt-1 text-muted">এখন তোলার মতো কিছু নেই।</p>
@@ -106,7 +124,7 @@ import { computed, onMounted, ref } from 'vue';
 import StickerScanner from '@/components/StickerScanner.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
-import { taka } from '@/lib/format';
+import { clockText, taka } from '@/lib/format';
 
 const loading = ref(true);
 const busy = ref(false);
@@ -131,7 +149,8 @@ const pickups = computed(() => {
     return [...groups.values()];
 });
 const onTheWay = computed(() => day.value.orders.filter((o) => o.status === 'picked_up'));
-const finished = computed(() => day.value.orders.filter((o) => !['booked', 'picked_up'].includes(o.status)));
+const asking = computed(() => day.value.orders.filter((o) => o.status === 'asking'));
+const finished = computed(() => day.value.orders.filter((o) => !['asking', 'booked', 'picked_up'].includes(o.status)));
 
 async function load() {
     try {

@@ -23,6 +23,8 @@ class SaveRegularRequest extends FormRequest
             'meal_slots' => ['required', 'array', 'min:1', 'max:4'],
             'meal_slots.*' => ['distinct', Rule::enum(MealSlot::class)],
             'plates' => ['required', 'integer', 'between:1,10'],
+            // F30: highest price per plate, in taka; empty = no limit.
+            'max_price_taka' => ['nullable', 'integer', 'between:20,2000'],
             'weekdays' => ['required', 'array', 'min:1', 'max:7'],
             'weekdays.*' => ['distinct', 'integer', 'between:0,6'],
         ];
@@ -38,6 +40,7 @@ class SaveRegularRequest extends FormRequest
             'meal_slots.required' => 'অন্তত একটা বেলা বেছে নিন।',
             'weekdays.required' => 'অন্তত একটা দিন বেছে নিন।',
             'plates.between' => 'প্লেট ১ থেকে ১০টা।',
+            'max_price_taka.between' => 'সর্বোচ্চ দাম ৳২০ থেকে ৳২০০০-এর মধ্যে দিন, অথবা খালি রাখুন।',
         ];
     }
 }

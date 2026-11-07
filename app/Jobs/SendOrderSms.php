@@ -35,6 +35,9 @@ class SendOrderSms implements ShouldQueue
                 'total' => Order::banglaDigits(intdiv($order->totalPaisa(), 100)),
                 'box' => $order->code(),
                 'kitchen' => $order->kitchen->display_name,
+                'price' => Order::banglaDigits(intdiv($order->food_paisa, max(1, $order->plates) * 100)),
+                'limit' => Order::banglaDigits(intdiv((int) $order->customer->max_price_paisa, 100)),
+                'minutes' => Order::banglaDigits((int) config('dawat.orders.ask_minutes', 45)),
             ]);
         } catch (OtpDeliveryFailedException $e) {
             // Logged by the sender; retry a couple of times, then give up quietly.

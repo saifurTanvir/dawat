@@ -82,11 +82,22 @@ class OrderResource extends Resource
                 SelectFilter::make('kitchen_id')->label('গৃহিণী')->relationship('kitchen', 'display_name'),
             ])
             ->recordActions([
+                Action::make('accept')
+                    ->label('গ্রাহক নেবেন')
+                    ->icon(Heroicon::OutlinedCheck)
+                    ->color('success')
+                    ->visible(fn (Order $record) => $record->status === OrderStatus::Asking)
+                    ->requiresConfirmation()
+                    ->modalDescription('আজকের বেশি দামে গ্রাহক রাজি হয়েছেন। বুক করে ডেলিভারি কোড SMS-এ পাঠানো হবে।')
+                    ->action(function (Order $record) {
+                        app(BookingPlanner::class)->accept($record);
+                        Notification::make()->title('বুক হয়েছে')->success()->send();
+                    }),
                 Action::make('cancel')
                     ->label('আজ বাদ')
                     ->icon(Heroicon::OutlinedXMark)
                     ->color('warning')
-                    ->visible(fn (Order $record) => $record->status === OrderStatus::Booked)
+                    ->visible(fn (Order $record) => in_array($record->status, [OrderStatus::Booked, OrderStatus::Asking], true))
                     ->schema([TextInput::make('reason')->label('কারণ')->required()->maxLength(200)->default('গ্রাহক ফোনে জানিয়েছেন')])
                     ->action(function (Order $record, array $data) {
                         app(BookingPlanner::class)->cancel($record, 'admin', $data['reason']);

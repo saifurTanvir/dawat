@@ -80,11 +80,18 @@ class BookingPlanner
             ]);
         }
 
-        $orders = $pairings->map(fn (Pairing $p) => $this->createOrder($p, $post->meal_slot, OrderStatus::Booked, [
-            'post_id' => $post->id,
-            'title' => $post->title,
-            'food_paisa' => $post->price_paisa * $p->customer->plates,
-        ]));
+        $orders = $pairings->map(function (Pairing $p) use ($post) {
+            // F30: above the customer's limit → hold the plates and ask first.
+            $limit = $p->customer->max_price_paisa;
+            $ask = $limit !== null && $post->price_paisa > $limit;
+
+            return $this->createOrder($p, $post->meal_slot, $ask ? OrderStatus::Asking : OrderStatus::Booked, [
+                'post_id' => $post->id,
+                'title' => $post->title,
+                'food_paisa' => $post->price_paisa * $p->customer->plates,
+                'ask_until' => $ask ? now()->addMinutes((int) config('dawat.orders.ask_minutes', 45)) : null,
+            ]);
+        });
 
         if ($needed > 0) {
             $post->plates_left = $post->plates_total - $needed;
@@ -112,16 +119,53 @@ class BookingPlanner
         ));
     }
 
+    /** F30: the customer (or their shahidar) says yes to today's higher price. */
+    public function accept(Order $order): Order
+    {
+        return DB::transaction(function () use ($order) {
+            $order = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if ($order->status !== OrderStatus::Asking) {
+                throw ValidationException::withMessages(['order' => 'এই বক্সের উত্তর আগেই দেওয়া হয়েছে বা সময় শেষ।']);
+            }
+            $code = (string) random_int(1000, 9999);
+            $order->forceFill([
+                'status' => OrderStatus::Booked,
+                'ask_until' => null,
+                'delivery_code_hash' => Hash::make($code),
+                'delivery_fee_paisa' => (int) $order->customer->area->delivery_fee_paisa,
+            ])->save();
+
+            if (config('dawat.orders.sms')) {
+                SendOrderSms::dispatch($order->id, OtpPurpose::OrderBooked, $code)->afterCommit();
+            }
+
+            return $order;
+        });
+    }
+
+    /** F30: nobody answered in time; the plates go back to the feed. */
+    public function expireAsks(): int
+    {
+        $count = 0;
+        Order::where('status', OrderStatus::Asking)->where('ask_until', '<=', now())->get()
+            ->each(function (Order $o) use (&$count) {
+                $this->cancel($o, 'system', 'দামের উত্তর আসেনি');
+                $count++;
+            });
+
+        return $count;
+    }
+
     /** "আজ না": before pickup the plates go back to the public feed. */
     public function cancel(Order $order, string $by, ?string $reason = null): Order
     {
         return DB::transaction(function () use ($order, $by, $reason) {
             $order = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
-            if ($order->status !== OrderStatus::Booked) {
+            if (! in_array($order->status, [OrderStatus::Booked, OrderStatus::Asking], true)) {
                 throw ValidationException::withMessages(['order' => 'খাবার পিকআপ হয়ে গেছে বা আগেই বাতিল, এখন আর বাদ দেওয়া যাবে না।']);
             }
 
-            $order->forceFill(['status' => OrderStatus::Cancelled, 'cancelled_by' => $by, 'cancel_reason' => $reason])->save();
+            $order->forceFill(['status' => OrderStatus::Cancelled, 'cancelled_by' => $by, 'cancel_reason' => $reason, 'ask_until' => null])->save();
 
             $post = $order->post_id ? Post::whereKey($order->post_id)->lockForUpdate()->first() : null;
             if ($post && in_array($post->status, [PostStatus::Live, PostStatus::SoldOut], true) && $post->available_until->isFuture()) {
@@ -147,7 +191,7 @@ class BookingPlanner
         return DB::transaction(function () use ($customer, $from, $to, $by, $reason) {
             $pause = $customer->pauses()->create(['starts_on' => $from, 'ends_on' => $to, 'reason' => $reason, 'created_by' => $by]);
 
-            $customer->orders()->where('status', OrderStatus::Booked)
+            $customer->orders()->whereIn('status', [OrderStatus::Booked, OrderStatus::Asking])
                 ->whereDate('service_date', '>=', $from)->whereDate('service_date', '<=', $to)
                 ->get()->each(fn (Order $o) => $this->cancel($o, 'customer', 'বিরতি'));
 
@@ -186,8 +230,12 @@ class BookingPlanner
         }
 
         if (config('dawat.orders.sms')) {
-            SendOrderSms::dispatch($order->id, $status === OrderStatus::Booked ? OtpPurpose::OrderBooked : OtpPurpose::CookOff, $code)
-                ->afterCommit();
+            $purpose = match ($status) {
+                OrderStatus::Booked => OtpPurpose::OrderBooked,
+                OrderStatus::Asking => OtpPurpose::PriceAsk,
+                default => OtpPurpose::CookOff,
+            };
+            SendOrderSms::dispatch($order->id, $purpose, $code)->afterCommit();
         }
 
         return $order;
