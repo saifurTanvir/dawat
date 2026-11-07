@@ -13,10 +13,15 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
+            $table->string('name')->nullable();
+            // Everyone signs in with a Bangladeshi mobile number + OTP, stored as 01XXXXXXXXX.
+            $table->string('phone', 11)->unique();
+            $table->timestamp('phone_verified_at')->nullable();
+            // Only admins have an email + password (for the /admin panel).
+            $table->string('email')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password')->nullable();
+            $table->string('status', 20)->default('active')->index();
             $table->rememberToken();
             $table->timestamps();
         });

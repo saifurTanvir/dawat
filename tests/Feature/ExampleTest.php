@@ -2,18 +2,33 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
-    /**
-     * A basic test example.
-     */
-    public function test_the_application_returns_a_successful_response(): void
+    public function test_the_api_answers_ping(): void
     {
-        $response = $this->get('/');
+        $this->getJson('/api/v1/ping')
+            ->assertOk()
+            ->assertJson(['ok' => true]);
+    }
 
-        $response->assertStatus(200);
+    public function test_spa_shell_is_served_for_app_paths(): void
+    {
+        $this->withoutVite();
+
+        $this->get('/')->assertOk()->assertSee('id="app"', false);
+        $this->get('/q/mirpur-10')->assertOk()->assertSee('id="app"', false);
+        $this->get('/updates')->assertOk();
+    }
+
+    public function test_unknown_api_paths_return_json_404(): void
+    {
+        $this->getJson('/api/v1/does-not-exist')->assertNotFound();
+    }
+
+    public function test_trusted_proxies_come_from_config(): void
+    {
+        $this->assertSame([], config('dawat.trusted_proxies'));
     }
 }

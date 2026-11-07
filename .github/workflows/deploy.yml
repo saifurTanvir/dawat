@@ -1,0 +1,115 @@
+name: Deploy
+
+# Deploys to the VPS after CI passes on main. Can also be started by hand
+# from the Actions tab ("Run workflow").
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy to production
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    environment: production
+
+    env:
+      # Secrets live in Settings → Secrets and variables → Actions. See README.
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/var/www/dawat' }}
+
+    steps:
+      - name: Check that deploy secrets are set
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          missing=""
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secrets:$missing (see README → Deployment)"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, pdo_mysql, gd, zip, bcmath
+          coverage: none
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install production PHP dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+
+      - name: Build frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Package release
+        id: package
+        run: |
+          release="$(date -u +%Y%m%d%H%M%S)-$(git rev-parse --short=7 HEAD)"
+          tar --exclude=./.git --exclude=./node_modules --exclude=./tests \
+              --exclude=./storage --exclude=./.env --exclude=./.github \
+              -czf "/tmp/$release.tar.gz" .
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+          du -h "/tmp/$release.tar.gz"
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            echo "::warning::DEPLOY_KNOWN_HOSTS is not set; trusting the server key seen now (set it to pin the key)."
+            ssh-keyscan -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" > ~/.ssh/known_hosts
+          fi
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload and activate release
+        env:
+          RELEASE: ${{ steps.package.outputs.release }}
+        run: |
+          SSH="ssh -i ~/.ssh/deploy_key -p $DEPLOY_PORT -o BatchMode=yes"
+          $SSH "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/releases'"
+          scp -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" -o BatchMode=yes \
+              "/tmp/$RELEASE.tar.gz" deploy/release.sh \
+              "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/releases/"
+          $SSH "$DEPLOY_USER@$DEPLOY_HOST" \
+              "bash '$DEPLOY_PATH/releases/release.sh' '$DEPLOY_PATH' '$RELEASE' && rm -f '$DEPLOY_PATH/releases/release.sh'"
+
+      - name: Check the site answers
+        if: ${{ vars.APP_URL != '' }}
+        run: |
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "${{ vars.APP_URL }}/up") && [ "$code" = "200" ] && { echo "Site is up"; exit 0; }
+            sleep 5
+          done
+          echo "::error::${{ vars.APP_URL }}/up did not return 200 after deploy"
+          exit 1

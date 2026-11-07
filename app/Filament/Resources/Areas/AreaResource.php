@@ -1,0 +1,98 @@
+<?php
+
+namespace App\Filament\Resources\Areas;
+
+use App\Filament\Resources\Areas\Pages\ManageAreas;
+use App\Models\Area;
+use App\Support\Geo\GeoPoint;
+use BackedEnum;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Support\Str;
+use UnitEnum;
+
+class AreaResource extends Resource
+{
+    protected static ?string $model = Area::class;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;
+
+    protected static string|UnitEnum|null $navigationGroup = 'সেটিংস';
+
+    protected static ?string $modelLabel = 'এলাকা';
+
+    protected static ?string $pluralModelLabel = 'এলাকা';
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                TextInput::make('name')->label('নাম (বাংলায়)')->required()->maxLength(60),
+                TextInput::make('slug')
+                    ->label('লিংকের নাম (ইংরেজি, যেমন mirpur-10)')
+                    ->required()
+                    ->unique(ignoreRecord: true)
+                    ->rule('alpha_dash')
+                    ->dehydrateStateUsing(fn (string $state) => Str::slug($state)),
+                Grid::make(2)->schema([
+                    TextInput::make('center_lat')
+                        ->label('কেন্দ্রের অক্ষাংশ (lat)')
+                        ->helperText('Google Maps-এ জায়গায় চেপে ধরলে প্রথম সংখ্যাটি')
+                        ->numeric()->required()->minValue(20)->maxValue(27),
+                    TextInput::make('center_lng')
+                        ->label('কেন্দ্রের দ্রাঘিমাংশ (lng)')
+                        ->helperText('দ্বিতীয় সংখ্যাটি')
+                        ->numeric()->required()->minValue(88)->maxValue(93),
+                ]),
+                TextInput::make('radius_m')->label('ব্যাসার্ধ (মিটার)')->numeric()->required()->default(2000)->minValue(300)->maxValue(10000),
+                TextInput::make('sort_order')->label('ক্রম')->numeric()->default(0),
+                Toggle::make('is_active')->label('চালু')->default(true),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->defaultSort('sort_order')
+            ->columns([
+                TextColumn::make('name')->label('নাম')->searchable()->weight('semibold'),
+                TextColumn::make('slug')->label('লিংক'),
+                TextColumn::make('radius_m')->label('ব্যাসার্ধ')->suffix(' মি'),
+                TextColumn::make('kitchens_count')->label('রান্নাঘর')->counts('kitchens'),
+                IconColumn::make('is_active')->label('চালু')->boolean(),
+            ])
+            ->recordActions([
+                EditAction::make()
+                    ->mutateRecordDataUsing(fn (array $data, Area $record) => [
+                        ...$data,
+                        'center_lat' => $record->center?->lat,
+                        'center_lng' => $record->center?->lng,
+                    ])
+                    ->mutateDataUsing(fn (array $data) => self::withCenter($data)),
+            ]);
+    }
+
+    /** The form edits lat/lng as two numbers; the model stores one POINT. */
+    public static function withCenter(array $data): array
+    {
+        $data['center'] = GeoPoint::make($data['center_lat'], $data['center_lng']);
+        unset($data['center_lat'], $data['center_lng']);
+
+        return $data;
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => ManageAreas::route('/'),
+        ];
+    }
+}
