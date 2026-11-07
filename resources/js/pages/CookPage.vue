@@ -30,6 +30,12 @@
 
         <!-- Registered: show where they stand -->
         <div v-else class="mt-4">
+            <p v-if="route.query.posted" class="mb-4 rounded-xl bg-leaf-soft p-4 font-semibold text-leaf-deep" role="status">
+                পোস্ট হয়ে গেছে। আশেপাশের মানুষ এখন দেখতে পাবেন।
+            </p>
+            <RouterLink v-if="kitchen.can_post" :to="{ name: 'new-post' }" class="btn-primary mb-6">
+                আজকের রান্না পোস্ট করুন
+            </RouterLink>
             <div class="rounded-[var(--radius-plate)] bg-plate p-5" :class="statusTone.border">
                 <p class="text-sm text-muted">{{ kitchen.display_name }}</p>
                 <p class="mt-1 text-lg font-semibold" :class="statusTone.text">{{ kitchen.status_label }}</p>
@@ -53,10 +59,12 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { api, errorMessage } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth';
 
 const auth = useAuthStore();
+const route = useRoute();
 const kitchen = ref(null);
 const loading = ref(true);
 const displayName = ref('');
@@ -65,7 +73,7 @@ const busy = ref(false);
 
 const messages = {
     pending: 'দাওয়াত টিম শীঘ্রই আপনার সাথে ফোনে যোগাযোগ করবে। অনুমোদনের পর রান্না পোস্ট করতে পারবেন।',
-    approved: 'অনুমোদন হয়ে গেছে। এরপর বাসার লোকেশন আর যোগাযোগের পছন্দ ঠিক করে পোস্ট দিতে পারবেন।',
+    approved: 'অনুমোদন হয়ে গেছে। রান্না হলেই ছবি তুলে পোস্ট দিন।',
     rejected: 'এখন অনুমোদন দেওয়া যায়নি। প্রশ্ন থাকলে দাওয়াত টিমের সাথে যোগাযোগ করুন।',
     suspended: 'আপনার রান্নাঘর সাময়িক বন্ধ আছে। দাওয়াত টিমের সাথে যোগাযোগ করুন।',
 };

@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
 use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
+use App\Http\Controllers\Api\V1\PostController;
+use App\Http\Controllers\Api\V1\TagController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('/ping', fn () => ['ok' => true, 'app' => config('app.name')])->name('ping');
     Route::get('/areas', [AreaController::class, 'index'])->name('areas.index');
+    Route::get('/tags', [TagController::class, 'index'])->name('tags.index');
 
     // F1: phone + OTP sign-in
     Route::middleware('throttle:otp')->prefix('auth')->name('auth.')->group(function () {
@@ -34,5 +37,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/kitchen', [KitchenController::class, 'store'])->name('kitchen.store');
         // F4–F5: location, area and contact preferences
         Route::patch('/kitchen', [KitchenController::class, 'update'])->name('kitchen.update');
+
+        // F6–F9: publish a post
+        Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
     });
 });
