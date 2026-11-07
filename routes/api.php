@@ -92,6 +92,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/orders/{order}/pickup', [ShahidarController::class, 'pickup'])->name('orders.pickup');
             Route::post('/orders/{order}/deliver', [ShahidarController::class, 'deliver'])->middleware('throttle:otp')->name('orders.deliver');
             Route::post('/orders/{order}/fail', [ShahidarController::class, 'fail'])->name('orders.fail');
+            Route::post('/orders/{order}/paid', [ShahidarController::class, 'paid'])->name('orders.paid');
             Route::post('/orders/{order}/skip', [ShahidarController::class, 'skip'])->name('orders.skip');
         });
         Route::post('/stickers/{code}/received', [StickerController::class, 'received'])->name('stickers.received');

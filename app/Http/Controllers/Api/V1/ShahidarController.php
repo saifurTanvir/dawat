@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Pairing;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Orders\Delivery;
+use App\Services\Orders\Settlements;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,7 +18,11 @@ use Illuminate\Http\Request;
  */
 class ShahidarController extends Controller
 {
-    public function __construct(private readonly BookingPlanner $planner, private readonly Delivery $delivery) {}
+    public function __construct(
+        private readonly BookingPlanner $planner,
+        private readonly Delivery $delivery,
+        private readonly Settlements $money,
+    ) {}
 
     /** GET /api/v1/shahidar/today */
     public function today(Request $request): JsonResponse
@@ -51,6 +56,8 @@ class ShahidarController extends Controller
             'date' => BookingPlanner::today(),
             'orders' => $orders->map(fn (Order $o) => $this->row($o))->values(),
             'waiting' => $waiting,
+            // F28: cash collected and not yet handed to Dawat.
+            'cash_held_paisa' => $this->money->cashHeldBy($me),
         ]]);
     }
 
@@ -65,9 +72,25 @@ class ShahidarController extends Controller
     public function deliver(Request $request, Order $order): JsonResponse
     {
         $this->mine($request, $order);
-        $data = $request->validate(['code' => ['nullable', 'digits:4']], ['code.digits' => 'কোড ৪ অঙ্কের।']);
+        $data = $request->validate([
+            'code' => ['nullable', 'digits:4'],
+            'cash_received' => ['sometimes', 'boolean'],
+        ], ['code.digits' => 'কোড ৪ অঙ্কের।']);
 
-        return $this->done($this->delivery->deliverByShahidar($order, $request->user(), $data['code'] ?? null), 'পৌঁছে দেওয়া হয়েছে।');
+        $order = $this->delivery->deliverByShahidar($order, $request->user(), $data['code'] ?? null);
+        if ($request->boolean('cash_received', true)) {
+            $order = $this->money->markPaid($order, $request->user());
+        }
+
+        return $this->done($order, 'পৌঁছে দেওয়া হয়েছে।');
+    }
+
+    /** POST — cash taken later, e.g. after the customer scanned the box. */
+    public function paid(Request $request, Order $order): JsonResponse
+    {
+        $this->mine($request, $order);
+
+        return $this->done($this->money->markPaid($order, $request->user()), 'টাকা পাওয়া লিখে রাখা হলো।');
     }
 
     public function fail(Request $request, Order $order): JsonResponse

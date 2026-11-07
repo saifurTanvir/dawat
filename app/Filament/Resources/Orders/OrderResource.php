@@ -6,7 +6,9 @@ use App\Enums\MealSlot;
 use App\Enums\OrderStatus;
 use App\Filament\Resources\Orders\Pages\ManageOrders;
 use App\Models\Order;
+use App\Models\User;
 use App\Services\Orders\BookingPlanner;
+use App\Support\Roles;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -19,6 +21,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use UnitEnum;
 
 /** F26: every regular customer's box, today by default. */
@@ -69,12 +72,13 @@ class OrderResource extends Resource
                 Filter::make('service_date')
                     ->schema([DatePicker::make('date')->label('তারিখ')->default(BookingPlanner::today())->native(false)])
                     ->query(fn (Builder $query, array $data) => $query->when($data['date'] ?? null, fn ($q, $d) => $q->whereDate('service_date', $d)))
-                    ->indicateUsing(fn (array $data) => ($data['date'] ?? null) ? 'তারিখ: '.$data['date'] : null),
+                    ->indicateUsing(fn (array $data) => ($data['date'] ?? null) ? 'তারিখ: '.Carbon::parse($data['date'])->format('j M Y') : null),
                 SelectFilter::make('status')->label('অবস্থা')->options(OrderStatus::class),
                 SelectFilter::make('meal_slot')->label('বেলা')->options(MealSlot::class),
                 Filter::make('unverified')->label('যাচাই বাকি (কোড/স্ক্যান ছাড়া)')
                     ->query(fn (Builder $query) => $query->where('confirm_method', 'shahidar_tap')),
-                SelectFilter::make('shahidar_id')->label('শাহিদার')->relationship('shahidar', 'name'),
+                SelectFilter::make('shahidar_id')->label('শাহিদার')
+                    ->options(fn () => User::role(Roles::SHAHIDAR)->get()->mapWithKeys(fn (User $u) => [$u->id => $u->name ?: $u->phone])->all()),
                 SelectFilter::make('kitchen_id')->label('গৃহিণী')->relationship('kitchen', 'display_name'),
             ])
             ->recordActions([

@@ -58,6 +58,8 @@ class OrdersAdminTest extends TestCase
 
         $this->assertSame(OrderStatus::Cancelled, $today->fresh()->status);
         $this->assertSame('admin', $today->fresh()->cancelled_by);
+        // Users without a name (most buyers) must not break the filters.
+        User::factory()->create(['name' => null])->assignRole(Roles::SHAHIDAR);
         $this->get('/admin/orders')->assertOk();
     }
 

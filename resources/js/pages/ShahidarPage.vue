@@ -9,6 +9,10 @@
         <template v-else>
             <p v-if="notice" class="mt-4 rounded-xl bg-leaf-soft p-3" role="status">{{ notice }}</p>
 
+            <p v-if="day.cash_held_paisa" class="mt-4 rounded-xl bg-plate p-3">
+                হাতে জমা টাকা <strong>{{ taka(day.cash_held_paisa) }}</strong> · দাওয়াত টিমকে বুঝিয়ে দিন
+            </p>
+
             <!-- Cooks who have not posted yet -->
             <div v-if="day.waiting.length" class="mt-4 rounded-[var(--radius-plate)] bg-turmeric-soft p-4">
                 <p class="font-semibold">এখনো পোস্ট আসেনি</p>
@@ -65,6 +69,10 @@
                         <input :id="`code-${o.id}`" v-model="code" class="field flex-1" inputmode="numeric" maxlength="4" autocomplete="one-time-code" />
                         <button type="submit" class="btn-primary w-auto px-5" :disabled="busy || code.length !== 4">দিয়েছি</button>
                     </div>
+                    <label class="mt-2 flex items-center gap-2 text-sm">
+                        <input v-model="cash" type="checkbox" class="size-5 accent-leaf" />
+                        {{ taka(o.total_paisa) }} নগদ পেয়েছি
+                    </label>
                     <div class="mt-2 flex flex-wrap gap-x-4 text-sm">
                         <button type="button" class="font-semibold text-leaf" :disabled="busy" @click="deliver(o, '')">কোড ছাড়া দিয়েছি</button>
                         <button type="button" class="font-semibold text-chili" :disabled="busy" @click="fail(o)">পৌঁছানো যায়নি</button>
@@ -80,6 +88,10 @@
                 <ul class="mt-2 divide-y divide-rule rounded-[var(--radius-plate)] bg-plate px-4">
                     <li v-for="o in finished" :key="o.id" class="py-2 text-sm">
                         বক্স {{ o.code }} · {{ o.customer.name }} · {{ o.status_label }}<template v-if="o.cancel_reason"> ({{ o.cancel_reason }})</template>
+                        <template v-if="o.status === 'delivered'">
+                            <span v-if="o.paid" class="text-muted"> · টাকা পেয়েছি</span>
+                            <button v-else type="button" class="ml-1 font-semibold text-leaf" :disabled="busy" @click="act(o, 'paid')">{{ taka(o.total_paisa) }} পেয়েছি</button>
+                        </template>
                     </li>
                 </ul>
             </details>
@@ -104,6 +116,7 @@ const day = ref({ orders: [], waiting: [], date: '' });
 const scanning = ref(null); // order being picked up
 const handing = ref(null); // order id being handed over
 const code = ref('');
+const cash = ref(true);
 
 const dateLabel = computed(() => day.value.date
     ? new Intl.DateTimeFormat('bn-BD', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${day.value.date}T00:00:00Z`))
@@ -132,6 +145,15 @@ async function load() {
 }
 onMounted(load);
 
+async function refreshCash() {
+    try {
+        const { data } = await api.get('/shahidar/today');
+        day.value.cash_held_paisa = data.data.cash_held_paisa;
+    } catch {
+        // the list still works without the total
+    }
+}
+
 async function act(order, path, body = {}) {
     busy.value = true;
     notice.value = '';
@@ -140,6 +162,7 @@ async function act(order, path, body = {}) {
         const i = day.value.orders.findIndex((o) => o.id === order.id);
         if (i >= 0) day.value.orders.splice(i, 1, data.data);
         notice.value = `বক্স ${order.code}: ${data.message}`;
+        if (path === 'paid') refreshCash();
         return true;
     } catch (e) {
         notice.value = `বক্স ${order.code}: ${errorMessage(e)}`;
@@ -162,11 +185,15 @@ async function finishPickup(sticker) {
 function openHand(order) {
     handing.value = order.id;
     code.value = '';
+    cash.value = true;
 }
 
 async function deliver(order, c) {
     if (!c && !window.confirm('কোড ছাড়া "দিয়েছি" দিলে দাওয়াত টিম পরে যাচাই করবে। ঠিক আছে?')) return;
-    if (await act(order, 'deliver', c ? { code: c } : {})) handing.value = null;
+    if (await act(order, 'deliver', { ...(c ? { code: c } : {}), cash_received: cash.value })) {
+        handing.value = null;
+        refreshCash();
+    }
 }
 
 async function fail(order) {
