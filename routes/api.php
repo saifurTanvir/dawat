@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Auth\OtpController;
+use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,5 +26,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/auth/logout', [OtpController::class, 'logout'])->name('auth.logout');
         Route::get('/me', [MeController::class, 'show'])->name('me');
         Route::patch('/me', [MeController::class, 'update'])->name('me.update');
+
+        // F3: become a cook (pending until an admin approves)
+        Route::get('/kitchen', [KitchenController::class, 'show'])->name('kitchen.show');
+        Route::post('/kitchen', [KitchenController::class, 'store'])->name('kitchen.store');
     });
 });

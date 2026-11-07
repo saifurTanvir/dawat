@@ -14,6 +14,12 @@ const routes = [
         meta: { guestOnly: true },
     },
     {
+        path: '/cook',
+        name: 'cook',
+        component: () => import('./pages/CookPage.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
         path: '/:pathMatch(.*)*',
         name: 'not-found',
         component: () => import('./pages/NotFoundPage.vue'),
