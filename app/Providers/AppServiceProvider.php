@@ -35,10 +35,11 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('feed', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
         RateLimiter::for('comments', fn (Request $request) => Limit::perMinute(5)->by($request->user()?->id ?: $request->ip()));
         // Stops anyone harvesting cooks' numbers by tapping every post.
-        RateLimiter::for('contact', fn (Request $request) => [
+        RateLimiter::for('contact', fn (Request $request) => array_filter([
             Limit::perMinute(10)->by($request->ip()),
             Limit::perDay(60)->by($request->ip()),
-        ]);
+            ($id = auth('sanctum')->id()) ? Limit::perDay(30)->by('user:'.$id) : null,
+        ]));
 
         // F3: only approved cooks who finished kitchen setup may publish food.
         Gate::define('publish-posts', function (User $user): bool {

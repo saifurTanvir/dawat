@@ -25,11 +25,33 @@ class ContactTest extends TestCase
         $this->post->kitchen->update(['allow_call' => true, 'allow_message' => true]);
     }
 
-    public function test_a_guest_taps_message_and_gets_a_prefilled_whatsapp_link(): void
+    private User $buyer;
+
+    private function asBuyer(): static
+    {
+        $this->buyer ??= User::factory()->create();
+
+        return $this->actingAs($this->buyer, 'sanctum');
+    }
+
+    public function test_guests_must_sign_in_to_get_a_number(): void
+    {
+        foreach (['call', 'message'] as $type) {
+            $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => $type])
+                ->assertUnauthorized()
+                ->assertJsonMissingPath('data');
+        }
+        $this->assertSame(0, ContactEvent::count());
+
+        // Sharing stays open to everyone.
+        $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'share'])->assertOk();
+    }
+
+    public function test_message_gives_a_prefilled_whatsapp_link(): void
     {
         $phone = $this->post->kitchen->user->phone;
 
-        $response = $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'message'])
+        $response = $this->asBuyer()->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'message'])
             ->assertOk();
 
         $url = $response->json('data.whatsapp_url');
@@ -39,7 +61,7 @@ class ContactTest extends TestCase
 
         $event = ContactEvent::sole();
         $this->assertSame(ContactType::Message, $event->type);
-        $this->assertNull($event->viewer_id);
+        $this->assertSame($this->buyer->id, $event->viewer_id);
     }
 
     public function test_call_returns_a_tel_link_and_logs_the_signed_in_buyer(): void
@@ -58,7 +80,7 @@ class ContactTest extends TestCase
     {
         $this->post->kitchen->update(['contact_phone' => '01812345678', 'contact_name' => 'করিম ভাই']);
 
-        $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'call'])
+        $this->asBuyer()->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'call'])
             ->assertJsonPath('data.tel', 'tel:+8801812345678')
             ->assertJsonPath('data.name', 'করিম ভাই');
     }
@@ -67,7 +89,7 @@ class ContactTest extends TestCase
     {
         $this->post->kitchen->update(['allow_call' => false]);
 
-        $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'call'])->assertForbidden();
+        $this->asBuyer()->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'call'])->assertForbidden();
         $this->assertSame(0, ContactEvent::count());
     }
 
@@ -79,7 +101,7 @@ class ContactTest extends TestCase
         $suspended->kitchen->update(['status' => KitchenStatus::Suspended]);
 
         foreach ([$soldOut, $past, $suspended] as $post) {
-            $this->postJson("/api/v1/posts/{$post->id}/contact", ['type' => 'message'])
+            $this->asBuyer()->postJson("/api/v1/posts/{$post->id}/contact", ['type' => 'message'])
                 ->assertStatus(410)
                 ->assertJsonMissingPath('data');
         }
@@ -97,8 +119,8 @@ class ContactTest extends TestCase
     {
         $qr = QrCode::factory()->create();
 
-        $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'message', 'qr' => strtoupper($qr->code)]);
-        $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'message', 'qr' => 'unknown1']);
+        $this->asBuyer()->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'message', 'qr' => strtoupper($qr->code)]);
+        $this->asBuyer()->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'message', 'qr' => 'unknown1']);
 
         $this->assertSame([$qr->id, null], ContactEvent::orderBy('id')->pluck('qr_code_id')->all());
     }
@@ -109,12 +131,33 @@ class ContactTest extends TestCase
             ->assertJsonValidationErrors(['type']);
     }
 
+    public function test_a_blocked_cook_gets_no_more_calls(): void
+    {
+        $this->post->kitchen->user->update(['status' => 'blocked']);
+
+        $this->asBuyer()->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'call'])->assertStatus(410);
+        $this->getJson('/api/v1/posts/'.$this->post->id)->assertOk();
+    }
+
+    public function test_each_buyer_has_a_daily_limit(): void
+    {
+        $this->asBuyer();
+        foreach (range(1, 30) as $i) {
+            $this->withServerVariables(['REMOTE_ADDR' => '10.1.'.intdiv($i, 9).'.'.$i])
+                ->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'message'])->assertOk();
+        }
+
+        $this->withServerVariables(['REMOTE_ADDR' => '10.9.9.9'])
+            ->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'message'])
+            ->assertTooManyRequests();
+    }
+
     public function test_number_harvesting_is_rate_limited(): void
     {
         foreach (range(1, 10) as $i) {
             $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'share']);
         }
 
-        $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'message'])->assertTooManyRequests();
+        $this->asBuyer()->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'message'])->assertTooManyRequests();
     }
 }
