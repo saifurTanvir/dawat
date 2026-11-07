@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ReportReason;
 use App\Enums\ReportStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +16,7 @@ class Report extends Model
     {
         return [
             'status' => ReportStatus::class,
+            'reason' => ReportReason::class,
             'resolved_at' => 'datetime',
         ];
     }

@@ -21,7 +21,15 @@
             </button>
             <slot />
         </div>
-        <div class="mt-1 flex justify-end">
+        <div class="mt-1 flex justify-between">
+            <RouterLink
+                v-if="showComments && post.contact.comment"
+                :to="{ name: 'post', params: { id: post.id }, hash: '#comments' }"
+                class="btn-quiet -ml-4 min-h-10 text-sm"
+            >
+                কমেন্ট<template v-if="post.comments_count"> ({{ bn(post.comments_count) }})</template>
+            </RouterLink>
+            <span v-else></span>
             <button type="button" class="btn-quiet -mr-4 min-h-10 text-sm" :disabled="busy !== null" @click="share">
                 {{ copied ? 'লিংক কপি হয়েছে' : 'শেয়ার করুন' }}
             </button>
@@ -33,9 +41,14 @@
 <script setup>
 import { ref } from 'vue';
 import { api, errorMessage } from '@/lib/api';
+import { bn } from '@/lib/bn';
 import { useFeedStore } from '@/stores/feed';
 
-const props = defineProps({ post: { type: Object, required: true } });
+const props = defineProps({
+    post: { type: Object, required: true },
+    /** The post page shows comments below; the feed links to them. */
+    showComments: { type: Boolean, default: true },
+});
 const emit = defineEmits(['gone']);
 
 const feed = useFeedStore();

@@ -2,13 +2,16 @@
 
 use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
+use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\FeedController;
 use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\My\MyPostController;
 use App\Http\Controllers\Api\V1\PostController;
+use App\Http\Controllers\Api\V1\PostShowController;
 use App\Http\Controllers\Api\V1\QrController;
+use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\TagController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +34,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('/qr/{code}', [QrController::class, 'show'])->middleware('throttle:feed')->name('qr.show');
     // F16, F18: call / message / share — guests too; reveals the number only on tap
     Route::post('/posts/{post}/contact', [ContactController::class, 'store'])->middleware('throttle:contact')->name('posts.contact');
+    // F17: one post (shared links) and its comments
+    Route::get('/posts/{post}', PostShowController::class)->middleware('throttle:feed')->name('posts.show');
+    Route::get('/posts/{post}/comments', [CommentController::class, 'index'])->middleware('throttle:feed')->name('posts.comments.index');
 
     // F1: phone + OTP sign-in
     Route::middleware('throttle:otp')->prefix('auth')->name('auth.')->group(function () {
@@ -56,5 +62,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/my/posts', [MyPostController::class, 'index'])->name('my.posts.index');
         Route::patch('/my/posts/{post}', [MyPostController::class, 'update'])->name('my.posts.update');
         Route::post('/my/posts/{post}/sold-out', [MyPostController::class, 'soldOut'])->name('my.posts.sold-out');
+
+        // F17: comments and reports
+        Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->middleware('throttle:comments')->name('posts.comments.store');
+        Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+        Route::post('/reports', [ReportController::class, 'store'])->middleware('throttle:comments')->name('reports.store');
     });
 });

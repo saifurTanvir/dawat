@@ -13,6 +13,11 @@ const routes = [
         component: () => import('./pages/QrPage.vue'),
     },
     {
+        path: '/p/:id(\\d+)',
+        name: 'post',
+        component: () => import('./pages/PostPage.vue'),
+    },
+    {
         path: '/login',
         name: 'login',
         component: () => import('./pages/LoginPage.vue'),

@@ -45,6 +45,8 @@ class FeedPostResource extends JsonResource
                 'comment' => $kitchen->allow_comment,
             ],
             'comments_count' => (int) ($this->comments_count ?? 0),
+            // Lets the app show the cook their own controls; no id is exposed.
+            'is_mine' => auth('sanctum')->id() !== null && auth('sanctum')->id() === $kitchen->user_id,
             'distance_m' => $this->when(isset($this->distance_m), fn () => PublicDistance::round((float) $this->distance_m)),
             'walk_minutes' => $this->when(isset($this->distance_m), fn () => PublicDistance::walkMinutes((float) $this->distance_m)),
         ];
