@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 #[Fillable([
     'user_id', 'display_name', 'area_id', 'location', 'status',
@@ -68,6 +69,11 @@ class Kitchen extends Model
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class);
+    }
+
+    public function contactEvents(): HasManyThrough
+    {
+        return $this->hasManyThrough(ContactEvent::class, Post::class);
     }
 
     public function isApproved(): bool
