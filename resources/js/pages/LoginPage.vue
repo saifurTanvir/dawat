@@ -4,10 +4,7 @@
             {{ step === 'phone' ? 'মোবাইল নম্বর দিয়ে ঢুকুন' : 'SMS-এর কোডটি দিন' }}
         </h1>
         <p class="mt-1 text-muted">
-            <template v-if="step === 'phone' && route.query.why === 'contact'">
-                রাঁধুনির নম্বর সুরক্ষিত রাখতে কল বা মেসেজের আগে একবার ঢুকতে হয়। পাসওয়ার্ড লাগবে না।
-            </template>
-            <template v-else-if="step === 'phone'">পাসওয়ার্ড লাগবে না। নম্বরে একটা কোড যাবে।</template>
+            <template v-if="step === 'phone'">পাসওয়ার্ড লাগবে না। নম্বরে একটা কোড যাবে।</template>
             <template v-else>{{ phoneShown }} নম্বরে {{ bn(codeLength) }} অঙ্কের কোড পাঠানো হয়েছে।</template>
         </p>
 

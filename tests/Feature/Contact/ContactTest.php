@@ -34,17 +34,13 @@ class ContactTest extends TestCase
         return $this->actingAs($this->buyer, 'sanctum');
     }
 
-    public function test_guests_must_sign_in_to_get_a_number(): void
+    public function test_guests_can_message_without_signing_in(): void
     {
-        foreach (['call', 'message'] as $type) {
-            $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => $type])
-                ->assertUnauthorized()
-                ->assertJsonMissingPath('data');
-        }
-        $this->assertSame(0, ContactEvent::count());
+        $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'message'])
+            ->assertOk()
+            ->assertJsonStructure(['data' => ['whatsapp_url']]);
 
-        // Sharing stays open to everyone.
-        $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'share'])->assertOk();
+        $this->assertNull(ContactEvent::sole()->viewer_id);
     }
 
     public function test_message_gives_a_prefilled_whatsapp_link(): void

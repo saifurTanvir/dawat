@@ -25,11 +25,6 @@ class ContactController extends Controller
         $type = ContactType::from($request->validated('type'));
         $kitchen = $post->kitchen;
 
-        // Numbers go only to signed-in buyers, so they can't be harvested anonymously.
-        if (in_array($type, [ContactType::Call, ContactType::Message], true) && ! auth('sanctum')->check()) {
-            return response()->json(['message' => 'কল বা মেসেজ করতে মোবাইল নম্বর দিয়ে একবার ঢুকুন।'], 401);
-        }
-
         if (! Post::visibleNow()->whereKey($post->id)->exists() || ! $kitchen->isApproved() || $kitchen->user->isBlocked()) {
             return response()->json(['message' => 'এই খাবারটি আর পাওয়া যাচ্ছে না।'], 410);
         }

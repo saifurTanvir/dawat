@@ -42,8 +42,6 @@
 import { ref } from 'vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
-import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
 import { useFeedStore } from '@/stores/feed';
 
 const props = defineProps({
@@ -54,9 +52,6 @@ const props = defineProps({
 const emit = defineEmits(['gone']);
 
 const feed = useFeedStore();
-const auth = useAuthStore();
-const route = useRoute();
-const router = useRouter();
 const busy = ref(null);
 const error = ref('');
 const copied = ref(false);
@@ -69,11 +64,6 @@ async function request(type) {
 /** Logs the tap, then opens the phone dialer or WhatsApp with the number the server hands back. */
 async function contact(type) {
     error.value = '';
-    if (!auth.isSignedIn) {
-        // Numbers are only for signed-in buyers; come straight back here after the OTP.
-        router.push({ name: 'login', query: { next: route.fullPath, why: 'contact' } });
-        return;
-    }
     busy.value = type;
     try {
         const data = await request(type);
