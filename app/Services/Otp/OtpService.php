@@ -5,6 +5,7 @@ namespace App\Services\Otp;
 use App\Enums\UserStatus;
 use App\Models\OtpCode;
 use App\Models\User;
+use App\Support\Roles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -75,6 +76,10 @@ class OtpService
             $otp->forceFill(['consumed_at' => now()])->save();
 
             $user = User::firstOrCreate(['phone' => $phone], ['status' => UserStatus::Active]);
+            if ($user->wasRecentlyCreated) {
+                // Everyone starts as a buyer; becoming a cook is a separate, reviewed step.
+                $user->assignRole(Roles::BUYER);
+            }
             if (! $user->phone_verified_at) {
                 $user->forceFill(['phone_verified_at' => now()])->save();
             }

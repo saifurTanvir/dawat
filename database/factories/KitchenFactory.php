@@ -17,7 +17,7 @@ class KitchenFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(),
+            'user_id' => User::factory()->cook(),
             'display_name' => fake()->firstNameFemale().'র রান্নাঘর',
             'area_id' => Area::factory(),
             'location' => GeoPoint::make(fake()->randomFloat(5, 23.70, 23.88), fake()->randomFloat(5, 90.34, 90.43)),

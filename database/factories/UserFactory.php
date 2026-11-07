@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Enums\UserStatus;
 use App\Models\User;
+use App\Support\Roles;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -34,5 +35,20 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => $password,
         ]);
+    }
+
+    public function role(string $role): static
+    {
+        return $this->afterCreating(fn (User $user) => $user->assignRole($role));
+    }
+
+    public function cook(): static
+    {
+        return $this->role(Roles::COOK);
+    }
+
+    public function admin(): static
+    {
+        return $this->withPassword(fake()->unique()->safeEmail())->role(Roles::ADMIN);
     }
 }

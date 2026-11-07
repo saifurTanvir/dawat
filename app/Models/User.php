@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\UserStatus;
+use App\Support\Roles;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -12,13 +13,17 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'phone', 'phone_verified_at', 'email', 'password', 'status'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
+
+    /** Roles are always checked against the web guard, whichever guard authenticated the request. */
+    protected string $guard_name = 'web';
 
     protected function casts(): array
     {
@@ -43,5 +48,15 @@ class User extends Authenticatable
     public function isBlocked(): bool
     {
         return $this->status === UserStatus::Blocked;
+    }
+
+    public function isCook(): bool
+    {
+        return $this->hasRole(Roles::COOK);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(Roles::ADMIN);
     }
 }

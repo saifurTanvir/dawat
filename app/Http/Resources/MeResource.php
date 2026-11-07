@@ -15,10 +15,18 @@ class MeResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $kitchen = $this->kitchen;
+
         return [
             'id' => $this->id,
             'name' => $this->name,
             'phone' => $this->phone,
+            'roles' => $this->getRoleNames()->values(),
+            'kitchen' => $kitchen ? [
+                'id' => $kitchen->id,
+                'status' => $kitchen->status->value,
+                'status_label' => $kitchen->status->label(),
+            ] : null,
         ];
     }
 }
