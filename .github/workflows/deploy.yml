@@ -82,8 +82,18 @@ jobs:
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          # Accept the key as pasted (BEGIN … END) or as one base64 line
+          # (base64 -w0 key), which survives copying from browser terminals.
+          key="$(printf '%s' "$DEPLOY_SSH_KEY" | tr -d '\r')"
+          case "$key" in
+            *"-----BEGIN"*) printf '%s\n' "$key" > ~/.ssh/deploy_key ;;
+            *) printf '%s' "$key" | tr -d ' \n' | base64 -d > ~/.ssh/deploy_key 2>/dev/null || true ;;
+          esac
           chmod 600 ~/.ssh/deploy_key
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1; then
+            echo "::error::DEPLOY_SSH_KEY is not a valid private key. On the server run: base64 -w0 /root/dawat_deploy  and paste that one line as the secret."
+            exit 1
+          fi
           if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
             printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
           else
