@@ -21,6 +21,9 @@ class ReportController extends Controller
     /** Distinct reporters with open reports before a post/comment is hidden pending review. */
     public const AUTO_HIDE_AT = 3;
 
+    /** Only accounts at least this old count towards hiding, so fresh throwaway numbers can't. */
+    public const TRUSTED_AFTER_DAYS = 3;
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -61,6 +64,9 @@ class ReportController extends Controller
         $reporters = Report::where('reportable_type', $target::class)
             ->where('reportable_id', $target->getKey())
             ->where('status', ReportStatus::Open)
+            ->whereHas('reporter', fn ($u) => $u->where('status', 'active')
+                ->whereNotNull('phone_verified_at')
+                ->where('created_at', '<=', now()->subDays(self::TRUSTED_AFTER_DAYS)))
             ->distinct()
             ->count('reporter_id');
 

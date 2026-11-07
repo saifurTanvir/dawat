@@ -147,7 +147,8 @@ class CommentsAndReportsTest extends TestCase
 
     public function test_three_different_reporters_hide_a_post_until_reviewed(): void
     {
-        foreach (User::factory()->count(2)->create() as $user) {
+        $this->buyer->forceFill(['created_at' => now()->subWeek()])->save();
+        foreach (User::factory()->count(2)->create(['created_at' => now()->subWeek()]) as $user) {
             $this->actingAs($user, 'sanctum')->postJson('/api/v1/reports', ['type' => 'post', 'id' => $this->post->id, 'reason' => 'wrong_info']);
         }
         $this->assertSame(PostStatus::Live, $this->post->fresh()->status);
@@ -160,11 +161,34 @@ class CommentsAndReportsTest extends TestCase
     {
         $comment = Comment::create(['post_id' => $this->post->id, 'user_id' => $this->buyer->id, 'body' => 'বিজ্ঞাপন']);
 
-        foreach (User::factory()->count(3)->create() as $user) {
+        foreach (User::factory()->count(3)->create(['created_at' => now()->subWeek()]) as $user) {
             $this->actingAs($user, 'sanctum')->postJson('/api/v1/reports', ['type' => 'comment', 'id' => $comment->id, 'reason' => 'spam'])->assertCreated();
         }
 
         $this->assertSame(CommentStatus::Hidden, $comment->fresh()->status);
+    }
+
+    public function test_brand_new_accounts_cannot_hide_a_post(): void
+    {
+        foreach (User::factory()->count(5)->create() as $user) {
+            $this->actingAs($user, 'sanctum')
+                ->postJson('/api/v1/reports', ['type' => 'post', 'id' => $this->post->id, 'reason' => 'spam'])
+                ->assertCreated();
+        }
+
+        // Still reported for the admin to review, but not hidden.
+        $this->assertSame(5, Report::count());
+        $this->assertSame(PostStatus::Live, $this->post->fresh()->status);
+    }
+
+    public function test_comments_on_suspended_kitchens_are_closed(): void
+    {
+        $this->post->kitchen->update(['status' => 'suspended']);
+
+        $this->getJson("/api/v1/posts/{$this->post->id}/comments")->assertNotFound();
+        $this->actingAs($this->buyer, 'sanctum')
+            ->postJson("/api/v1/posts/{$this->post->id}/comments", ['body' => 'আছে?'])
+            ->assertNotFound();
     }
 
     public function test_comment_rate_limit(): void

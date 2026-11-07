@@ -21,7 +21,7 @@ class CommentController extends Controller
     /** GET /api/v1/posts/{post}/comments — visible comments, oldest first. */
     public function index(Post $post): AnonymousResourceCollection
     {
-        abort_if($post->status === PostStatus::Hidden, 404);
+        abort_if($post->status === PostStatus::Hidden || ! $post->kitchen->isApproved(), 404);
 
         $comments = $post->comments()
             ->where('status', CommentStatus::Visible)
@@ -39,7 +39,7 @@ class CommentController extends Controller
         $kitchen = $post->kitchen;
         $isCook = $kitchen->user_id === $user->id;
 
-        if ($post->status === PostStatus::Hidden) {
+        if ($post->status === PostStatus::Hidden || ! $kitchen->isApproved()) {
             abort(404);
         }
         if (! $kitchen->allow_comment && ! $isCook) {
