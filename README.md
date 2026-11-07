@@ -182,6 +182,7 @@ sudo -u deploy bash /var/www/dawat/current/deploy/rollback.sh /var/www/dawat
 | --- | --- |
 | `BULKSMSBD_API_KEY`, `BULKSMSBD_SENDER_ID` | প্রথম ডিপ্লয়ের আগেই (BulkSMSBD প্যানেল থেকে)। যাচাই: `php artisan dawat:sms-test 017XXXXXXXX`। প্যানেলে IP whitelist চালু থাকলে সার্ভারের IP যোগ করুন |
 | `MEDIA_DISK=s3` + `AWS_*` | ছবি Cloudflare R2 / DigitalOcean Spaces-এ রাখতে চাইলে |
+| `ORDER_SMS_ENABLED` | নিয়মিত গ্রাহকের বুকিং/রান্না-নেই SMS (ডিফল্ট `true`, প্রতি SMS প্রায় ৳০.৩৫) |
 | `AI_DRIVER=anthropic` + `ANTHROPIC_API_KEY` | F20 AI সাজেশন চালু করতে (না দিলে বোতামগুলো দেখায় না, বাকি সব চলে) |
 
 ---
@@ -215,3 +216,4 @@ sudo -u deploy bash /var/www/dawat/current/deploy/rollback.sh /var/www/dawat
 | --- | --- | --- |
 | F24 | শাহিদার রোল; প্রতিটা এলাকা = ডেলিভারির জোন, তাতে এক বা একাধিক শাহিদার | ✅ |
 | F25 | নিয়মিত গ্রাহক (অ্যাপে অনুরোধ বা অ্যাডমিন যোগ করে), গৃহিণীর সর্বোচ্চ গ্রাহক, গ্রাহক ↔ গৃহিণী ↔ শাহিদার জুটি ও বদলের ইতিহাস | ✅ |
+| F26 | আগাম বুকিং: পোস্ট দিলেই জুটির গ্রাহকদের প্লেট আগে কাটা, SMS-এ বক্স নম্বর আর ডেলিভারি কোড; "আজ লাগবে না", বিরতি, "আজ রান্না নেই"; বাকি প্লেট ফিডে | ✅ |

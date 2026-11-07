@@ -54,6 +54,8 @@ class AreaResource extends Resource
                         ->numeric()->required()->minValue(88)->maxValue(93),
                 ]),
                 TextInput::make('radius_m')->label('ব্যাসার্ধ (মিটার)')->numeric()->required()->default(2000)->minValue(300)->maxValue(10000),
+                TextInput::make('delivery_fee_taka')->label('নিয়মিত গ্রাহকের ডেলিভারি চার্জ (৳, প্রতি বক্স)')->numeric()->minValue(0)->maxValue(500)->default(0)
+                    ->afterStateHydrated(fn ($component, ?Area $record) => $component->state(intdiv($record?->delivery_fee_paisa ?? 0, 100))),
                 TextInput::make('sort_order')->label('ক্রম')->numeric()->default(0),
                 Toggle::make('is_active')->label('চালু')->default(true),
             ]);
@@ -86,6 +88,10 @@ class AreaResource extends Resource
     public static function withCenter(array $data): array
     {
         $data['center'] = GeoPoint::make($data['center_lat'], $data['center_lng']);
+        if (array_key_exists('delivery_fee_taka', $data)) {
+            $data['delivery_fee_paisa'] = (int) $data['delivery_fee_taka'] * 100;
+            unset($data['delivery_fee_taka']);
+        }
         unset($data['center_lat'], $data['center_lng']);
 
         return $data;

@@ -13,6 +13,7 @@ class ViewCustomer extends ViewRecord
     {
         return [
             CustomerResource::pairAction(),
+            CustomerResource::pauseAction(),
             CustomerResource::stopAction(),
         ];
     }

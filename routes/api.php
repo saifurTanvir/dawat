@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\FeedController;
 use App\Http\Controllers\Api\V1\KitchenContactController;
 use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
+use App\Http\Controllers\Api\V1\My\MyBookingController;
 use App\Http\Controllers\Api\V1\My\MyPostController;
 use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\PostShowController;
@@ -76,9 +77,17 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::patch('/my/posts/{post}', [MyPostController::class, 'update'])->name('my.posts.update');
         Route::post('/my/posts/{post}/sold-out', [MyPostController::class, 'soldOut'])->name('my.posts.sold-out');
 
+        // F26: the cook's regular bookings today
+        Route::get('/my/bookings', [MyBookingController::class, 'index'])->name('my.bookings.index');
+        Route::post('/my/bookings/off', [MyBookingController::class, 'off'])->middleware('can:publish-posts')->name('my.bookings.off');
+
         // F25: regular home food (customer side)
         Route::get('/regular', [RegularController::class, 'show'])->name('regular.show');
         Route::put('/regular', [RegularController::class, 'save'])->middleware('throttle:comments')->name('regular.save');
+        // F26: skip today's box, days off
+        Route::post('/regular/orders/{order}/skip', [RegularController::class, 'skip'])->name('regular.orders.skip');
+        Route::post('/regular/pauses', [RegularController::class, 'pause'])->middleware('throttle:comments')->name('regular.pauses.store');
+        Route::delete('/regular/pauses/{pause}', [RegularController::class, 'unpause'])->name('regular.pauses.destroy');
 
         // F17: comments and reports
         Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->middleware('throttle:comments')->name('posts.comments.store');

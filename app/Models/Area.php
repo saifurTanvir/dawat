@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'slug', 'center', 'radius_m', 'is_active', 'sort_order'])]
+#[Fillable(['name', 'slug', 'center', 'radius_m', 'delivery_fee_paisa', 'is_active', 'sort_order'])]
 class Area extends Model
 {
     /** @use HasFactory<AreaFactory> */
@@ -22,6 +22,7 @@ class Area extends Model
         return [
             'center' => AsGeoPoint::class,
             'radius_m' => 'integer',
+            'delivery_fee_paisa' => 'integer',
             'is_active' => 'boolean',
         ];
     }

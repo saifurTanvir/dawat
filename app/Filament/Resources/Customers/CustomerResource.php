@@ -14,12 +14,14 @@ use App\Models\Area;
 use App\Models\Customer;
 use App\Models\Kitchen;
 use App\Models\User;
+use App\Services\Orders\BookingPlanner;
 use App\Support\Roles;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -33,6 +35,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use UnitEnum;
 
@@ -198,6 +201,29 @@ class CustomerResource extends Resource
             });
     }
 
+    public static function pauseAction(): Action
+    {
+        return Action::make('pause')
+            ->label('বিরতি দিন')
+            ->icon(Heroicon::OutlinedPauseCircle)
+            ->visible(fn (Customer $record) => $record->isActive())
+            ->schema([
+                DatePicker::make('starts_on')->label('কবে থেকে')->required()->native(false)->default(BookingPlanner::today()),
+                DatePicker::make('ends_on')->label('কবে পর্যন্ত')->required()->native(false)->afterOrEqual('starts_on'),
+                TextInput::make('reason')->label('কারণ')->maxLength(200),
+            ])
+            ->action(function (Customer $record, array $data) {
+                app(BookingPlanner::class)->pause(
+                    $record,
+                    Carbon::parse($data['starts_on'])->toDateString(),
+                    Carbon::parse($data['ends_on'])->toDateString(),
+                    auth()->id(),
+                    $data['reason'] ?? null,
+                );
+                Notification::make()->title('বিরতি দেওয়া হয়েছে')->success()->send();
+            });
+    }
+
     public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
@@ -210,6 +236,13 @@ class CustomerResource extends Resource
                 TextEntry::make('booking')->label('বুকিং')->state(fn (Customer $record) => $record->bookingSummary())->columnSpan(2),
                 TextEntry::make('note')->label('খাবার নিয়ে')->placeholder('—'),
             ]),
+            Section::make('বিরতি')->schema([
+                RepeatableEntry::make('upcomingPauses')->label('')->columns(3)->schema([
+                    TextEntry::make('starts_on')->label('থেকে')->date('j M Y'),
+                    TextEntry::make('ends_on')->label('পর্যন্ত')->date('j M Y'),
+                    TextEntry::make('reason')->label('কারণ')->placeholder('—'),
+                ])->placeholder('কোনো বিরতি নেই'),
+            ])->collapsible(),
             Section::make('জুটির ইতিহাস')->schema([
                 RepeatableEntry::make('pairings')->label('')->columns(4)->schema([
                     TextEntry::make('kitchen.display_name')->label('রান্নাঘর'),

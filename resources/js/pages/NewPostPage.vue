@@ -52,6 +52,9 @@
 
             <!-- Step 2: food, price, plates, time -->
             <div v-show="step === 1" class="space-y-5">
+                <p v-if="bookedPlates" class="rounded-xl bg-leaf-soft p-3 text-sm" role="status">
+                    আজ {{ slotLabel }} নিয়মিত গ্রাহকদের বুকিং <strong>{{ bn(bookedPlates) }} প্লেট</strong>। এগুলো আগে তাঁদের কাছে যাবে, বাকিগুলো ফিডে।
+                </p>
                 <div>
                     <label for="title" class="mb-1 block font-semibold">খাবারের নাম</label>
                     <input id="title" v-model="form.title" class="field" type="text" maxlength="100" placeholder="যেমন: ভাত, মুরগির ঝোল, ডাল" />
@@ -70,9 +73,9 @@
                     <div>
                         <span id="plates-label" class="mb-1 block font-semibold">কয় প্লেট</span>
                         <div class="flex items-center rounded-xl border border-rule bg-plate" role="group" aria-labelledby="plates-label">
-                            <button type="button" class="size-12 text-2xl text-leaf disabled:text-rule" :disabled="form.plates_total <= 1" aria-label="এক প্লেট কম" @click="form.plates_total--">−</button>
+                            <button type="button" class="size-12 text-2xl text-leaf disabled:text-rule" :disabled="form.plates_total <= Math.max(1, bookedPlates)" aria-label="এক প্লেট কম" @click="form.plates_total--">−</button>
                             <output class="flex-1 text-center text-lg font-semibold" aria-live="polite">{{ bn(form.plates_total) }}</output>
-                            <button type="button" class="size-12 text-2xl text-leaf disabled:text-rule" :disabled="form.plates_total >= 20" aria-label="এক প্লেট বেশি" @click="form.plates_total++">+</button>
+                            <button type="button" class="size-12 text-2xl text-leaf disabled:text-rule" :disabled="form.plates_total >= Math.max(20, bookedPlates + 10)" aria-label="এক প্লেট বেশি" @click="form.plates_total++">+</button>
                         </div>
                     </div>
                 </div>
@@ -204,6 +207,7 @@ const errors = ref({});
 const photos = ref([]); // { file, url }
 const tags = ref([]);
 const kitchenName = ref('');
+const bookings = ref({}); // meal_slot => plates still to be booked today (F26)
 const aiAvailable = ref(false);
 
 // F20: suggestions only. Nothing here overwrites what the cook typed.
@@ -235,17 +239,23 @@ const tagGroups = computed(() =>
         .filter((g) => g.tags.length),
 );
 
+const bookedPlates = computed(() => bookings.value[form.meal_slot] ?? 0);
+const slotLabel = computed(() => mealSlots.find((m) => m.value === form.meal_slot)?.label ?? '');
+watch(bookedPlates, (n) => {
+    if (form.plates_total < n) form.plates_total = n;
+});
+
 const canContinue = computed(() => {
     if (preparing.value) return false;
     if (step.value === 0) return photos.value.length > 0;
-    if (step.value === 1) return form.title.trim().length >= 2 && form.price_taka >= 20;
+    if (step.value === 1) return form.title.trim().length >= 2 && form.price_taka >= 20 && form.plates_total >= bookedPlates.value;
     return true;
 });
 
 const preview = computed(() => ({
     title: form.title || 'খাবারের নাম',
     price_paisa: (form.price_taka || 0) * 100,
-    plates_left: form.plates_total,
+    plates_left: Math.max(0, form.plates_total - bookedPlates.value),
     plates_total: form.plates_total,
     meal_slot_label: mealSlots.find((m) => m.value === form.meal_slot)?.label,
     available_until: new Date(Date.now() + form.available_hours * 3600_000).toISOString(),
@@ -264,6 +274,9 @@ onMounted(async () => {
         tags.value = t.data;
         kitchenName.value = k.data.display_name;
         aiAvailable.value = !!k.data.ai_available;
+        api.get('/my/bookings').then(({ data: b }) => {
+            bookings.value = Object.fromEntries(b.data.slots.map((x) => [x.meal_slot, x.waiting_plates]));
+        }).catch(() => {});
         if (!k.data.can_post) {
             router.replace({ name: 'cook' });
         }

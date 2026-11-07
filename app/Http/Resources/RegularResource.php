@@ -2,7 +2,9 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\OrderStatus;
 use App\Models\Customer;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -31,6 +33,22 @@ class RegularResource extends JsonResource
             'booking_summary' => $this->bookingSummary(),
             'kitchen' => $pairing ? ['name' => $pairing->kitchen->display_name] : null,
             'shahidar' => $pairing ? ['name' => $pairing->shahidar->name, 'phone' => $pairing->shahidar->phone] : null,
+            'today' => $this->whenLoaded('todayOrders', fn () => $this->todayOrders->map(fn (Order $o) => [
+                'id' => $o->id,
+                'code' => $o->code(),
+                'meal_slot_label' => $o->meal_slot->label(),
+                'title' => $o->title,
+                'plates' => $o->plates,
+                'total_paisa' => $o->totalPaisa(),
+                'status' => $o->status->value,
+                'status_label' => $o->cancelled_by === 'cook' ? 'আজ রান্না নেই' : $o->status->label(),
+                'can_skip' => $o->status === OrderStatus::Booked,
+            ])->values()),
+            'pauses' => $this->whenLoaded('upcomingPauses', fn () => $this->upcomingPauses->map(fn ($p) => [
+                'id' => $p->id,
+                'starts_on' => $p->starts_on->toDateString(),
+                'ends_on' => $p->ends_on->toDateString(),
+            ])->values()),
         ];
     }
 }

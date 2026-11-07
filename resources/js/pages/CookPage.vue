@@ -34,6 +34,31 @@
                 <RouterLink :to="{ name: 'new-post' }" class="btn-primary">আজকের রান্না পোস্ট করুন</RouterLink>
                 <RouterLink :to="{ name: 'my-posts' }" class="btn-quiet mt-2 mb-6 w-full border border-rule">আমার পোস্ট ও প্লেট বাকি</RouterLink>
             </template>
+            <!-- F26: regular customers today -->
+            <section v-if="bookings && bookings.regular_customers" class="mb-6 rounded-[var(--radius-plate)] bg-plate p-5" aria-labelledby="regular-title">
+                <h2 id="regular-title" class="font-semibold">নিয়মিত গ্রাহক</h2>
+                <p class="text-sm text-muted">{{ bn(bookings.regular_customers) }} জন · সর্বোচ্চ {{ bn(bookings.max_regular_customers) }}</p>
+                <p v-if="!bookings.slots.length" class="mt-3 text-muted">আজ কারো বুকিং নেই।</p>
+                <div v-for="slot in bookings.slots" :key="slot.meal_slot" class="mt-4 border-t border-rule pt-3">
+                    <p class="font-semibold">আজ {{ slot.label }}</p>
+                    <p v-if="slot.waiting_plates" class="mt-1">
+                        রান্না করতে হবে <strong>{{ bn(slot.waiting_plates) }} প্লেট</strong>:
+                        {{ slot.waiting.map((w) => `${w.name} (${bn(w.plates)})`).join(', ') }}
+                    </p>
+                    <ul v-if="slot.orders.length" class="mt-1 space-y-0.5 text-sm text-muted">
+                        <li v-for="o in slot.orders" :key="o.code">বক্স {{ o.code }} · {{ o.name }} · {{ bn(o.plates) }} প্লেট · {{ o.status_label }}</li>
+                    </ul>
+                    <button
+                        v-if="slot.waiting_plates"
+                        type="button"
+                        class="btn-quiet -ml-4 mt-1 text-chili"
+                        :disabled="busy"
+                        @click="cookOff(slot)"
+                    >আজ {{ slot.label }} রান্না নেই</button>
+                </div>
+                <p v-if="bookingNotice" class="mt-3 rounded-lg bg-leaf-soft p-3 text-sm" role="status">{{ bookingNotice }}</p>
+            </section>
+
             <div class="rounded-[var(--radius-plate)] bg-plate p-5" :class="statusTone.border">
                 <p class="text-sm text-muted">{{ kitchen.display_name }}</p>
                 <p class="mt-1 text-lg font-semibold" :class="statusTone.text">{{ kitchen.status_label }}</p>
@@ -58,6 +83,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { api, errorMessage } from '@/lib/api';
+import { bn } from '@/lib/bn';
 import { useAuthStore } from '@/stores/auth';
 
 const auth = useAuthStore();
@@ -66,6 +92,31 @@ const loading = ref(true);
 const displayName = ref('');
 const error = ref('');
 const busy = ref(false);
+const bookings = ref(null);
+const bookingNotice = ref('');
+
+async function loadBookings() {
+    try {
+        const { data } = await api.get('/my/bookings');
+        bookings.value = data.data;
+    } catch {
+        bookings.value = null;
+    }
+}
+
+async function cookOff(slot) {
+    if (!window.confirm(`আজ ${slot.label} রান্না নেই? নিয়মিত গ্রাহকদের SMS-এ জানানো হবে।`)) return;
+    busy.value = true;
+    try {
+        const { data } = await api.post('/my/bookings/off', { meal_slot: slot.meal_slot });
+        bookingNotice.value = data.message;
+        await loadBookings();
+    } catch (e) {
+        bookingNotice.value = errorMessage(e);
+    } finally {
+        busy.value = false;
+    }
+}
 
 const messages = {
     pending: 'দাওয়াত টিম শীঘ্রই আপনার সাথে ফোনে যোগাযোগ করবে। অনুমোদনের পর রান্না পোস্ট করতে পারবেন।',
@@ -90,6 +141,7 @@ onMounted(async () => {
     try {
         const { data } = await api.get('/kitchen');
         kitchen.value = data.data;
+        if (kitchen.value.status === 'approved') loadBookings();
     } catch (e) {
         if (e.response?.status !== 404) {
             error.value = errorMessage(e);

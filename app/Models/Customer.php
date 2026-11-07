@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CustomerStatus;
 use App\Enums\MealSlot;
+use App\Services\Orders\BookingPlanner;
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -55,6 +56,33 @@ class Customer extends Model
         return $this->hasOne(Pairing::class)->whereNull('ended_at')->latestOfMany('started_at');
     }
 
+    public function pauses(): HasMany
+    {
+        return $this->hasMany(CustomerPause::class)->orderBy('starts_on');
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /** Today's boxes (Dhaka date). */
+    public function todayOrders(): HasMany
+    {
+        return $this->hasMany(Order::class)->whereDate('service_date', BookingPlanner::today())->orderBy('id');
+    }
+
+    /** Days off that have not ended yet. */
+    public function upcomingPauses(): HasMany
+    {
+        return $this->hasMany(CustomerPause::class)->whereDate('ends_on', '>=', BookingPlanner::today())->orderBy('starts_on');
+    }
+
+    public function isPausedOn(string $date): bool
+    {
+        return $this->pauses()->covering($date)->exists();
+    }
+
     public function isActive(): bool
     {
         return $this->status === CustomerStatus::Active;
@@ -63,11 +91,12 @@ class Customer extends Model
     /** "দুপুর, রাত · ১ প্লেট · রবি–শনি" style summary for lists. */
     public function bookingSummary(): string
     {
-        $slots = collect($this->meal_slots)->map(fn ($s) => MealSlot::tryFrom($s)?->label())->filter()->implode(', ');
+        $slots = collect(MealSlot::cases())->filter(fn (MealSlot $m) => in_array($m->value, $this->meal_slots, true))
+            ->map(fn (MealSlot $m) => $m->label())->implode(', ');
         $days = collect($this->weekdays)->sort()->values();
         $dayText = $days->count() === 7 ? 'প্রতিদিন' : $days->map(fn ($d) => self::WEEKDAY_LABELS[$d] ?? '')->implode(', ');
 
-        $plates = strtr((string) $this->plates, ['0' => '০', '1' => '১', '2' => '২', '3' => '৩', '4' => '৪', '5' => '৫', '6' => '৬', '7' => '৭', '8' => '৮', '9' => '৯']);
+        $plates = Order::banglaDigits($this->plates);
 
         return "{$slots} · {$plates} প্লেট · {$dayText}";
     }

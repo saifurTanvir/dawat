@@ -25,11 +25,45 @@
                 </dl>
             </div>
 
+            <!-- F26: today's boxes -->
+            <div v-if="booking.today?.length" class="rounded-[var(--radius-plate)] bg-plate p-5">
+                <h2 class="font-semibold">আজকের খাবার</h2>
+                <div v-for="o in booking.today" :key="o.id" class="mt-3 border-t border-rule pt-3 first:border-0 first:pt-0">
+                    <p class="font-semibold">{{ o.meal_slot_label }}<template v-if="o.title"> · {{ o.title }}</template></p>
+                    <p class="text-sm text-muted">বক্স {{ o.code }} · {{ bn(o.plates) }} প্লেট · {{ taka(o.total_paisa) }} · {{ o.status_label }}</p>
+                    <button v-if="o.can_skip" type="button" class="btn-quiet -ml-4 mt-1 text-chili" :disabled="busy" @click="skip(o)">আজ লাগবে না</button>
+                </div>
+                <p class="mt-3 text-sm text-muted">খাবার হাতে পেলে SMS-এ পাওয়া ৪ অঙ্কের কোডটা শাহিদারকে বলবেন।</p>
+            </div>
+
             <div v-if="booking.shahidar" class="rounded-[var(--radius-plate)] bg-plate p-5">
                 <p class="text-sm text-muted">আপনার শাহিদার (খাবার পৌঁছে দেবেন)</p>
                 <p class="mt-1 text-lg font-semibold">{{ booking.shahidar.name }}</p>
                 <a :href="`tel:${booking.shahidar.phone}`" class="btn-primary mt-3">কল করুন · {{ bn(booking.shahidar.phone) }}</a>
                 <p class="mt-3 text-sm text-muted">খাবার ভালো না লাগলে বা গৃহিণী বদলাতে চাইলে শাহিদারকে বলুন।</p>
+            </div>
+
+            <!-- F26: days off -->
+            <div v-if="booking.status === 'active'" class="rounded-[var(--radius-plate)] bg-plate p-5">
+                <h2 class="font-semibold">কোনো দিন লাগবে না?</h2>
+                <ul v-if="booking.pauses?.length" class="mt-2 space-y-1">
+                    <li v-for="p in booking.pauses" :key="p.id" class="flex items-center justify-between gap-2">
+                        <span>{{ dateText(p.starts_on) }} – {{ dateText(p.ends_on) }}</span>
+                        <button type="button" class="text-sm font-semibold text-leaf" :disabled="busy" @click="unpause(p)">তুলে নিন</button>
+                    </li>
+                </ul>
+                <div class="mt-3 grid grid-cols-2 gap-3">
+                    <label class="text-sm">
+                        <span class="mb-1 block text-muted">কবে থেকে</span>
+                        <input v-model="pauseForm.starts_on" type="date" class="field" :min="todayIso" />
+                    </label>
+                    <label class="text-sm">
+                        <span class="mb-1 block text-muted">কবে পর্যন্ত</span>
+                        <input v-model="pauseForm.ends_on" type="date" class="field" :min="pauseForm.starts_on || todayIso" />
+                    </label>
+                </div>
+                <button type="button" class="btn-quiet -ml-4 mt-2" :disabled="busy || !pauseForm.starts_on || !pauseForm.ends_on" @click="pause">এই দিনগুলোতে বন্ধ রাখুন</button>
+                <p v-if="pauseError" class="error-text">{{ pauseError }}</p>
             </div>
 
             <button type="button" class="btn-quiet w-full border border-rule" @click="startEdit">
@@ -131,6 +165,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import ChoiceChip from '@/components/ChoiceChip.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
+import { taka } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
 
 const auth = useAuthStore();
@@ -150,6 +185,47 @@ const areas = ref([]);
 const error = ref('');
 const errors = ref({});
 const notice = ref('');
+const pauseError = ref('');
+const pauseForm = reactive({ starts_on: '', ends_on: '' });
+// Dhaka date, YYYY-MM-DD
+const todayIso = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).format(new Date());
+
+function dateText(iso) {
+    return new Intl.DateTimeFormat('bn-BD', { day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`));
+}
+
+async function act(request) {
+    busy.value = true;
+    pauseError.value = '';
+    try {
+        const { data } = await request();
+        booking.value = data.data;
+        notice.value = data.message;
+        return true;
+    } catch (e) {
+        pauseError.value = errorMessage(e);
+        notice.value = '';
+        return false;
+    } finally {
+        busy.value = false;
+    }
+}
+
+function skip(order) {
+    if (!window.confirm(`আজ ${order.meal_slot_label} খাবার লাগবে না?`)) return;
+    act(() => api.post(`/regular/orders/${order.id}/skip`));
+}
+
+async function pause() {
+    if (await act(() => api.post('/regular/pauses', { ...pauseForm }))) {
+        pauseForm.starts_on = '';
+        pauseForm.ends_on = '';
+    }
+}
+
+function unpause(p) {
+    act(() => api.delete(`/regular/pauses/${p.id}`));
+}
 
 const form = reactive({ name: '', area_id: null, address: '', note: '', meal_slots: ['lunch'], plates: 1, weekdays: [0, 1, 2, 3, 4, 5, 6] });
 
