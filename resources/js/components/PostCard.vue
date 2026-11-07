@@ -45,6 +45,8 @@
                 · {{ clockText(post.available_until) }} পর্যন্ত
             </p>
 
+            <p v-if="$slots.meta" class="mt-1 text-sm text-muted"><slot name="meta" /></p>
+
             <ul v-if="post.tags?.length" class="mt-3 flex flex-wrap gap-1.5" aria-label="খাবারের বৈশিষ্ট্য">
                 <li
                     v-for="tag in post.tags"
@@ -60,8 +62,6 @@
                 <p>{{ post.note }}</p>
                 <footer class="mt-0.5 text-sm text-muted">— {{ kitchenName || 'রাঁধুনির কথা' }}</footer>
             </blockquote>
-
-            <p v-if="$slots.meta" class="mt-3 text-sm text-muted"><slot name="meta" /></p>
 
             <div v-if="$slots.actions" class="mt-4">
                 <slot name="actions" />

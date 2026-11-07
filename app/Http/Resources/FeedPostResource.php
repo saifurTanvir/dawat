@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Http\Resources;
+
+use App\Models\Post;
+use App\Support\Geo\PublicDistance;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+/**
+ * A post as buyers see it. Never contains coordinates or phone numbers:
+ * the number is only handed out when a buyer taps call/message (F16).
+ *
+ * @mixin Post
+ */
+class FeedPostResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        $kitchen = $this->kitchen;
+
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'price_paisa' => $this->price_paisa,
+            'plates_total' => $this->plates_total,
+            'plates_left' => $this->plates_left,
+            'meal_slot' => $this->meal_slot->value,
+            'meal_slot_label' => $this->meal_slot->label(),
+            'note' => $this->note,
+            'available_until' => $this->available_until->toIso8601String(),
+            'published_at' => $this->published_at?->toIso8601String(),
+            'images' => $this->images->map(fn ($img) => [
+                'url' => $img->url(),
+                'width' => $img->width,
+                'height' => $img->height,
+            ]),
+            'tags' => TagResource::collection($this->tags),
+            'kitchen' => [
+                'name' => $kitchen->display_name,
+            ],
+            'contact' => [
+                'call' => $kitchen->allow_call,
+                'message' => $kitchen->allow_message,
+                'comment' => $kitchen->allow_comment,
+            ],
+            'comments_count' => (int) ($this->comments_count ?? 0),
+            'distance_m' => $this->when(isset($this->distance_m), fn () => PublicDistance::round((float) $this->distance_m)),
+            'walk_minutes' => $this->when(isset($this->distance_m), fn () => PublicDistance::walkMinutes((float) $this->distance_m)),
+        ];
+    }
+}

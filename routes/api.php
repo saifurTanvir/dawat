@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
+use App\Http\Controllers\Api\V1\FeedController;
 use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\My\MyPostController;
@@ -21,6 +22,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('/ping', fn () => ['ok' => true, 'app' => config('app.name')])->name('ping');
     Route::get('/areas', [AreaController::class, 'index'])->name('areas.index');
     Route::get('/tags', [TagController::class, 'index'])->name('tags.index');
+
+    // F12–F14: what buyers see. Public, so a QR scan works without signing in.
+    Route::get('/feed', [FeedController::class, 'index'])->middleware('throttle:feed')->name('feed');
 
     // F1: phone + OTP sign-in
     Route::middleware('throttle:otp')->prefix('auth')->name('auth.')->group(function () {
