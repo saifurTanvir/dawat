@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
 use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('/ping', fn () => ['ok' => true, 'app' => config('app.name')])->name('ping');
+    Route::get('/areas', [AreaController::class, 'index'])->name('areas.index');
 
     // F1: phone + OTP sign-in
     Route::middleware('throttle:otp')->prefix('auth')->name('auth.')->group(function () {
@@ -30,5 +32,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         // F3: become a cook (pending until an admin approves)
         Route::get('/kitchen', [KitchenController::class, 'show'])->name('kitchen.show');
         Route::post('/kitchen', [KitchenController::class, 'store'])->name('kitchen.store');
+        // F4–F5: location, area and contact preferences
+        Route::patch('/kitchen', [KitchenController::class, 'update'])->name('kitchen.update');
     });
 });

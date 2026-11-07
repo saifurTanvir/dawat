@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\KitchenStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Kitchen\UpdateKitchenRequest;
 use App\Http\Resources\OwnKitchenResource;
 use App\Models\Kitchen;
+use App\Support\Geo\GeoPoint;
 use App\Support\Roles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -62,5 +64,24 @@ class KitchenController extends Controller
             ->additional(['message' => 'নিবন্ধন হয়েছে। দাওয়াত টিম যাচাই করে অনুমোদন দিলে পোস্ট করতে পারবেন।'])
             ->response()
             ->setStatusCode(201);
+    }
+
+    /**
+     * PATCH /api/v1/kitchen — one-time setup and later changes (F4, F5).
+     * The exact home location is stored but never returned.
+     */
+    public function update(UpdateKitchenRequest $request): OwnKitchenResource
+    {
+        $kitchen = $request->user()->kitchen;
+        $data = $request->validated();
+
+        if (isset($data['lat'], $data['lng'])) {
+            $kitchen->location = GeoPoint::make($data['lat'], $data['lng']);
+        }
+        unset($data['lat'], $data['lng']);
+
+        $kitchen->fill($data)->save();
+
+        return OwnKitchenResource::make($kitchen->fresh()->load('area'));
     }
 }

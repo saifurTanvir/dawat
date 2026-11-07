@@ -38,6 +38,15 @@
                     কারণ: {{ kitchen.rejection_reason }}
                 </p>
             </div>
+
+            <div v-if="!kitchen.is_set_up" class="mt-6 rounded-[var(--radius-plate)] bg-turmeric-soft p-5">
+                <p class="font-semibold">সেটআপ বাকি আছে</p>
+                <p class="mt-1 text-muted">বাসার লোকেশন আর এলাকা দিন। এটা ছাড়া খাবার পোস্ট করা যাবে না।</p>
+                <RouterLink :to="{ name: 'cook-setup' }" class="btn-primary mt-4">সেটআপ করুন</RouterLink>
+            </div>
+            <RouterLink v-else :to="{ name: 'cook-setup' }" class="btn-quiet -ml-4 mt-4">
+                লোকেশন ও এলাকা বদলান
+            </RouterLink>
         </div>
     </section>
 </template>
