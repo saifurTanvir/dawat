@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\Ai\AnthropicFoodAssistant;
+use App\Services\Ai\FoodAssistant;
+use App\Services\Ai\NullFoodAssistant;
 use App\Services\Otp\LogOtpSender;
 use App\Services\Otp\OtpSender;
 use App\Services\ShareCards\BrowsershotRenderer;
@@ -21,6 +24,11 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(ShareCardRenderer::class, BrowsershotRenderer::class);
+
+        $this->app->bind(FoodAssistant::class, fn () => match (config('services.ai.driver')) {
+            'anthropic' => new AnthropicFoodAssistant,
+            default => new NullFoodAssistant,
+        });
 
         $this->app->bind(OtpSender::class, function () {
             return match (config('services.otp.driver')) {
@@ -56,6 +64,8 @@ class AppServiceProvider extends ServiceProvider
                 'message' => 'এখন অনেকে একসাথে কোড চাইছেন। কয়েক মিনিট পরে আবার চেষ্টা করুন।',
             ], 429)));
         RateLimiter::for('feed', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
+        // AI calls cost money: per cook per day.
+        RateLimiter::for('ai', fn (Request $request) => Limit::perDay(40)->by('ai:'.$request->user()?->id));
         RateLimiter::for('comments', fn (Request $request) => Limit::perMinute(5)->by($request->user()?->id ?: $request->ip()));
         // Stops anyone harvesting cooks' numbers by tapping every post.
         RateLimiter::for('contact', fn (Request $request) => array_filter([

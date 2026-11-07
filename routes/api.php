@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AiController;
 use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
 use App\Http\Controllers\Api\V1\CommentController;
@@ -62,6 +63,12 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         // F6–F9: publish a post
         Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
+
+        // F20: AI suggestions while writing a post (approved cooks only)
+        Route::middleware(['can:publish-posts', 'throttle:ai'])->prefix('ai')->name('ai.')->group(function () {
+            Route::post('/photo', [AiController::class, 'photo'])->name('photo');
+            Route::post('/note', [AiController::class, 'note'])->name('note');
+        });
 
         // F10: the cook's own posts
         Route::get('/my/posts', [MyPostController::class, 'index'])->name('my.posts.index');

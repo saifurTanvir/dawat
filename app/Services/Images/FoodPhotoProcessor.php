@@ -32,29 +32,7 @@ class FoodPhotoProcessor
      */
     public function store(UploadedFile $file, string $directory): array
     {
-        $bytes = file_get_contents($file->getRealPath());
-        $info = @getimagesizefromstring($bytes);
-
-        if (! $info || ! in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP], true)) {
-            throw new UnreadablePhotoException('ছবিটা খোলা যাচ্ছে না। JPG, PNG বা WebP ছবি দিন।');
-        }
-        if ($info[0] * $info[1] > self::MAX_SOURCE_PIXELS) {
-            throw new UnreadablePhotoException('ছবিটা অনেক বড়। ফোনের সাধারণ ক্যামেরায় তোলা ছবি দিন।');
-        }
-        if (min($info[0], $info[1]) < self::MIN_EDGE) {
-            throw new UnreadablePhotoException('ছবিটা খুব ছোট, ঝাপসা দেখাবে। আরেকটু কাছ থেকে তুলুন।');
-        }
-
-        $image = @imagecreatefromstring($bytes);
-        if (! $image instanceof GdImage) {
-            throw new UnreadablePhotoException('ছবিটা খোলা যাচ্ছে না। আবার তুলে দেখুন।');
-        }
-
-        if ($info[2] === IMAGETYPE_JPEG) {
-            $image = $this->applyExifOrientation($image, $bytes);
-        }
-
-        $image = $this->fitWithin($image, self::MAX_EDGE);
+        $image = $this->fitWithin($this->decode($file), self::MAX_EDGE);
 
         $width = imagesx($image);
         $height = imagesy($image);
@@ -72,6 +50,51 @@ class FoodPhotoProcessor
         Storage::disk(config('filesystems.media_disk'))->put($path, $encoded, 'public');
 
         return ['path' => $path, 'width' => $width, 'height' => $height];
+    }
+
+    /**
+     * A small JPEG for the AI assistant (F20): same checks, rotation fixed,
+     * every bit of metadata dropped, nothing stored.
+     *
+     * @throws UnreadablePhotoException
+     */
+    public function smallJpeg(UploadedFile $file, int $maxEdge = 768): string
+    {
+        $image = $this->fitWithin($this->decode($file), $maxEdge);
+        ob_start();
+        imagejpeg($image, null, 82);
+        $jpeg = (string) ob_get_clean();
+        imagedestroy($image);
+
+        return $jpeg;
+    }
+
+    /**
+     * Validates and decodes an upload into upright pixels.
+     *
+     * @throws UnreadablePhotoException
+     */
+    private function decode(UploadedFile $file): GdImage
+    {
+        $bytes = (string) file_get_contents($file->getRealPath());
+        $info = @getimagesizefromstring($bytes);
+
+        if (! $info || ! in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP], true)) {
+            throw new UnreadablePhotoException('ছবিটা খোলা যাচ্ছে না। JPG, PNG বা WebP ছবি দিন।');
+        }
+        if ($info[0] * $info[1] > self::MAX_SOURCE_PIXELS) {
+            throw new UnreadablePhotoException('ছবিটা অনেক বড়। ফোনের সাধারণ ক্যামেরায় তোলা ছবি দিন।');
+        }
+        if (min($info[0], $info[1]) < self::MIN_EDGE) {
+            throw new UnreadablePhotoException('ছবিটা খুব ছোট, ঝাপসা দেখাবে। আরেকটু কাছ থেকে তুলুন।');
+        }
+
+        $image = @imagecreatefromstring($bytes);
+        if (! $image instanceof GdImage) {
+            throw new UnreadablePhotoException('ছবিটা খোলা যাচ্ছে না। আবার তুলে দেখুন।');
+        }
+
+        return $info[2] === IMAGETYPE_JPEG ? $this->applyExifOrientation($image, $bytes) : $image;
     }
 
     /** Phones store photos sideways and record the rotation in EXIF; bake it into the pixels. */

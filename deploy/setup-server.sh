@@ -159,6 +159,11 @@ SHARE_CARDS_ENABLED=true
 SHARE_CARD_CHROME_PATH=/usr/bin/google-chrome
 SHARE_CARD_NODE_BINARY=/usr/bin/node
 SHARE_CARD_NODE_MODULES=$APP_DIR/shared/browsershot/node_modules
+
+# F20 AI suggestions. To turn on: AI_DRIVER=anthropic and put the key here.
+AI_DRIVER=none
+ANTHROPIC_API_KEY=
+AI_MODEL=claude-haiku-5-5
 EOF
     chown "$DEPLOY_USER:www-data" "$APP_DIR/shared/.env"
     chmod 640 "$APP_DIR/shared/.env"

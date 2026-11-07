@@ -43,6 +43,11 @@
                     </template>
                 </div>
                 <p v-if="preparing" class="mt-3 text-sm text-muted">ছবি ছোট করা হচ্ছে…</p>
+                <p v-else-if="ai.checking" class="mt-3 text-sm text-muted" aria-live="polite">ছবি দেখে খাবারের নাম খোঁজা হচ্ছে…</p>
+                <div v-if="ai.photoProblem" class="mt-3 rounded-xl bg-turmeric-soft p-3 text-sm" role="status">
+                    <p class="font-semibold">ছবিটা আরেকবার দেখুন</p>
+                    <p class="mt-0.5">{{ ai.photoProblem }} পরিষ্কার আলোতে প্লেটের ছবি দিলে ক্রেতারা বেশি আগ্রহ পান।</p>
+                </div>
             </div>
 
             <!-- Step 2: food, price, plates, time -->
@@ -50,6 +55,9 @@
                 <div>
                     <label for="title" class="mb-1 block font-semibold">খাবারের নাম</label>
                     <input id="title" v-model="form.title" class="field" type="text" maxlength="100" placeholder="যেমন: ভাত, মুরগির ঝোল, ডাল" />
+                    <p v-if="ai.filledTitle && form.title === ai.filledTitle" class="mt-1 text-sm text-muted">
+                        ছবি দেখে নামটা বসানো হয়েছে। ঠিক না হলে বদলে দিন।
+                    </p>
                     <p v-if="err('title')" class="error-text">{{ err('title') }}</p>
                 </div>
 
@@ -93,6 +101,9 @@
             <div v-show="step === 2">
                 <h2 class="text-lg font-semibold">খাবার সম্পর্কে জানান</h2>
                 <p class="mt-1 text-muted">যেগুলো মেলে সেগুলোতে চাপ দিন। ক্রেতারা এগুলো দেখে বেছে নেন।</p>
+                <p v-if="ai.filledTags" class="mt-2 rounded-xl bg-leaf-soft p-3 text-sm">
+                    ছবি দেখে কয়েকটা বেছে রাখা হয়েছে। মিলিয়ে দেখুন। হালাল, ডায়াবেটিস বা অ্যালার্জির কথা শুধু আপনিই জানেন, ওগুলো নিজে বাছুন।
+                </p>
                 <fieldset v-for="group in tagGroups" :key="group.type" class="mt-5">
                     <legend class="mb-2 font-semibold">{{ group.label }}</legend>
                     <div class="flex flex-wrap gap-2">
@@ -103,7 +114,7 @@
                             :value="true"
                             type="checkbox"
                             :name="`tags-${group.type}`"
-                            @update:model-value="toggleTag(tag, group)"
+                            @update:model-value="toggleTagByCook(tag, group)"
                         >
                             {{ tag.name }}
                         </ChoiceChip>
@@ -117,7 +128,25 @@
                 <label for="note" class="block font-semibold">আপনার কথা (ইচ্ছা হলে)</label>
                 <p class="mt-1 text-sm text-muted">সত্যি কথাটাই লিখুন। যেমন “লবণ একটু কম হয়েছে, যারা কম লবণ খান তাদের জন্য ভালো।”</p>
                 <textarea id="note" v-model="form.note" class="field mt-2 min-h-24" maxlength="300" rows="3"></textarea>
-                <p class="mt-1 text-right text-xs text-muted">{{ bn(form.note.length) }}/৩০০</p>
+                <div class="mt-1 flex items-start justify-between gap-3">
+                    <div v-if="aiAvailable" class="text-sm">
+                        <button
+                            v-if="ai.noteBefore === null"
+                            type="button"
+                            class="font-semibold text-leaf disabled:text-muted"
+                            :disabled="ai.polishing || form.note.trim().length < 3"
+                            @click="polishNote"
+                        >
+                            {{ ai.polishing ? 'গোছানো হচ্ছে…' : 'লেখাটা গুছিয়ে দিন' }}
+                        </button>
+                        <template v-else>
+                            <span class="text-muted">গুছিয়ে দেওয়া হয়েছে। আপনার সব কথা আছে কিনা দেখে নিন।</span>
+                            <button type="button" class="ml-1 font-semibold text-leaf" @click="undoPolish">আগের লেখা ফেরত আনুন</button>
+                        </template>
+                        <p v-if="ai.noteError" class="error-text">{{ ai.noteError }}</p>
+                    </div>
+                    <p class="ml-auto shrink-0 text-xs text-muted">{{ bn(form.note.length) }}/৩০০</p>
+                </div>
 
                 <h2 class="mt-6 mb-3 font-semibold">ক্রেতারা এভাবে দেখবেন</h2>
                 <PostCard :post="preview" :kitchen-name="kitchenName" />
@@ -138,7 +167,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import ChoiceChip from '@/components/ChoiceChip.vue';
 import PostCard from '@/components/PostCard.vue';
@@ -175,6 +204,20 @@ const errors = ref({});
 const photos = ref([]); // { file, url }
 const tags = ref([]);
 const kitchenName = ref('');
+const aiAvailable = ref(false);
+
+// F20: suggestions only. Nothing here overwrites what the cook typed.
+const ai = reactive({
+    checking: false,
+    askedFor: null, // the File last sent, so each first photo is asked about once
+    photoProblem: '',
+    filledTitle: '',
+    filledTags: false,
+    polishing: false,
+    noteBefore: null,
+    noteAfter: '',
+    noteError: '',
+});
 
 const form = reactive({
     title: '',
@@ -220,6 +263,7 @@ onMounted(async () => {
         const [{ data: t }, { data: k }] = await Promise.all([api.get('/tags'), api.get('/kitchen')]);
         tags.value = t.data;
         kitchenName.value = k.data.display_name;
+        aiAvailable.value = !!k.data.ai_available;
         if (!k.data.can_post) {
             router.replace({ name: 'cook' });
         }
@@ -261,6 +305,78 @@ function toggleTag(tag, group) {
     } else {
         form.tag_ids = has ? form.tag_ids.filter((id) => id !== tag.id) : [...form.tag_ids, tag.id];
     }
+}
+
+watch(
+    () => photos.value[0]?.file,
+    (file) => {
+        if (file && aiAvailable.value && file !== ai.askedFor) suggestFromPhoto(file);
+        if (!file) ai.photoProblem = '';
+    },
+);
+watch(aiAvailable, (on) => {
+    const file = photos.value[0]?.file;
+    if (on && file) suggestFromPhoto(file);
+});
+
+async function suggestFromPhoto(file) {
+    ai.askedFor = file;
+    ai.checking = true;
+    const body = new FormData();
+    body.append('image', file);
+    try {
+        const { data } = await api.post('/ai/photo', body, { timeout: 45000 });
+        if (ai.askedFor !== file) return; // a newer first photo was chosen meanwhile
+        const s = data.data;
+        ai.photoProblem = s.photo_ok ? '' : s.photo_problem || 'ছবিতে খাবারটা ঠিকমতো বোঝা যাচ্ছে না।';
+        if (s.title && (!form.title.trim() || form.title === ai.filledTitle)) {
+            form.title = s.title;
+            ai.filledTitle = s.title;
+        }
+        const ids = tags.value.filter((t) => s.tag_slugs.includes(t.slug)).map((t) => t.id);
+        if (ids.length && (!form.tag_ids.length || ai.filledTags)) {
+            form.tag_ids = ids;
+            ai.filledTags = true;
+        }
+    } catch {
+        // Quietly fall back to typing; the wizard works without suggestions.
+    } finally {
+        if (ai.askedFor === file) ai.checking = false;
+    }
+}
+
+async function polishNote() {
+    ai.polishing = true;
+    ai.noteError = '';
+    try {
+        const { data } = await api.post('/ai/note', { note: form.note.trim(), title: form.title.trim() });
+        ai.noteBefore = form.note;
+        ai.noteAfter = data.data.note;
+        form.note = data.data.note;
+    } catch (e) {
+        ai.noteError = errorMessage(e);
+    } finally {
+        ai.polishing = false;
+    }
+}
+
+function undoPolish() {
+    form.note = ai.noteBefore;
+    ai.noteBefore = null;
+}
+
+// Typing over the polished note makes it the cook's own again.
+watch(
+    () => form.note,
+    (v) => {
+        if (ai.noteBefore !== null && v !== ai.noteAfter) ai.noteBefore = null;
+    },
+);
+
+// Once the cook changes a suggested tag themselves, stop replacing tags.
+function toggleTagByCook(tag, group) {
+    ai.filledTags = false;
+    toggleTag(tag, group);
 }
 
 function back() {

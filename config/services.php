@@ -45,4 +45,12 @@ return [
         'any_code' => (bool) env('OTP_ANY_CODE', false),
     ],
 
+    'ai' => [
+        // none = AI features hidden. anthropic = Claude (needs ANTHROPIC_API_KEY).
+        'driver' => env('AI_DRIVER', 'none'),
+        'anthropic_key' => env('ANTHROPIC_API_KEY'),
+        'model' => env('AI_MODEL', 'claude-haiku-5-5'),
+        'timeout' => (int) env('AI_TIMEOUT', 30),
+    ],
+
 ];

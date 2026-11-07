@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Kitchen;
+use App\Services\Ai\FoodAssistant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -24,6 +25,8 @@ class OwnKitchenResource extends JsonResource
             'rejection_reason' => $this->rejection_reason,
             'is_set_up' => $this->isSetUp(),
             'can_post' => $request->user()?->can('publish-posts') ?? false,
+            // F20: show the AI buttons only when an assistant is configured.
+            'ai_available' => app(FoodAssistant::class)->available(),
             'area' => $this->whenLoaded('area', fn () => $this->area ? ['id' => $this->area->id, 'name' => $this->area->name] : null),
             'has_location' => $this->location !== null,
             'allow_call' => $this->allow_call,
