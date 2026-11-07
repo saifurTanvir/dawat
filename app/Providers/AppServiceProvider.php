@@ -33,6 +33,11 @@ class AppServiceProvider extends ServiceProvider
         // Per-IP cap on OTP endpoints, on top of the per-phone limits in OtpService.
         RateLimiter::for('otp', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
         RateLimiter::for('feed', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
+        // Stops anyone harvesting cooks' numbers by tapping every post.
+        RateLimiter::for('contact', fn (Request $request) => [
+            Limit::perMinute(10)->by($request->ip()),
+            Limit::perDay(60)->by($request->ip()),
+        ]);
 
         // F3: only approved cooks who finished kitchen setup may publish food.
         Gate::define('publish-posts', function (User $user): bool {

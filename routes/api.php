@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
+use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\FeedController;
 use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
@@ -28,6 +29,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('/feed', [FeedController::class, 'index'])->middleware('throttle:feed')->name('feed');
     // F15: printed QR codes
     Route::get('/qr/{code}', [QrController::class, 'show'])->middleware('throttle:feed')->name('qr.show');
+    // F16, F18: call / message / share — guests too; reveals the number only on tap
+    Route::post('/posts/{post}/contact', [ContactController::class, 'store'])->middleware('throttle:contact')->name('posts.contact');
 
     // F1: phone + OTP sign-in
     Route::middleware('throttle:otp')->prefix('auth')->name('auth.')->group(function () {

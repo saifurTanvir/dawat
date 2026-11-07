@@ -76,7 +76,7 @@
                             · হেঁটে {{ bn(post.walk_minutes) }} মিনিট · {{ post.kitchen.name }} · {{ agoText(post.published_at) }}
                         </template>
                         <template #actions>
-                            <ContactButtons :post="post" />
+                            <ContactButtons :post="post" @gone="dropPost" />
                         </template>
                     </PostCard>
                 </li>
@@ -194,6 +194,11 @@ async function pickArea(slug) {
 
 function changePlace() {
     choosing.value = true;
+}
+
+/** A post sold out or expired since the feed loaded. */
+function dropPost(id) {
+    setTimeout(() => (posts.value = posts.value.filter((p) => p.id !== id)), 2500);
 }
 
 function setRadius(value) {

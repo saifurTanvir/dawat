@@ -1,8 +1,88 @@
 <template>
-    <!-- Filled in by F16 (call / message) and F17 (comments). -->
-    <div></div>
+    <div>
+        <div class="flex gap-2">
+            <button
+                v-if="post.contact.message"
+                type="button"
+                class="btn-primary flex-1"
+                :disabled="busy !== null"
+                @click="contact('message')"
+            >
+                {{ busy === 'message' ? 'খোলা হচ্ছে…' : 'মেসেজ করুন' }}
+            </button>
+            <button
+                v-if="post.contact.call"
+                type="button"
+                class="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl border-2 border-leaf px-4 font-semibold text-leaf hover:bg-leaf-soft"
+                :disabled="busy !== null"
+                @click="contact('call')"
+            >
+                {{ busy === 'call' ? 'খোলা হচ্ছে…' : 'কল করুন' }}
+            </button>
+            <slot />
+        </div>
+        <div class="mt-1 flex justify-end">
+            <button type="button" class="btn-quiet -mr-4 min-h-10 text-sm" :disabled="busy !== null" @click="share">
+                {{ copied ? 'লিংক কপি হয়েছে' : 'শেয়ার করুন' }}
+            </button>
+        </div>
+        <p v-if="error" class="error-text" role="alert">{{ error }}</p>
+    </div>
 </template>
 
 <script setup>
-defineProps({ post: { type: Object, required: true } });
+import { ref } from 'vue';
+import { api, errorMessage } from '@/lib/api';
+import { useFeedStore } from '@/stores/feed';
+
+const props = defineProps({ post: { type: Object, required: true } });
+const emit = defineEmits(['gone']);
+
+const feed = useFeedStore();
+const busy = ref(null);
+const error = ref('');
+const copied = ref(false);
+
+async function request(type) {
+    const { data } = await api.post(`/posts/${props.post.id}/contact`, { type, qr: feed.qr?.code ?? null });
+    return data.data;
+}
+
+/** Logs the tap, then opens the phone dialer or WhatsApp with the number the server hands back. */
+async function contact(type) {
+    error.value = '';
+    busy.value = type;
+    try {
+        const data = await request(type);
+        window.location.href = type === 'call' ? data.tel : data.whatsapp_url;
+    } catch (e) {
+        error.value = errorMessage(e);
+        if (e.response?.status === 410) emit('gone', props.post.id);
+    } finally {
+        // Leave the button busy briefly so a double tap doesn't open two chats.
+        setTimeout(() => (busy.value = null), 1200);
+    }
+}
+
+async function share() {
+    error.value = '';
+    let url = `${window.location.origin}/p/${props.post.id}`;
+    try {
+        url = (await request('share')).share_url;
+    } catch {
+        // Sharing still works without the log entry.
+    }
+    const text = `${props.post.title} — ${props.post.kitchen.name}, দাওয়াতে`;
+    try {
+        if (navigator.share) {
+            await navigator.share({ title: props.post.title, text, url });
+            return;
+        }
+        await navigator.clipboard.writeText(`${text}\n${url}`);
+        copied.value = true;
+        setTimeout(() => (copied.value = false), 2500);
+    } catch {
+        // The buyer closed the share sheet; nothing to report.
+    }
+}
 </script>
