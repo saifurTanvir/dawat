@@ -4,7 +4,6 @@ namespace App\Support;
 
 /**
  * Role names used with spatie/laravel-permission.
- * A shahidar role will be added here in a later phase without schema changes.
  */
 final class Roles
 {
@@ -14,9 +13,12 @@ final class Roles
 
     public const BUYER = 'buyer';
 
+    /** Trusted local runner: picks up from cooks, delivers to regular customers (F24). */
+    public const SHAHIDAR = 'shahidar';
+
     /** @return list<string> */
     public static function all(): array
     {
-        return [self::ADMIN, self::COOK, self::BUYER];
+        return [self::ADMIN, self::COOK, self::BUYER, self::SHAHIDAR];
     }
 }

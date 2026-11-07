@@ -27,6 +27,7 @@ class AreaResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'সেটিংস';
 
+    /** An area is also a delivery zone: its shahidars serve the kitchens and customers in it. */
     protected static ?string $modelLabel = 'এলাকা';
 
     protected static ?string $pluralModelLabel = 'এলাকা';
@@ -67,6 +68,7 @@ class AreaResource extends Resource
                 TextColumn::make('slug')->label('লিংক'),
                 TextColumn::make('radius_m')->label('ব্যাসার্ধ')->suffix(' মি'),
                 TextColumn::make('kitchens_count')->label('রান্নাঘর')->counts('kitchens'),
+                TextColumn::make('shahidars.name')->label('শাহিদার')->badge()->color('success')->placeholder('—'),
                 IconColumn::make('is_active')->label('চালু')->boolean(),
             ])
             ->recordActions([

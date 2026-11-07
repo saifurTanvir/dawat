@@ -36,7 +36,7 @@ class AdminPanelProvider extends PanelProvider
                 'danger' => Color::hex('#b8322a'),
             ])
             ->font('Noto Sans Bengali')
-            ->navigationGroups(['রাঁধুনি ও খাবার', 'নিরাপত্তা', 'সেটিংস'])
+            ->navigationGroups(['রাঁধুনি ও খাবার', 'নিয়মিত খাবার', 'নিরাপত্তা', 'সেটিংস'])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
