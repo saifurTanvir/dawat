@@ -32,6 +32,12 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        path: '/cook/posts',
+        name: 'my-posts',
+        component: () => import('./pages/MyPostsPage.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
         path: '/:pathMatch(.*)*',
         name: 'not-found',
         component: () => import('./pages/NotFoundPage.vue'),

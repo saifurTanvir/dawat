@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
 use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
+use App\Http\Controllers\Api\V1\My\MyPostController;
 use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\TagController;
 use Illuminate\Support\Facades\Route;
@@ -40,5 +41,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         // F6–F9: publish a post
         Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
+
+        // F10: the cook's own posts
+        Route::get('/my/posts', [MyPostController::class, 'index'])->name('my.posts.index');
+        Route::patch('/my/posts/{post}', [MyPostController::class, 'update'])->name('my.posts.update');
+        Route::post('/my/posts/{post}/sold-out', [MyPostController::class, 'soldOut'])->name('my.posts.sold-out');
     });
 });

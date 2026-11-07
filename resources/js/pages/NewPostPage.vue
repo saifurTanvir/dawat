@@ -302,7 +302,7 @@ async function publish() {
                 if (e.total) uploadProgress.value = Math.round((e.loaded / e.total) * 100);
             },
         });
-        router.push({ name: 'cook', query: { posted: 1 } });
+        router.push({ name: 'my-posts', query: { posted: 1 } });
     } catch (e) {
         errors.value = e.response?.data?.errors ?? {};
         error.value = errorMessage(e);

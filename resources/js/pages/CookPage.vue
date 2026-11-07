@@ -30,12 +30,10 @@
 
         <!-- Registered: show where they stand -->
         <div v-else class="mt-4">
-            <p v-if="route.query.posted" class="mb-4 rounded-xl bg-leaf-soft p-4 font-semibold text-leaf-deep" role="status">
-                পোস্ট হয়ে গেছে। আশেপাশের মানুষ এখন দেখতে পাবেন।
-            </p>
-            <RouterLink v-if="kitchen.can_post" :to="{ name: 'new-post' }" class="btn-primary mb-6">
-                আজকের রান্না পোস্ট করুন
-            </RouterLink>
+            <template v-if="kitchen.can_post">
+                <RouterLink :to="{ name: 'new-post' }" class="btn-primary">আজকের রান্না পোস্ট করুন</RouterLink>
+                <RouterLink :to="{ name: 'my-posts' }" class="btn-quiet mt-2 mb-6 w-full border border-rule">আমার পোস্ট ও প্লেট বাকি</RouterLink>
+            </template>
             <div class="rounded-[var(--radius-plate)] bg-plate p-5" :class="statusTone.border">
                 <p class="text-sm text-muted">{{ kitchen.display_name }}</p>
                 <p class="mt-1 text-lg font-semibold" :class="statusTone.text">{{ kitchen.status_label }}</p>
@@ -59,12 +57,10 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
 import { api, errorMessage } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth';
 
 const auth = useAuthStore();
-const route = useRoute();
 const kitchen = ref(null);
 const loading = ref(true);
 const displayName = ref('');
