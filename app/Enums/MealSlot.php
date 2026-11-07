@@ -2,7 +2,9 @@
 
 namespace App\Enums;
 
-enum MealSlot: string
+use Filament\Support\Contracts\HasLabel;
+
+enum MealSlot: string implements HasLabel
 {
     case Breakfast = 'breakfast';
     case Lunch = 'lunch';
@@ -24,5 +26,10 @@ enum MealSlot: string
     public static function options(): array
     {
         return collect(self::cases())->mapWithKeys(fn (self $case) => [$case->value => $case->label()])->all();
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label();
     }
 }

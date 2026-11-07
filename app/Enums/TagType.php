@@ -2,7 +2,9 @@
 
 namespace App\Enums;
 
-enum TagType: string
+use Filament\Support\Contracts\HasLabel;
+
+enum TagType: string implements HasLabel
 {
     case Diet = 'diet';
     case Spice = 'spice';
@@ -26,5 +28,10 @@ enum TagType: string
     public static function options(): array
     {
         return collect(self::cases())->mapWithKeys(fn (self $case) => [$case->value => $case->label()])->all();
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label();
     }
 }

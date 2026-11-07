@@ -2,7 +2,9 @@
 
 namespace App\Enums;
 
-enum ContactType: string
+use Filament\Support\Contracts\HasLabel;
+
+enum ContactType: string implements HasLabel
 {
     case Call = 'call';
     case Message = 'message';
@@ -24,5 +26,10 @@ enum ContactType: string
     public static function options(): array
     {
         return collect(self::cases())->mapWithKeys(fn (self $case) => [$case->value => $case->label()])->all();
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label();
     }
 }

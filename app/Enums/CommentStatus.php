@@ -2,7 +2,10 @@
 
 namespace App\Enums;
 
-enum CommentStatus: string
+use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasLabel;
+
+enum CommentStatus: string implements HasColor, HasLabel
 {
     case Visible = 'visible';
     case Hidden = 'hidden';
@@ -20,5 +23,18 @@ enum CommentStatus: string
     public static function options(): array
     {
         return collect(self::cases())->mapWithKeys(fn (self $case) => [$case->value => $case->label()])->all();
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label();
+    }
+
+    public function getColor(): string
+    {
+        return match ($this) {
+            self::Visible => 'success',
+            self::Hidden => 'danger',
+        };
     }
 }

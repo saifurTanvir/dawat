@@ -5,6 +5,9 @@ namespace App\Models;
 use App\Enums\UserStatus;
 use App\Support\Roles;
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasName;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +20,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'phone', 'phone_verified_at', 'email', 'password', 'status'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser, HasName
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
@@ -58,5 +61,16 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->hasRole(Roles::ADMIN);
+    }
+
+    /** Only active admins may open /admin. */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $panel->getId() === 'admin' && $this->isAdmin() && ! $this->isBlocked();
+    }
+
+    public function getFilamentName(): string
+    {
+        return $this->name ?: $this->phone;
     }
 }

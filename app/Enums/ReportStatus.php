@@ -2,7 +2,10 @@
 
 namespace App\Enums;
 
-enum ReportStatus: string
+use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasLabel;
+
+enum ReportStatus: string implements HasColor, HasLabel
 {
     case Open = 'open';
     case Resolved = 'resolved';
@@ -22,5 +25,19 @@ enum ReportStatus: string
     public static function options(): array
     {
         return collect(self::cases())->mapWithKeys(fn (self $case) => [$case->value => $case->label()])->all();
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label();
+    }
+
+    public function getColor(): string
+    {
+        return match ($this) {
+            self::Open => 'warning',
+            self::Resolved => 'success',
+            self::Dismissed => 'gray',
+        };
     }
 }

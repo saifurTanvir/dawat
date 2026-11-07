@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Filament\Resources\Kitchens\Pages;
+
+use App\Filament\Actions\KitchenModerationActions;
+use App\Filament\Resources\Kitchens\KitchenResource;
+use Filament\Actions\EditAction;
+use Filament\Resources\Pages\ViewRecord;
+
+class ViewKitchen extends ViewRecord
+{
+    protected static string $resource = KitchenResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            ...KitchenModerationActions::make(),
+            EditAction::make(),
+        ];
+    }
+}
