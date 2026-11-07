@@ -28,6 +28,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if (config('services.otp.any_code') && ! $this->app->environment('local')) {
+            // Has no effect outside local, but someone left it on: say so.
+            logger()->warning('OTP_ANY_CODE is set but ignored because APP_ENV is not "local". Remove it from this .env.');
+        }
+
         // Read from config (not env) so it still works after `php artisan optimize`.
         if ($proxies = config('dawat.trusted_proxies')) {
             TrustProxies::at($proxies === ['*'] ? '*' : $proxies);

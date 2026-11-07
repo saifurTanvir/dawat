@@ -40,6 +40,9 @@ return [
         'driver' => env('OTP_DRIVER', 'log'),
         'ttl_minutes' => (int) env('OTP_TTL_MINUTES', 5),
         'length' => (int) env('OTP_LENGTH', 6),
+        // Local development only: any code of the right length is accepted.
+        // Ignored unless APP_ENV=local (see OtpService::anyCodeAccepted()).
+        'any_code' => (bool) env('OTP_ANY_CODE', false),
     ],
 
 ];

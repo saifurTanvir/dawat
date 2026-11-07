@@ -84,6 +84,13 @@ class OtpService
      */
     public function consume(string $phone, string $code): bool
     {
+        if (self::anyCodeAccepted()) {
+            // Local shortcut: use up whatever code was sent and accept any code of the right length.
+            OtpCode::where('phone', $phone)->usable()->update(['consumed_at' => now()]);
+
+            return strlen($code) === (int) config('services.otp.length', 6) && ctype_digit($code);
+        }
+
         return DB::transaction(function () use ($phone, $code) {
             $otp = OtpCode::where('phone', $phone)->usable()->latest('id')->lockForUpdate()->first();
 
@@ -101,6 +108,15 @@ class OtpService
 
             return true;
         });
+    }
+
+    /**
+     * OTP_ANY_CODE works only on a developer's machine (APP_ENV=local), never
+     * in production, staging or tests, whatever the .env says.
+     */
+    public static function anyCodeAccepted(): bool
+    {
+        return config('services.otp.any_code') === true && app()->environment('local');
     }
 
     private function generateCode(): string

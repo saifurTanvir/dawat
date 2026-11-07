@@ -43,6 +43,9 @@
                 aria-describedby="code-error"
                 required
             />
+            <p v-if="devAnyCode" class="mt-2 rounded-lg bg-turmeric-soft p-2 text-sm">
+                লোকাল ডেভেলপমেন্ট: যেকোনো {{ bn(codeLength) }} অঙ্কের কোড চলবে, যেমন ১২৩৪৫৬।
+            </p>
             <p v-if="error" id="code-error" class="error-text" role="alert">{{ error }}</p>
             <button type="submit" class="btn-primary mt-5" :disabled="busy || code.length < codeLength">
                 {{ busy ? 'যাচাই হচ্ছে…' : 'ঢুকুন' }}
@@ -76,6 +79,7 @@ const code = ref('');
 const error = ref('');
 const busy = ref(false);
 const cooldown = ref(0);
+const devAnyCode = ref(false);
 const codeInput = ref(null);
 let timer = null;
 
@@ -97,6 +101,7 @@ async function sendCode() {
     busy.value = true;
     try {
         const data = await auth.requestCode(phone.value);
+        devAnyCode.value = Boolean(data.dev_any_code);
         step.value = 'code';
         startCooldown(data.resend_after ?? 60);
         await nextTick();

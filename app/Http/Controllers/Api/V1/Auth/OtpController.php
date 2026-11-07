@@ -31,6 +31,8 @@ class OtpController extends Controller
         return response()->json([
             'message' => 'আপনার মোবাইলে একটি কোড পাঠানো হয়েছে।',
             'resend_after' => OtpService::RESEND_AFTER,
+            // Lets the app show a hint on a developer's machine; always false elsewhere.
+            'dev_any_code' => OtpService::anyCodeAccepted(),
         ], Response::HTTP_ACCEPTED);
     }
 
