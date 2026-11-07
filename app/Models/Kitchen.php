@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 #[Fillable([
     'user_id', 'display_name', 'area_id', 'pickup_address', 'location', 'status',
-    'allow_call', 'allow_message', 'allow_comment', 'contact_phone', 'contact_name', 'max_regular_customers',
+    'allow_call', 'allow_message', 'allow_comment', 'allow_order', 'contact_phone', 'contact_name', 'max_regular_customers',
 ])]
 #[Hidden(['location', 'public_location', 'pickup_address'])]
 class Kitchen extends Model
@@ -34,6 +34,7 @@ class Kitchen extends Model
             'allow_call' => 'boolean',
             'allow_message' => 'boolean',
             'allow_comment' => 'boolean',
+            'allow_order' => 'boolean',
             'rating_avg' => 'decimal:2',
             'max_regular_customers' => 'integer',
             'contact_verified_at' => 'datetime',

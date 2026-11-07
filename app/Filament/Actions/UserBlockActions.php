@@ -40,6 +40,18 @@ class UserBlockActions
                     $record->update(['status' => UserStatus::Active]);
                     Notification::make()->title('ইউজার আবার চালু')->success()->send();
                 }),
+
+            // F29: lifted by hand after repeated no-shows paused "নিতে চাই".
+            Action::make('allowOrders')
+                ->label('"নিতে চাই" আবার চালু')
+                ->icon('heroicon-o-shopping-bag')
+                ->color('success')
+                ->requiresConfirmation()
+                ->visible(fn (User $record) => $record->order_blocked_until?->isFuture() ?? false)
+                ->action(function (User $record) {
+                    $record->forceFill(['order_blocked_until' => null])->save();
+                    Notification::make()->title('অর্ডার আবার চালু')->success()->send();
+                }),
         ];
     }
 }

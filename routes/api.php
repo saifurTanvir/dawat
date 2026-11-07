@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\My\MyBookingController;
 use App\Http\Controllers\Api\V1\My\MyPostController;
+use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\PostShowController;
 use App\Http\Controllers\Api\V1\QrController;
@@ -82,9 +83,17 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::patch('/my/posts/{post}', [MyPostController::class, 'update'])->name('my.posts.update');
         Route::post('/my/posts/{post}/sold-out', [MyPostController::class, 'soldOut'])->name('my.posts.sold-out');
 
+        // F29: "নিতে চাই" — one-off orders from the feed
+        Route::post('/posts/{post}/orders', [OrderController::class, 'store'])->middleware('throttle:comments')->name('posts.orders.store');
+        Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+
         // F26: the cook's regular bookings today
         Route::get('/my/bookings', [MyBookingController::class, 'index'])->name('my.bookings.index');
         Route::post('/my/bookings/off', [MyBookingController::class, 'off'])->middleware('can:publish-posts')->name('my.bookings.off');
+        // F29: the cook's one-off orders
+        Route::post('/my/orders/{order}/decline', [MyBookingController::class, 'decline'])->name('my.orders.decline');
+        Route::post('/my/orders/{order}/handed', [MyBookingController::class, 'handed'])->name('my.orders.handed');
 
         // F27: the shahidar's day
         Route::middleware('can:work-as-shahidar')->prefix('shahidar')->name('shahidar.')->group(function () {

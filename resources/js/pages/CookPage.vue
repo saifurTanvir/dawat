@@ -35,9 +35,9 @@
                 <RouterLink :to="{ name: 'my-posts' }" class="btn-quiet mt-2 mb-6 w-full border border-rule">আমার পোস্ট ও প্লেট বাকি</RouterLink>
             </template>
             <!-- F26: regular customers today -->
-            <section v-if="bookings && bookings.regular_customers" class="mb-6 rounded-[var(--radius-plate)] bg-plate p-5" aria-labelledby="regular-title">
-                <h2 id="regular-title" class="font-semibold">নিয়মিত গ্রাহক</h2>
-                <p class="text-sm text-muted">{{ bn(bookings.regular_customers) }} জন · সর্বোচ্চ {{ bn(bookings.max_regular_customers) }}</p>
+            <section v-if="bookings && (bookings.regular_customers || bookings.slots.length)" class="mb-6 rounded-[var(--radius-plate)] bg-plate p-5" aria-labelledby="regular-title">
+                <h2 id="regular-title" class="font-semibold">আজকের অর্ডার</h2>
+                <p v-if="bookings.regular_customers" class="text-sm text-muted">নিয়মিত গ্রাহক {{ bn(bookings.regular_customers) }} জন · সর্বোচ্চ {{ bn(bookings.max_regular_customers) }}</p>
                 <p v-if="!bookings.slots.length" class="mt-3 text-muted">আজ কারো বুকিং নেই।</p>
                 <div v-for="slot in bookings.slots" :key="slot.meal_slot" class="mt-4 border-t border-rule pt-3">
                     <p class="font-semibold">আজ {{ slot.label }}</p>
@@ -46,7 +46,15 @@
                         {{ slot.waiting.map((w) => `${w.name} (${bn(w.plates)})`).join(', ') }}
                     </p>
                     <ul v-if="slot.orders.length" class="mt-1 space-y-0.5 text-sm text-muted">
-                        <li v-for="o in slot.orders" :key="o.code">বক্স {{ o.code }} · {{ o.name }} · {{ bn(o.plates) }} প্লেট · {{ o.status_label }}</li>
+                        <li v-for="o in slot.orders" :key="o.code">
+                            বক্স {{ o.code }} · {{ o.name }} · {{ bn(o.plates) }} প্লেট · {{ o.status_label }}
+                            <span v-if="o.kind === 'oneoff'" class="ml-1 rounded-full bg-turmeric-soft px-2 text-xs text-ink">{{ o.receive === 'self' ? 'নিজে নেবেন' : 'একবারের' }}</span>
+                            <span class="mt-0.5 flex flex-wrap gap-x-3">
+                                <a v-if="o.phone" :href="`tel:${o.phone}`" class="font-semibold text-leaf">ক্রেতাকে ফোন</a>
+                                <button v-if="o.can_hand" type="button" class="font-semibold text-leaf" :disabled="busy" @click="orderAct(o, 'handed', `${taka(o.total_paisa)} পেয়ে খাবার দিয়েছেন?`)">দিয়েছি</button>
+                                <button v-if="o.can_decline" type="button" class="font-semibold text-chili" :disabled="busy" @click="orderAct(o, 'decline', 'এই অর্ডার দিতে পারছেন না? ক্রেতাকে জানানো হবে।')">দিতে পারছি না</button>
+                            </span>
+                        </li>
                     </ul>
                     <button
                         v-if="slot.waiting_plates"
@@ -84,6 +92,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
+import { taka } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
 
 const auth = useAuthStore();
@@ -101,6 +110,20 @@ async function loadBookings() {
         bookings.value = data.data;
     } catch {
         bookings.value = null;
+    }
+}
+
+async function orderAct(order, path, question) {
+    if (!window.confirm(question)) return;
+    busy.value = true;
+    try {
+        const { data } = await api.post(`/my/orders/${order.id}/${path}`);
+        bookingNotice.value = data.message;
+        await loadBookings();
+    } catch (e) {
+        bookingNotice.value = errorMessage(e);
+    } finally {
+        busy.value = false;
     }
 }
 

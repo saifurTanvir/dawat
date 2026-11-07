@@ -32,6 +32,7 @@ class OwnKitchenResource extends JsonResource
             'allow_call' => $this->allow_call,
             'allow_message' => $this->allow_message,
             'allow_comment' => $this->allow_comment,
+            'allow_order' => $this->allow_order,
             'contact_phone' => $this->contact_phone,
             'contact_name' => $this->contact_name,
             'contact_verified_via' => $this->contact_verified_via,

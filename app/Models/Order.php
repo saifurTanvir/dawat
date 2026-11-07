@@ -44,6 +44,38 @@ class Order extends Model
         return $this->belongsTo(Customer::class);
     }
 
+    /** F29: who booked a one-off box from the feed. */
+    public function buyer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'buyer_id');
+    }
+
+    public function isOneOff(): bool
+    {
+        return $this->kind === 'oneoff';
+    }
+
+    public function isSelfPickup(): bool
+    {
+        return $this->receive === 'self';
+    }
+
+    /** The person the box is for: a regular customer or a one-off buyer. */
+    public function recipient(): User
+    {
+        return $this->isOneOff() ? $this->buyer : $this->customer->user;
+    }
+
+    public function recipientAddress(): ?string
+    {
+        return $this->isOneOff() ? $this->delivery_address : $this->customer->address;
+    }
+
+    public function recipientNote(): ?string
+    {
+        return $this->isOneOff() ? $this->buyer_note : $this->customer->note;
+    }
+
     public function shahidar(): BelongsTo
     {
         return $this->belongsTo(User::class, 'shahidar_id');

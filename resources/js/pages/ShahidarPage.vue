@@ -57,6 +57,7 @@
                     <li v-for="o in g.orders" :key="o.id" class="flex items-center justify-between gap-3 py-2">
                         <span>
                             <span class="font-semibold">বক্স {{ o.code }}</span>
+                            <span v-if="o.kind === 'oneoff'" class="ml-1 rounded-full bg-turmeric-soft px-2 text-xs">একবারের</span>
                             <span class="block text-sm text-muted">{{ o.meal_slot_label }} · {{ o.customer.name }} · {{ bn(o.plates) }} প্লেট</span>
                         </span>
                         <span class="flex shrink-0 flex-col items-end gap-1">
@@ -73,7 +74,7 @@
             <div v-for="o in onTheWay" :key="o.id" class="mt-3 rounded-[var(--radius-plate)] border-2 border-leaf bg-plate p-4">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="font-semibold">বক্স {{ o.code }} · {{ o.customer.name }}</p>
+                        <p class="font-semibold">বক্স {{ o.code }} · {{ o.customer.name }}<span v-if="o.kind === 'oneoff'" class="ml-1 rounded-full bg-turmeric-soft px-2 text-xs font-normal">একবারের</span></p>
                         <p class="text-sm text-muted">{{ o.customer.address }}</p>
                         <p v-if="o.customer.note" class="text-sm">{{ o.customer.note }}</p>
                         <p class="mt-1 text-sm">{{ bn(o.plates) }} প্লেট · নেবেন <strong>{{ taka(o.total_paisa) }}</strong><template v-if="o.sticker"> · স্টিকার {{ o.sticker }}</template></p>

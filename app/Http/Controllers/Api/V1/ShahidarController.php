@@ -30,7 +30,7 @@ class ShahidarController extends Controller
         $me = $request->user();
         $orders = Order::where('shahidar_id', $me->id)
             ->whereDate('service_date', BookingPlanner::today())
-            ->with(['customer.user', 'kitchen.user', 'kitchen.area', 'sticker'])
+            ->with(['customer.user', 'buyer', 'kitchen.user', 'kitchen.area', 'sticker'])
             ->orderBy('seq')
             ->get();
 
@@ -125,7 +125,7 @@ class ShahidarController extends Controller
 
     private function done(Order $order, string $message): JsonResponse
     {
-        $order->load(['customer.user', 'kitchen.user', 'kitchen.area', 'sticker']);
+        $order->load(['customer.user', 'buyer', 'kitchen.user', 'kitchen.area', 'sticker']);
 
         return response()->json(['data' => $this->row($order), 'message' => $message]);
     }
@@ -145,7 +145,9 @@ class ShahidarController extends Controller
             'cancel_reason' => $o->cancel_reason,
             'ask_until' => $o->ask_until?->toIso8601String(),
             'price_paisa' => intdiv($o->food_paisa, max(1, $o->plates)),
-            'max_price_paisa' => $o->customer->max_price_paisa,
+            'max_price_paisa' => $o->customer?->max_price_paisa,
+            // F29: one-off feed orders are marked "একবারের".
+            'kind' => $o->kind,
             'confirm_method' => $o->confirm_method,
             'sticker' => $o->sticker?->displayCode(),
             'kitchen' => [
@@ -155,10 +157,10 @@ class ShahidarController extends Controller
                 'address' => $o->kitchen->pickup_address ?? $o->kitchen->area?->name,
             ],
             'customer' => [
-                'name' => $o->customer->user->name,
-                'phone' => $o->customer->user->phone,
-                'address' => $o->customer->address,
-                'note' => $o->customer->note,
+                'name' => $o->recipient()->name ?: 'ক্রেতা',
+                'phone' => $o->recipient()->phone,
+                'address' => $o->recipientAddress(),
+                'note' => $o->recipientNote(),
             ],
             'paid' => $o->paid_at !== null,
         ];

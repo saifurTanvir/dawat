@@ -54,8 +54,8 @@
                     @foreach ($owing as $o)
                         <tr class="border-t border-gray-200 dark:border-white/10">
                             <td class="py-2">{{ $o->code() }}</td>
-                            <td>{{ $o->customer->user->name }} <span class="muted">{{ $o->customer->user->phone }}</span></td>
-                            <td>{{ $o->shahidar->name }}</td>
+                            <td>{{ $o->recipient()->name }} <span class="muted">{{ $o->recipient()->phone }}</span></td>
+                            <td>{{ $o->shahidar?->name ?? '—' }}</td>
                             <td>{{ $o->status->label() }}</td>
                             <td class="r">{{ $tk($o->totalPaisa()) }}</td>
                         </tr>

@@ -25,7 +25,7 @@ class PostShowController extends Controller
             'lng' => ['nullable', 'required_with:lat', 'numeric', 'between:'.Bangladesh::MIN_LNG.','.Bangladesh::MAX_LNG],
         ]);
 
-        $post->load(['images', 'tags', 'kitchen'])
+        $post->load(['images', 'tags', 'kitchen.area'])
             ->loadCount(['comments as comments_count' => fn ($c) => $c->where('status', 'visible')]);
 
         if (isset($near['lat'], $near['lng'])) {

@@ -20,7 +20,7 @@
                         · হেঁটে {{ bn(post.walk_minutes) }} মিনিট · {{ post.kitchen.name }}
                     </template>
                     <template v-if="available" #actions>
-                        <ContactButtons :post="post" :show-comments="false" @gone="available = false" />
+                        <ContactButtons :post="post" :show-comments="false" :open-order="$route.query.order === '1'" @gone="available = false" />
                     </template>
                 </PostCard>
             </div>

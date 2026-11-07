@@ -39,7 +39,8 @@ class Settlements
     /** @return Collection<int, array{kitchen: Kitchen, orders: int, gross: int, commission: int, payable: int, from: ?string, to: ?string}> */
     public function cooksDue(): Collection
     {
-        $rows = Order::whereIn('status', self::COOKED)->whereNull('cook_settlement_id')
+        // Self-pickup boxes were paid to the cook directly (F29).
+        $rows = Order::whereIn('status', self::COOKED)->whereNull('cook_settlement_id')->where('payment_method', '!=', 'cash_to_cook')
             ->selectRaw('kitchen_id, COUNT(*) AS n, SUM(food_paisa) AS gross, MIN(service_date) AS d0, MAX(service_date) AS d1')
             ->groupBy('kitchen_id')->get();
         $kitchens = Kitchen::whereIn('id', $rows->pluck('kitchen_id'))->with('user')->get()->keyBy('id');
@@ -79,7 +80,8 @@ class Settlements
         return Order::where(fn ($q) => $q->where('status', OrderStatus::Failed)
             ->orWhere(fn ($q) => $q->where('status', OrderStatus::Delivered)->whereNull('paid_at')))
             ->whereNull('paid_at')
-            ->with(['customer.user', 'shahidar'])
+            ->where('payment_method', '!=', 'cash_to_cook')
+            ->with(['customer.user', 'buyer', 'shahidar'])
             ->orderBy('service_date')
             ->get();
     }
@@ -94,7 +96,7 @@ class Settlements
     {
         return DB::transaction(function () use ($kitchen, $by, $note) {
             $orders = Order::where('kitchen_id', $kitchen->id)->whereIn('status', self::COOKED)
-                ->whereNull('cook_settlement_id')->lockForUpdate()->get();
+                ->whereNull('cook_settlement_id')->where('payment_method', '!=', 'cash_to_cook')->lockForUpdate()->get();
             if ($orders->isEmpty()) {
                 throw ValidationException::withMessages(['kitchen' => 'এই গৃহিণীর পাওনা কিছু নেই।']);
             }
