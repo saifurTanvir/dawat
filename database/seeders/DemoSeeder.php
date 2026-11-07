@@ -62,7 +62,7 @@ class DemoSeeder extends Seeder
             $post = Post::create([
                 'kitchen_id' => $kitchen->id,
                 'area_id' => $area->id,
-                'location' => $kitchen->location,
+                'location' => $kitchen->public_location,
                 'title' => $title,
                 'price_paisa' => $price * 100,
                 'plates_total' => $plates,

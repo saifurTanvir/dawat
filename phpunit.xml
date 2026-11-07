@@ -30,6 +30,9 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
+        <!-- Exact distances in tests; LocationFuzzTest switches the offset on. -->
+        <env name="LOCATION_FUZZ_MIN_M" value="0"/>
+        <env name="LOCATION_FUZZ_MAX_M" value="0"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
     </php>

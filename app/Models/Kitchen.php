@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\AsGeoPoint;
 use App\Enums\KitchenStatus;
+use App\Support\Geo\LocationFuzzer;
 use Database\Factories\KitchenFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'user_id', 'display_name', 'area_id', 'location', 'status',
     'allow_call', 'allow_message', 'allow_comment', 'contact_phone', 'contact_name',
 ])]
-#[Hidden(['location'])]
+#[Hidden(['location', 'public_location'])]
 class Kitchen extends Model
 {
     /** @use HasFactory<KitchenFactory> */
@@ -26,6 +27,7 @@ class Kitchen extends Model
     {
         return [
             'location' => AsGeoPoint::class,
+            'public_location' => AsGeoPoint::class,
             'status' => KitchenStatus::class,
             'approved_at' => 'datetime',
             'allow_call' => 'boolean',
@@ -33,6 +35,17 @@ class Kitchen extends Model
             'allow_comment' => 'boolean',
             'rating_avg' => 'decimal:2',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // A new home gets a new public point; the same home keeps its point
+        // forever, so repeated queries can't average the offset away.
+        static::saving(function (Kitchen $kitchen) {
+            if ($kitchen->isDirty('location')) {
+                $kitchen->public_location = $kitchen->location ? LocationFuzzer::fuzz($kitchen->location) : null;
+            }
+        });
     }
 
     public function user(): BelongsTo

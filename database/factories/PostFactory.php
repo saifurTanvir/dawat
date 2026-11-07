@@ -36,7 +36,7 @@ class PostFactory extends Factory
     {
         return $this->afterMaking(function (Post $post) {
             $kitchen = $post->kitchen;
-            $post->location ??= $kitchen->location;
+            $post->location ??= $kitchen->public_location;
             $post->area_id ??= $kitchen->area_id;
         });
     }

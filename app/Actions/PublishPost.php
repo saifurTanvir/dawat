@@ -29,7 +29,8 @@ class PublishPost
                 $post = Post::create([
                     'kitchen_id' => $kitchen->id,
                     'area_id' => $kitchen->area_id,
-                    'location' => $kitchen->location,
+                    // The public (offset) point, never the real home.
+                    'location' => $kitchen->public_location,
                     'title' => trim($data['title']),
                     'price_paisa' => (int) $data['price_taka'] * 100,
                     'plates_total' => (int) $data['plates_total'],
