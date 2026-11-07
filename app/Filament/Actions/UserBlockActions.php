@@ -23,6 +23,10 @@ class UserBlockActions
                 ->action(function (User $record) {
                     $record->update(['status' => UserStatus::Blocked]);
                     $record->tokens()->delete();
+                    // A blocked cook must stop receiving calls at once.
+                    if ($record->kitchen?->isApproved()) {
+                        $record->kitchen->suspend(auth()->user(), 'ইউজার বন্ধ করা হয়েছে');
+                    }
                     Notification::make()->title('ইউজার বন্ধ করা হয়েছে')->send();
                 }),
 

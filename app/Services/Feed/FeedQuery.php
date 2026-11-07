@@ -42,7 +42,8 @@ class FeedQuery
             ->selectRaw("ST_Distance_Sphere(posts.location, {$point}) AS distance_m", [$wkt])
             ->whereRaw("MBRContains(ST_GeomFromText(?, 4326, 'axis-order=long-lat'), posts.location)", [$this->boundingBox($metres)])
             ->whereRaw("ST_Distance_Sphere(posts.location, {$point}) <= ?", [$wkt, $metres])
-            ->whereHas('kitchen', fn (Builder $k) => $k->where('status', 'approved'))
+            ->whereHas('kitchen', fn (Builder $k) => $k->where('status', 'approved')
+                ->whereHas('user', fn (Builder $u) => $u->where('status', 'active')))
             ->when($this->meal, fn (Builder $q) => $q->where('meal_slot', $this->meal))
             ->with([
                 'images',

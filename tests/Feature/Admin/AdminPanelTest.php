@@ -109,6 +109,16 @@ class AdminPanelTest extends TestCase
         $this->assertSame(0, $user->tokens()->count());
     }
 
+    public function test_blocking_a_cook_suspends_their_kitchen(): void
+    {
+        $kitchen = Kitchen::factory()->approved()->create();
+        $this->actingAs($this->admin);
+
+        Livewire::test(ListUsers::class)->callAction(TestAction::make('block')->table($kitchen->user));
+
+        $this->assertSame(KitchenStatus::Suspended, $kitchen->fresh()->status);
+    }
+
     public function test_admin_cannot_block_themselves(): void
     {
         $this->actingAs($this->admin);

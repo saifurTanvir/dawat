@@ -74,6 +74,8 @@ class FeedTest extends TestCase
         $this->postEast(300, ['available_until' => now()->subMinute()]);
         $suspended = $this->postEast(300);
         $suspended->kitchen->update(['status' => KitchenStatus::Suspended]);
+        $blocked = $this->postEast(300);
+        $blocked->kitchen->user->update(['status' => 'blocked']);
 
         $this->getJson('/api/v1/feed?'.http_build_query(self::HERE))
             ->assertJsonPath('data.*.id', [$ok->id]);
