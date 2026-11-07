@@ -8,6 +8,11 @@ const routes = [
         component: () => import('./pages/FeedPage.vue'),
     },
     {
+        path: '/q/:code',
+        name: 'qr',
+        component: () => import('./pages/QrPage.vue'),
+    },
+    {
         path: '/login',
         name: 'login',
         component: () => import('./pages/LoginPage.vue'),

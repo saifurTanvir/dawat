@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\My\MyPostController;
 use App\Http\Controllers\Api\V1\PostController;
+use App\Http\Controllers\Api\V1\QrController;
 use App\Http\Controllers\Api\V1\TagController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +26,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
     // F12–F14: what buyers see. Public, so a QR scan works without signing in.
     Route::get('/feed', [FeedController::class, 'index'])->middleware('throttle:feed')->name('feed');
+    // F15: printed QR codes
+    Route::get('/qr/{code}', [QrController::class, 'show'])->middleware('throttle:feed')->name('qr.show');
 
     // F1: phone + OTP sign-in
     Route::middleware('throttle:otp')->prefix('auth')->name('auth.')->group(function () {
