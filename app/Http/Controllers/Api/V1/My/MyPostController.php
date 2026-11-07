@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\My;
 use App\Enums\PostStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OwnPostResource;
+use App\Models\Order;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -34,9 +35,13 @@ class MyPostController extends Controller
     {
         Gate::authorize('manage', $post);
 
+        // F26: plates booked by regular customers are not for sale.
+        $booked = (int) $post->orders()->open()->sum('plates');
         $data = $request->validate(
-            ['plates_left' => ['required', 'integer', 'min:0', 'max:'.$post->plates_total]],
-            ['plates_left.max' => 'মোট :max প্লেটের বেশি হতে পারবে না।'],
+            ['plates_left' => ['required', 'integer', 'min:0', 'max:'.($post->plates_total - $booked)]],
+            ['plates_left.max' => $booked
+                ? 'নিয়মিত গ্রাহকদের '.Order::banglaDigits($booked).' প্লেট বাদে সর্বোচ্চ :max প্লেট বাকি রাখা যাবে।'
+                : 'মোট :max প্লেটের বেশি হতে পারবে না।'],
         );
 
         $post->plates_left = $data['plates_left'];

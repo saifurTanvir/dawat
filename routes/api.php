@@ -9,11 +9,15 @@ use App\Http\Controllers\Api\V1\FeedController;
 use App\Http\Controllers\Api\V1\KitchenContactController;
 use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
+use App\Http\Controllers\Api\V1\My\MyBookingController;
 use App\Http\Controllers\Api\V1\My\MyPostController;
 use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\PostShowController;
 use App\Http\Controllers\Api\V1\QrController;
+use App\Http\Controllers\Api\V1\RegularController;
 use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\ShahidarController;
+use App\Http\Controllers\Api\V1\StickerController;
 use App\Http\Controllers\Api\V1\TagController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +43,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     // F17: one post (shared links) and its comments
     Route::get('/posts/{post}', PostShowController::class)->middleware('throttle:feed')->name('posts.show');
     Route::get('/posts/{post}/comments', [CommentController::class, 'index'])->middleware('throttle:feed')->name('posts.comments.index');
+
+    // F27: scanning a box sticker (sign-in optional; strangers see nothing personal)
+    Route::get('/stickers/{code}', [StickerController::class, 'show'])->middleware('throttle:feed')->name('stickers.show');
 
     // F1: phone + OTP sign-in
     Route::middleware('throttle:otp')->prefix('auth')->name('auth.')->group(function () {
@@ -74,6 +81,29 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/my/posts', [MyPostController::class, 'index'])->name('my.posts.index');
         Route::patch('/my/posts/{post}', [MyPostController::class, 'update'])->name('my.posts.update');
         Route::post('/my/posts/{post}/sold-out', [MyPostController::class, 'soldOut'])->name('my.posts.sold-out');
+
+        // F26: the cook's regular bookings today
+        Route::get('/my/bookings', [MyBookingController::class, 'index'])->name('my.bookings.index');
+        Route::post('/my/bookings/off', [MyBookingController::class, 'off'])->middleware('can:publish-posts')->name('my.bookings.off');
+
+        // F27: the shahidar's day
+        Route::middleware('can:work-as-shahidar')->prefix('shahidar')->name('shahidar.')->group(function () {
+            Route::get('/today', [ShahidarController::class, 'today'])->name('today');
+            Route::post('/orders/{order}/pickup', [ShahidarController::class, 'pickup'])->name('orders.pickup');
+            Route::post('/orders/{order}/deliver', [ShahidarController::class, 'deliver'])->middleware('throttle:otp')->name('orders.deliver');
+            Route::post('/orders/{order}/fail', [ShahidarController::class, 'fail'])->name('orders.fail');
+            Route::post('/orders/{order}/paid', [ShahidarController::class, 'paid'])->name('orders.paid');
+            Route::post('/orders/{order}/skip', [ShahidarController::class, 'skip'])->name('orders.skip');
+        });
+        Route::post('/stickers/{code}/received', [StickerController::class, 'received'])->name('stickers.received');
+
+        // F25: regular home food (customer side)
+        Route::get('/regular', [RegularController::class, 'show'])->name('regular.show');
+        Route::put('/regular', [RegularController::class, 'save'])->middleware('throttle:comments')->name('regular.save');
+        // F26: skip today's box, days off
+        Route::post('/regular/orders/{order}/skip', [RegularController::class, 'skip'])->name('regular.orders.skip');
+        Route::post('/regular/pauses', [RegularController::class, 'pause'])->middleware('throttle:comments')->name('regular.pauses.store');
+        Route::delete('/regular/pauses/{pause}', [RegularController::class, 'unpause'])->name('regular.pauses.destroy');
 
         // F17: comments and reports
         Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->middleware('throttle:comments')->name('posts.comments.store');

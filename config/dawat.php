@@ -39,4 +39,15 @@ return [
         'width' => 1080,
         'height' => 1350,
     ],
+
+    /*
+    | F26 regular orders: SMS each customer when today's box is booked (with
+    | the delivery code) or when their cook is not cooking. ~৳0.35 per SMS.
+    */
+    'orders' => [
+        'sms' => (bool) env('ORDER_SMS_ENABLED', true),
+        'max_pause_days' => 60,
+        // F28: Dawat's share of the food price when paying cooks, in percent.
+        'commission_percent' => (float) env('ORDER_COMMISSION_PERCENT', 0),
+    ],
 ];

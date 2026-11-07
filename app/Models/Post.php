@@ -42,6 +42,12 @@ class Post extends Model
         ];
     }
 
+    /** F26: regular customers' boxes from this post. */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
     public function kitchen(): BelongsTo
     {
         return $this->belongsTo(Kitchen::class);

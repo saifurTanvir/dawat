@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Http\Controllers\Admin\QrCodeController;
+use App\Http\Controllers\Admin\StickerSheetController;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -36,7 +37,7 @@ class AdminPanelProvider extends PanelProvider
                 'danger' => Color::hex('#b8322a'),
             ])
             ->font('Noto Sans Bengali')
-            ->navigationGroups(['রাঁধুনি ও খাবার', 'নিরাপত্তা', 'সেটিংস'])
+            ->navigationGroups(['রাঁধুনি ও খাবার', 'নিয়মিত খাবার', 'নিরাপত্তা', 'সেটিংস'])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -48,6 +49,7 @@ class AdminPanelProvider extends PanelProvider
             ->authenticatedRoutes(function () {
                 Route::get('qr/{qr}/poster', [QrCodeController::class, 'poster'])->name('qr.poster');
                 Route::get('qr/{qr}/png', [QrCodeController::class, 'png'])->name('qr.png');
+                Route::get('stickers/sheet/{batch}', StickerSheetController::class)->name('stickers.sheet');
             })
             ->middleware([
                 EncryptCookies::class,

@@ -11,6 +11,7 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -43,9 +44,26 @@ class User extends Authenticatable implements FilamentUser, HasName
         return $this->hasOne(Kitchen::class);
     }
 
+    /** F25: set when this person is a regular customer. */
+    public function customer(): HasOne
+    {
+        return $this->hasOne(Customer::class);
+    }
+
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
+    }
+
+    /** Areas this user serves as a shahidar. */
+    public function shahidarAreas(): BelongsToMany
+    {
+        return $this->belongsToMany(Area::class, 'area_shahidar')->withTimestamps();
+    }
+
+    public function isShahidar(): bool
+    {
+        return $this->hasRole(Roles::SHAHIDAR);
     }
 
     public function isBlocked(): bool

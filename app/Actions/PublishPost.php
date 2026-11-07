@@ -7,6 +7,7 @@ use App\Events\PostPublished;
 use App\Models\Kitchen;
 use App\Models\Post;
 use App\Services\Images\FoodPhotoProcessor;
+use App\Services\Orders\BookingPlanner;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -14,7 +15,10 @@ use Throwable;
 
 class PublishPost
 {
-    public function __construct(private readonly FoodPhotoProcessor $photos) {}
+    public function __construct(
+        private readonly FoodPhotoProcessor $photos,
+        private readonly BookingPlanner $bookings,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data  validated StorePostRequest data
@@ -49,6 +53,9 @@ class PublishPost
                 }
 
                 $post->tags()->sync($data['tag_ids'] ?? []);
+
+                // F26: paired regular customers get their plates first.
+                $this->bookings->bookForPost($post);
 
                 PostPublished::dispatch($post);
 

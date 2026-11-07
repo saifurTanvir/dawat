@@ -48,6 +48,23 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        path: '/regular',
+        name: 'regular',
+        component: () => import('./pages/RegularPage.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/shahidar',
+        name: 'shahidar',
+        component: () => import('./pages/ShahidarPage.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/s/:code',
+        name: 'sticker',
+        component: () => import('./pages/StickerPage.vue'),
+    },
+    {
         path: '/:pathMatch(.*)*',
         name: 'not-found',
         component: () => import('./pages/NotFoundPage.vue'),

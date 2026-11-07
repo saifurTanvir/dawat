@@ -1,0 +1,88 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1\My;
+
+use App\Enums\MealSlot;
+use App\Enums\OrderStatus;
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\Pairing;
+use App\Services\Orders\BookingPlanner;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+
+/**
+ * F26: the cook's regular customers today, per meal. Customers appear by first
+ * name only; their phone and address are for the shahidar.
+ */
+class MyBookingController extends Controller
+{
+    public function __construct(private readonly BookingPlanner $planner) {}
+
+    /** GET /api/v1/my/bookings */
+    public function index(Request $request): JsonResponse
+    {
+        $kitchen = $request->user()->kitchen;
+        abort_unless($kitchen, 404, 'আপনি এখনো রাঁধুনি হিসেবে নিবন্ধন করেননি।');
+
+        $orders = Order::where('kitchen_id', $kitchen->id)
+            ->whereDate('service_date', BookingPlanner::today())
+            ->with('customer.user')
+            ->get()
+            ->groupBy(fn (Order $o) => $o->meal_slot->value);
+
+        $slots = collect(MealSlot::cases())->map(function (MealSlot $slot) use ($kitchen, $orders) {
+            $waiting = $this->planner->expected($kitchen, $slot);
+            $done = $orders->get($slot->value, collect());
+            if ($waiting->isEmpty() && $done->isEmpty()) {
+                return null;
+            }
+
+            return [
+                'meal_slot' => $slot->value,
+                'label' => $slot->label(),
+                // Still to be booked: they get plates from the next post for this meal.
+                'waiting_plates' => (int) $waiting->sum(fn (Pairing $p) => $p->customer->plates),
+                'waiting' => $waiting->map(fn (Pairing $p) => ['name' => self::firstName($p->customer->user->name), 'plates' => $p->customer->plates])->values(),
+                'orders' => $done->map(fn (Order $o) => [
+                    'code' => $o->code(),
+                    'name' => self::firstName($o->customer->user->name),
+                    'plates' => $o->plates,
+                    'status' => $o->status->value,
+                    'status_label' => $o->status === OrderStatus::Cancelled && $o->cancelled_by === 'cook' ? 'আজ রান্না নেই' : $o->status->label(),
+                ])->values(),
+            ];
+        })->filter()->values();
+
+        return response()->json([
+            'data' => [
+                'regular_customers' => $kitchen->pairings()->count(),
+                'max_regular_customers' => $kitchen->max_regular_customers,
+                'slots' => $slots,
+            ],
+        ]);
+    }
+
+    /** POST /api/v1/my/bookings/off — "আজ রান্না নেই" for one meal. */
+    public function off(Request $request): JsonResponse
+    {
+        $kitchen = $request->user()->kitchen;
+        abort_unless($kitchen, 404);
+        $data = $request->validate(['meal_slot' => ['required', Rule::enum(MealSlot::class)]]);
+
+        $orders = $this->planner->cookOff($kitchen, MealSlot::from($data['meal_slot']));
+
+        return response()->json([
+            'message' => $orders->isEmpty()
+                ? 'এই বেলায় আজ কারো বুকিং বাকি নেই।'
+                : Order::banglaDigits($orders->count()).' জন গ্রাহককে জানানো হচ্ছে। শাহিদার বিকল্প দেখবেন।',
+        ]);
+    }
+
+    private static function firstName(?string $name): string
+    {
+        return $name ? Str::before(trim($name), ' ') : 'গ্রাহক';
+    }
+}
