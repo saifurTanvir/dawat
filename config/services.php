@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'otp' => [
+        // log = write codes to the log (development). Add a real SMS gateway driver later.
+        'driver' => env('OTP_DRIVER', 'log'),
+        'ttl_minutes' => (int) env('OTP_TTL_MINUTES', 5),
+        'length' => (int) env('OTP_LENGTH', 6),
+    ],
+
 ];
