@@ -168,6 +168,30 @@ class OtpLoginTest extends TestCase
             ->assertJsonPath('data.name', 'রহিমা খাতুন');
     }
 
+    public function test_daily_ip_cap_on_otp(): void
+    {
+        config(['dawat.otp.per_ip_per_day' => 3]);
+
+        foreach (range(1, 3) as $i) {
+            $this->travel(2)->minutes();
+            $this->postJson('/api/v1/auth/otp', ['phone' => sprintf('0171%07d', $i)])->assertAccepted();
+        }
+
+        $this->travel(2)->minutes();
+        $this->postJson('/api/v1/auth/otp', ['phone' => '01799999999'])->assertTooManyRequests();
+    }
+
+    public function test_app_wide_hourly_cap_on_sending_codes(): void
+    {
+        config(['dawat.otp.global_per_hour' => 2]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.1'])->postJson('/api/v1/auth/otp', ['phone' => '01711111111'])->assertAccepted();
+        $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.2'])->postJson('/api/v1/auth/otp', ['phone' => '01722222222'])->assertAccepted();
+        $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.3'])->postJson('/api/v1/auth/otp', ['phone' => '01733333333'])
+            ->assertTooManyRequests()
+            ->assertJsonPath('message', 'এখন অনেকে একসাথে কোড চাইছেন। কয়েক মিনিট পরে আবার চেষ্টা করুন।');
+    }
+
     public function test_ip_rate_limit_applies_to_otp_endpoints(): void
     {
         RateLimiter::clear('otp');

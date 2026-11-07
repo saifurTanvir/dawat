@@ -132,7 +132,12 @@ MEDIA_DISK=public
 OTP_DRIVER=log
 OTP_TTL_MINUTES=5
 OTP_LENGTH=6
+OTP_PER_IP_PER_DAY=30
+OTP_GLOBAL_PER_HOUR=300
 SANCTUM_TOKEN_EXPIRATION_DAYS=90
+
+# Set when the site goes behind Cloudflare or a load balancer
+TRUSTED_PROXIES=
 EOF
     chown "$DEPLOY_USER:www-data" "$APP_DIR/shared/.env"
     chmod 640 "$APP_DIR/shared/.env"

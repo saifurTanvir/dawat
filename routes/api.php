@@ -40,7 +40,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
     // F1: phone + OTP sign-in
     Route::middleware('throttle:otp')->prefix('auth')->name('auth.')->group(function () {
-        Route::post('/otp', [OtpController::class, 'request'])->name('otp');
+        Route::post('/otp', [OtpController::class, 'request'])->middleware('throttle:otp-send')->name('otp');
         Route::post('/verify', [OtpController::class, 'verify'])->name('verify');
     });
 

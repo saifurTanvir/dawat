@@ -26,4 +26,9 @@ class ExampleTest extends TestCase
     {
         $this->getJson('/api/v1/does-not-exist')->assertNotFound();
     }
+
+    public function test_trusted_proxies_come_from_config(): void
+    {
+        $this->assertSame([], config('dawat.trusted_proxies'));
+    }
 }
