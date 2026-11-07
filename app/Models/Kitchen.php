@@ -34,6 +34,8 @@ class Kitchen extends Model
             'allow_message' => 'boolean',
             'allow_comment' => 'boolean',
             'rating_avg' => 'decimal:2',
+            'contact_verified_at' => 'datetime',
+            'pending_contact_requested_at' => 'datetime',
         ];
     }
 
@@ -83,6 +85,55 @@ class Kitchen extends Model
     public function publicContactPhone(): string
     {
         return $this->contact_phone ?: $this->user->phone;
+    }
+
+    /** A contact number is waiting for the cook's OTP or an admin. */
+    public function hasPendingContact(): bool
+    {
+        return $this->pending_contact_phone !== null;
+    }
+
+    /** Ask to use another number; nothing changes for buyers until it is confirmed. */
+    public function requestContact(string $phone, string $name, string $method): void
+    {
+        $this->forceFill([
+            'pending_contact_phone' => $phone,
+            'pending_contact_name' => $name,
+            'pending_contact_method' => $method,
+            'pending_contact_requested_at' => now(),
+        ])->save();
+    }
+
+    /** The pending number becomes the one buyers reach. $via: otp | admin */
+    public function confirmPendingContact(string $via): void
+    {
+        $this->forceFill([
+            'contact_phone' => $this->pending_contact_phone,
+            'contact_name' => $this->pending_contact_name,
+            'contact_verified_via' => $via,
+            'contact_verified_at' => now(),
+        ])->clearPendingContact();
+    }
+
+    public function clearPendingContact(): void
+    {
+        $this->forceFill([
+            'pending_contact_phone' => null,
+            'pending_contact_name' => null,
+            'pending_contact_method' => null,
+            'pending_contact_requested_at' => null,
+        ])->save();
+    }
+
+    /** Back to the cook's own number. */
+    public function removeContact(): void
+    {
+        $this->forceFill([
+            'contact_phone' => null,
+            'contact_name' => null,
+            'contact_verified_via' => null,
+            'contact_verified_at' => null,
+        ])->clearPendingContact();
     }
 
     public function approve(User $admin): void

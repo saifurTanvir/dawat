@@ -51,25 +51,7 @@
                 </div>
                 <p v-if="fieldError('allow_comment')" class="error-text" role="alert">{{ fieldError('allow_comment') }}</p>
 
-                <label class="mt-5 flex items-start gap-3">
-                    <input v-model="useOtherNumber" type="checkbox" class="mt-1.5 size-5 accent-leaf" />
-                    <span>
-                        <span class="block font-semibold">আমার নম্বরের বদলে অন্য নম্বর দেব</span>
-                        <span class="block text-sm text-muted">যেমন এলাকার শাহিদার বা পরিবারের কেউ। কল আর মেসেজ সেই নম্বরে যাবে।</span>
-                    </span>
-                </label>
-                <div v-if="useOtherNumber" class="mt-3 space-y-3 pl-8">
-                    <div>
-                        <label for="contact_name" class="mb-1 block text-sm font-semibold">নাম</label>
-                        <input id="contact_name" v-model="contact.contact_name" class="field" type="text" maxlength="60" placeholder="যেমন: করিম ভাই (শাহিদার)" />
-                        <p v-if="fieldError('contact_name')" class="error-text" role="alert">{{ fieldError('contact_name') }}</p>
-                    </div>
-                    <div>
-                        <label for="contact_phone" class="mb-1 block text-sm font-semibold">মোবাইল নম্বর</label>
-                        <input id="contact_phone" v-model="contact.contact_phone" class="field" type="tel" inputmode="tel" placeholder="018XXXXXXXX" />
-                        <p v-if="fieldError('contact_phone')" class="error-text" role="alert">{{ fieldError('contact_phone') }}</p>
-                    </div>
-                </div>
+                <ContactNumberCard v-if="kitchen" :kitchen="kitchen" class="mt-6" @updated="kitchen = $event" />
             </fieldset>
 
             <p v-if="error" class="error-text" role="alert">{{ error }}</p>
@@ -83,6 +65,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import ContactNumberCard from '@/components/ContactNumberCard.vue';
 import MapPicker from '@/components/MapPicker.vue';
 import { api, errorMessage } from '@/lib/api';
 import { distanceText } from '@/lib/format';
@@ -99,8 +82,8 @@ const point = ref(null);
 const hasLocation = ref(false);
 const locating = ref(false);
 const locateError = ref('');
-const useOtherNumber = ref(false);
-const contact = ref({ allow_call: false, allow_message: true, allow_comment: true, contact_name: '', contact_phone: '' });
+const kitchen = ref(null);
+const contact = ref({ allow_call: false, allow_message: true, allow_comment: true });
 
 const contactOptions = [
     { key: 'allow_message', label: 'হোয়াটসঅ্যাপে মেসেজ', help: 'ক্রেতা আগে থেকে লেখা একটা মেসেজ পাঠাবেন।' },
@@ -121,19 +104,13 @@ async function loadAreas(near) {
 
 onMounted(async () => {
     try {
-        const [{ data: kitchen }] = await Promise.all([api.get('/kitchen'), loadAreas()]);
-        areaId.value = kitchen.data.area?.id ?? null;
+        const [{ data: loaded }] = await Promise.all([api.get('/kitchen'), loadAreas()]);
+        areaId.value = loaded.data.area?.id ?? null;
         // The server never sends saved coordinates back; the cook re-pins only to move house.
-        hasLocation.value = kitchen.data.has_location;
-        const k = kitchen.data;
-        contact.value = {
-            allow_call: k.allow_call,
-            allow_message: k.allow_message,
-            allow_comment: k.allow_comment,
-            contact_name: k.contact_name ?? '',
-            contact_phone: k.contact_phone ?? '',
-        };
-        useOtherNumber.value = Boolean(k.contact_phone);
+        hasLocation.value = loaded.data.has_location;
+        const k = loaded.data;
+        contact.value = { allow_call: k.allow_call, allow_message: k.allow_message, allow_comment: k.allow_comment };
+        kitchen.value = k;
     } catch (e) {
         error.value = errorMessage(e);
     } finally {
@@ -179,14 +156,7 @@ async function save() {
     errors.value = {};
     busy.value = true;
     try {
-        const { contact_name, contact_phone, ...toggles } = contact.value;
-        await api.patch('/kitchen', {
-            area_id: areaId.value,
-            ...(point.value ?? {}),
-            ...toggles,
-            contact_name: useOtherNumber.value ? contact_name : null,
-            contact_phone: useOtherNumber.value ? contact_phone : null,
-        });
+        await api.patch('/kitchen', { area_id: areaId.value, ...(point.value ?? {}), ...contact.value });
         router.push({ name: 'cook' });
     } catch (e) {
         errors.value = e.response?.data?.errors ?? {};

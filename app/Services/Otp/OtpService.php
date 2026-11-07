@@ -25,7 +25,7 @@ class OtpService
      *
      * @throws OtpThrottledException
      */
-    public function request(string $phone, ?string $ip = null): void
+    public function request(string $phone, ?string $ip = null, OtpPurpose $purpose = OtpPurpose::Login, array $context = []): void
     {
         $latest = OtpCode::where('phone', $phone)->latest('id')->first();
         if ($latest && $latest->created_at->diffInSeconds(now()) < self::RESEND_AFTER) {
@@ -51,7 +51,7 @@ class OtpService
             ]);
         });
 
-        $this->sender->send($phone, $code);
+        $this->sender->send($phone, $code, $purpose, $context);
     }
 
     /**
@@ -61,19 +61,9 @@ class OtpService
     public function verify(string $phone, string $code): ?User
     {
         return DB::transaction(function () use ($phone, $code) {
-            $otp = OtpCode::where('phone', $phone)->usable()->latest('id')->lockForUpdate()->first();
-
-            if (! $otp || $otp->attempts >= self::MAX_ATTEMPTS) {
+            if (! $this->consume($phone, $code)) {
                 return null;
             }
-
-            $otp->increment('attempts');
-
-            if (! Hash::check($code, $otp->code_hash)) {
-                return null;
-            }
-
-            $otp->forceFill(['consumed_at' => now()])->save();
 
             $user = User::firstOrCreate(['phone' => $phone], ['status' => UserStatus::Active]);
             if ($user->wasRecentlyCreated) {
@@ -85,6 +75,31 @@ class OtpService
             }
 
             return $user;
+        });
+    }
+
+    /**
+     * True when $code is the newest unexpired code for $phone; uses it up.
+     * Wrong guesses count towards MAX_ATTEMPTS. Does not sign anyone in.
+     */
+    public function consume(string $phone, string $code): bool
+    {
+        return DB::transaction(function () use ($phone, $code) {
+            $otp = OtpCode::where('phone', $phone)->usable()->latest('id')->lockForUpdate()->first();
+
+            if (! $otp || $otp->attempts >= self::MAX_ATTEMPTS) {
+                return false;
+            }
+
+            $otp->increment('attempts');
+
+            if (! Hash::check($code, $otp->code_hash)) {
+                return false;
+            }
+
+            $otp->forceFill(['consumed_at' => now()])->save();
+
+            return true;
         });
     }
 

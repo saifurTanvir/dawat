@@ -52,6 +52,32 @@ class KitchenModerationActions
                     $record->suspend(auth()->user(), $data['reason']);
                     Notification::make()->title('সাময়িক বন্ধ করা হয়েছে')->send();
                 }),
+
+            // F5: a cook asked to let buyers reach another number and chose admin approval.
+            Action::make('approveContact')
+                ->label('নম্বর অনুমোদন')
+                ->icon('heroicon-o-phone')
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading('যোগাযোগের নম্বর অনুমোদন')
+                ->modalDescription(fn (Kitchen $record) => "{$record->pending_contact_name} ({$record->pending_contact_phone}) — "
+                    .'এই নম্বরে ফোন করে নিশ্চিত হয়েছেন তো যে তিনি রাজি?')
+                ->visible(fn (Kitchen $record) => $record->pending_contact_method === 'admin')
+                ->action(function (Kitchen $record) {
+                    $record->confirmPendingContact('admin');
+                    Notification::make()->title('নম্বর অনুমোদন দেওয়া হয়েছে')->success()->send();
+                }),
+
+            Action::make('rejectContact')
+                ->label('নম্বর বাতিল')
+                ->icon('heroicon-o-x-mark')
+                ->color('gray')
+                ->requiresConfirmation()
+                ->visible(fn (Kitchen $record) => $record->hasPendingContact())
+                ->action(function (Kitchen $record) {
+                    $record->clearPendingContact();
+                    Notification::make()->title('নম্বরের অনুরোধ বাতিল')->send();
+                }),
         ];
     }
 }

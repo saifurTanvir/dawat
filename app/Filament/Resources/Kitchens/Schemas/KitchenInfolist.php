@@ -39,6 +39,12 @@ class KitchenInfolist
                         IconEntry::make('allow_comment')->label('কমেন্ট')->boolean(),
                         TextEntry::make('contact_phone')->label('যোগাযোগের নম্বর')->placeholder('গৃহিণীর নিজের নম্বর'),
                         TextEntry::make('contact_name')->label('যোগাযোগের নাম')->placeholder('—'),
+                        TextEntry::make('contact_verified_via')->label('যেভাবে যাচাই')
+                            ->formatStateUsing(fn ($state) => $state === 'otp' ? 'OTP কোড' : 'অ্যাডমিন')
+                            ->placeholder('—'),
+                        TextEntry::make('pending_contact_phone')->label('অপেক্ষমাণ নতুন নম্বর')
+                            ->formatStateUsing(fn ($state, $record) => "{$record->pending_contact_name}: {$state}")
+                            ->placeholder('—'),
                     ]),
             ]);
     }

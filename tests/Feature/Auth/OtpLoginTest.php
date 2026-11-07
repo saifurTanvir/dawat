@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\OtpCode;
 use App\Models\User;
+use App\Services\Otp\OtpPurpose;
 use App\Services\Otp\OtpSender;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
@@ -24,7 +25,7 @@ class OtpLoginTest extends TestCase
         {
             public function __construct(private array &$sent) {}
 
-            public function send(string $phone, string $code): void
+            public function send(string $phone, string $code, OtpPurpose $purpose = OtpPurpose::Login, array $context = []): void
             {
                 $this->sent[$phone] = $code;
             }

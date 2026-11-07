@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\Auth\OtpController;
 use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\FeedController;
+use App\Http\Controllers\Api\V1\KitchenContactController;
 use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\My\MyPostController;
@@ -54,6 +55,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/kitchen', [KitchenController::class, 'store'])->name('kitchen.store');
         // F4–F5: location, area and contact preferences
         Route::patch('/kitchen', [KitchenController::class, 'update'])->name('kitchen.update');
+        // F5: another contact number, confirmed by OTP or by an admin
+        Route::post('/kitchen/contact', [KitchenContactController::class, 'store'])->middleware(['throttle:otp', 'throttle:otp-send'])->name('kitchen.contact.store');
+        Route::post('/kitchen/contact/verify', [KitchenContactController::class, 'verify'])->middleware('throttle:otp')->name('kitchen.contact.verify');
+        Route::delete('/kitchen/contact', [KitchenContactController::class, 'destroy'])->name('kitchen.contact.destroy');
 
         // F6–F9: publish a post
         Route::post('/posts', [PostController::class, 'store'])->name('posts.store');

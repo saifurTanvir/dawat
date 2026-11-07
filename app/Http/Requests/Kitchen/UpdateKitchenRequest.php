@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Kitchen;
 
 use App\Support\Geo\Bangladesh;
-use App\Support\PhoneNumber;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,13 +11,6 @@ class UpdateKitchenRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()?->kitchen !== null;
-    }
-
-    protected function prepareForValidation(): void
-    {
-        if ($this->filled('contact_phone')) {
-            $this->merge(['contact_phone' => PhoneNumber::normalize($this->input('contact_phone')) ?? $this->input('contact_phone')]);
-        }
     }
 
     public function rules(): array
@@ -31,8 +23,9 @@ class UpdateKitchenRequest extends FormRequest
             'allow_call' => ['sometimes', 'boolean'],
             'allow_message' => ['sometimes', 'boolean'],
             'allow_comment' => ['sometimes', 'boolean'],
-            'contact_phone' => ['sometimes', 'nullable', 'string', 'regex:'.PhoneNumber::PATTERN],
-            'contact_name' => ['nullable', 'string', 'max:60', 'required_with:contact_phone'],
+            // Another number must be confirmed first: POST /kitchen/contact.
+            'contact_phone' => ['prohibited'],
+            'contact_name' => ['prohibited'],
             'lng' => ['nullable', 'required_with:lat', 'numeric', 'between:'.Bangladesh::MIN_LNG.','.Bangladesh::MAX_LNG],
         ];
     }
@@ -63,8 +56,8 @@ class UpdateKitchenRequest extends FormRequest
             'lng.between' => 'লোকেশনটি বাংলাদেশের ভেতরে নয়। ম্যাপে আবার পিন দিন।',
             'lat.required_with' => 'ম্যাপে বাসার জায়গায় পিন দিন।',
             'lng.required_with' => 'ম্যাপে বাসার জায়গায় পিন দিন।',
-            'contact_phone.regex' => 'সঠিক মোবাইল নম্বর দিন, যেমন 017XXXXXXXX।',
-            'contact_name.required_with' => 'এই নম্বরটা কার, সেই নাম দিন (যেমন শাহিদারের নাম)।',
+            'contact_phone.prohibited' => 'অন্য নম্বর যাচাই করে যোগ করতে হয়।',
+            'contact_name.prohibited' => 'অন্য নম্বর যাচাই করে যোগ করতে হয়।',
         ];
     }
 

@@ -31,6 +31,13 @@ class OwnKitchenResource extends JsonResource
             'allow_comment' => $this->allow_comment,
             'contact_phone' => $this->contact_phone,
             'contact_name' => $this->contact_name,
+            'contact_verified_via' => $this->contact_verified_via,
+            'pending_contact' => $this->hasPendingContact() ? [
+                'phone' => $this->pending_contact_phone,
+                'name' => $this->pending_contact_name,
+                'method' => $this->pending_contact_method,
+                'requested_at' => $this->pending_contact_requested_at?->toIso8601String(),
+            ] : null,
         ];
     }
 }

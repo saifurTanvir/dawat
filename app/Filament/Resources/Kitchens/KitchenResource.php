@@ -36,7 +36,10 @@ class KitchenResource extends Resource
     /** Pending kitchens waiting for a decision, shown as a badge in the menu. */
     public static function getNavigationBadge(): ?string
     {
-        $pending = Kitchen::where('status', KitchenStatus::Pending)->count();
+        // New kitchens and contact numbers waiting for an admin.
+        $pending = Kitchen::where('status', KitchenStatus::Pending)
+            ->orWhere('pending_contact_method', 'admin')
+            ->count();
 
         return $pending > 0 ? (string) $pending : null;
     }
