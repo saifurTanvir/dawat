@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 #[Fillable([
     'user_id', 'display_name', 'area_id', 'location', 'status',
-    'allow_call', 'allow_message', 'allow_comment', 'contact_phone', 'contact_name',
+    'allow_call', 'allow_message', 'allow_comment', 'contact_phone', 'contact_name', 'max_regular_customers',
 ])]
 #[Hidden(['location', 'public_location'])]
 class Kitchen extends Model
@@ -35,6 +35,7 @@ class Kitchen extends Model
             'allow_message' => 'boolean',
             'allow_comment' => 'boolean',
             'rating_avg' => 'decimal:2',
+            'max_regular_customers' => 'integer',
             'contact_verified_at' => 'datetime',
             'pending_contact_requested_at' => 'datetime',
         ];
@@ -74,6 +75,20 @@ class Kitchen extends Model
     public function contactEvents(): HasManyThrough
     {
         return $this->hasManyThrough(ContactEvent::class, Post::class);
+    }
+
+    /** F25: regular customers paired with this cook (open pairings). */
+    public function pairings(): HasMany
+    {
+        return $this->hasMany(Pairing::class)->whereNull('ended_at');
+    }
+
+    /** How many more regular customers this cook can take. */
+    public function freeRegularSlots(): int
+    {
+        $taken = $this->pairings_count ?? $this->pairings()->count();
+
+        return max(0, $this->max_regular_customers - $taken);
     }
 
     public function isApproved(): bool

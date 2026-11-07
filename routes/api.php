@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\My\MyPostController;
 use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\PostShowController;
 use App\Http\Controllers\Api\V1\QrController;
+use App\Http\Controllers\Api\V1\RegularController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\TagController;
 use Illuminate\Support\Facades\Route;
@@ -74,6 +75,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/my/posts', [MyPostController::class, 'index'])->name('my.posts.index');
         Route::patch('/my/posts/{post}', [MyPostController::class, 'update'])->name('my.posts.update');
         Route::post('/my/posts/{post}/sold-out', [MyPostController::class, 'soldOut'])->name('my.posts.sold-out');
+
+        // F25: regular home food (customer side)
+        Route::get('/regular', [RegularController::class, 'show'])->name('regular.show');
+        Route::put('/regular', [RegularController::class, 'save'])->middleware('throttle:comments')->name('regular.save');
 
         // F17: comments and reports
         Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->middleware('throttle:comments')->name('posts.comments.store');

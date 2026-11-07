@@ -48,6 +48,12 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        path: '/regular',
+        name: 'regular',
+        component: () => import('./pages/RegularPage.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
         path: '/:pathMatch(.*)*',
         name: 'not-found',
         component: () => import('./pages/NotFoundPage.vue'),

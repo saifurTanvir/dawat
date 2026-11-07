@@ -93,6 +93,11 @@
         </template>
 
         <aside class="mt-12 border-t border-rule pt-6">
+            <p class="font-semibold">প্রতিদিন ঘরের খাবার চান?</p>
+            <p class="mt-1 text-muted">পাড়ার একজন গৃহিণী রোজ রান্না করবেন, শাহিদার বাসায় পৌঁছে দেবেন।</p>
+            <RouterLink to="/regular" class="btn-quiet -ml-4 mt-1">নিয়মিত খাবারের অনুরোধ করুন</RouterLink>
+        </aside>
+        <aside class="mt-6 border-t border-rule pt-6">
             <p class="font-semibold">বাসায় রান্না করেন?</p>
             <p class="mt-1 text-muted">পরিবারের রান্না থেকে এক-দুই প্লেট পাড়ার মানুষের কাছে বিক্রি করুন।</p>
             <RouterLink to="/cook" class="btn-quiet -ml-4 mt-1">দাওয়াতে রাঁধুনি হিসেবে যোগ দিন</RouterLink>

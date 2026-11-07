@@ -44,6 +44,12 @@ class User extends Authenticatable implements FilamentUser, HasName
         return $this->hasOne(Kitchen::class);
     }
 
+    /** F25: set when this person is a regular customer. */
+    public function customer(): HasOne
+    {
+        return $this->hasOne(Customer::class);
+    }
+
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
