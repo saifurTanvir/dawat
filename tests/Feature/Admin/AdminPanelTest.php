@@ -126,4 +126,13 @@ class AdminPanelTest extends TestCase
         $this->assertSame(ReportStatus::Resolved, $report->fresh()->status);
         $this->assertSame($this->admin->id, $report->fresh()->resolved_by);
     }
+
+    public function test_admin_shows_dhaka_time(): void
+    {
+        $this->travelTo(now()->setTimezone('UTC')->setTime(5, 0));
+        $post = Post::factory()->create(['available_until' => now()->setTimezone('UTC')->setTime(8, 0)]);
+
+        // 08:00 UTC is 2 PM in Dhaka.
+        $this->actingAs($this->admin)->get("/admin/posts/{$post->id}")->assertSee('14:00');
+    }
 }

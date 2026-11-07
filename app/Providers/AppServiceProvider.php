@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\User;
 use App\Services\Otp\LogOtpSender;
 use App\Services\Otp\OtpSender;
+use Filament\Support\Facades\FilamentTimezone;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -26,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Store UTC, show Dhaka time in the admin panel.
+        FilamentTimezone::set(config('app.display_timezone'));
+
         // Per-IP cap on OTP endpoints, on top of the per-phone limits in OtpService.
         RateLimiter::for('otp', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
 

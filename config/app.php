@@ -67,6 +67,9 @@ return [
 
     'timezone' => 'UTC',
 
+    // Times are stored in UTC and shown to people in Dhaka time.
+    'display_timezone' => env('APP_DISPLAY_TIMEZONE', 'Asia/Dhaka'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
