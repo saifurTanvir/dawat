@@ -103,7 +103,8 @@ function err(key) {
 onMounted(async () => {
     try {
         const { data } = await api.get('/orders');
-        address.value = data.last_address ?? '';
+        // Never overwrite what the buyer has already started typing.
+        if (!address.value) address.value = data.last_address ?? '';
         if (!data.can_order) error.value = 'বারবার খাবার না নেওয়ায় "নিতে চাই" কিছুদিনের জন্য বন্ধ। দাওয়াত টিমের সাথে যোগাযোগ করুন।';
     } catch {
         // Prefill only.
