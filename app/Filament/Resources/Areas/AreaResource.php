@@ -16,6 +16,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use UnitEnum;
 
@@ -75,10 +76,12 @@ class AreaResource extends Resource
             ])
             ->recordActions([
                 EditAction::make()
+                    // The POINT itself can't go into a Livewire form; edit it as two numbers.
                     ->mutateRecordDataUsing(fn (array $data, Area $record) => [
-                        ...$data,
+                        ...Arr::except($data, ['center']),
                         'center_lat' => $record->center?->lat,
                         'center_lng' => $record->center?->lng,
+                        'delivery_fee_taka' => intdiv((int) $record->delivery_fee_paisa, 100),
                     ])
                     ->mutateDataUsing(fn (array $data) => self::withCenter($data)),
             ]);

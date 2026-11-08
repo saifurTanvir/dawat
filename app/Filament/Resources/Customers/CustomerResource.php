@@ -241,14 +241,14 @@ class CustomerResource extends Resource
                 TextEntry::make('note')->label('খাবার নিয়ে')->placeholder('—'),
             ]),
             Section::make('বিরতি')->schema([
-                RepeatableEntry::make('upcomingPauses')->label('')->columns(3)->schema([
+                RepeatableEntry::make('upcomingPauses')->hiddenLabel()->columns(3)->schema([
                     TextEntry::make('starts_on')->label('থেকে')->date('j M Y'),
                     TextEntry::make('ends_on')->label('পর্যন্ত')->date('j M Y'),
                     TextEntry::make('reason')->label('কারণ')->placeholder('—'),
                 ])->placeholder('কোনো বিরতি নেই'),
             ])->collapsible(),
             Section::make('জুটির ইতিহাস')->schema([
-                RepeatableEntry::make('pairings')->label('')->columns(4)->schema([
+                RepeatableEntry::make('pairings')->hiddenLabel()->columns(4)->schema([
                     TextEntry::make('kitchen.display_name')->label('রান্নাঘর'),
                     TextEntry::make('shahidar.name')->label('শাহিদার'),
                     TextEntry::make('started_at')->label('শুরু')->dateTime('j M Y'),

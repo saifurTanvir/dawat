@@ -84,5 +84,16 @@ class OrdersAdminTest extends TestCase
             ])->assertHasNoActionErrors();
 
         $this->assertSame(2000, Area::where('slug', 'senpara')->value('delivery_fee_paisa'));
+
+        // Editing an area (its POINT must not reach the Livewire form).
+        $area = Area::where('slug', 'senpara')->first();
+        Livewire::test(ManageAreas::class)
+            ->mountTableAction('edit', $area)
+            ->assertTableActionDataSet(['center_lat' => 23.80, 'delivery_fee_taka' => 20])
+            ->setTableActionData(['delivery_fee_taka' => 30])
+            ->callMountedTableAction()
+            ->assertHasNoTableActionErrors();
+        $this->assertSame(3000, $area->fresh()->delivery_fee_paisa);
+        $this->assertEqualsWithDelta(23.80, $area->fresh()->center->lat, 1e-6);
     }
 }
