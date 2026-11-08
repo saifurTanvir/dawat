@@ -52,4 +52,19 @@ return [
         // F28: Dawat's share of the food price when paying cooks, in percent.
         'commission_percent' => (float) env('ORDER_COMMISSION_PERCENT', 0),
     ],
+
+    /*
+    | F31: public contact and search settings. The phone shows on the public
+    | pages, in Google's structured data and on the Business Profile.
+    */
+    'contact' => [
+        'phone' => env('DAWAT_PHONE', '01685284290'),
+        'facebook_url' => env('DAWAT_FACEBOOK_URL'),
+    ],
+
+    'seo' => [
+        // Search Console "HTML tag" method; not needed when the domain is verified by DNS.
+        'google_verification' => env('GOOGLE_SITE_VERIFICATION'),
+        'region' => 'বাড্ডা, গুলশান, বনানী, মহাখালী, রামপুরা ও বসুন্ধরা',
+    ],
 ];

@@ -60,7 +60,7 @@ class SchemaTest extends TestCase
         $this->seed(DatabaseSeeder::class);
 
         $this->assertSame(13, Tag::count());
-        $this->assertSame(6, Area::count());
-        $this->assertNotNull(Area::where('slug', 'mirpur-10')->first()->center);
+        $this->assertSame(12, Area::count());
+        $this->assertNotNull(Area::where('slug', 'uttar-badda')->first()->center);
     }
 }

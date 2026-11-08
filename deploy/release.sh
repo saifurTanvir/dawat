@@ -49,6 +49,7 @@ php artisan db:seed --force --no-interaction
 
 log "Caching config, routes, views and events"
 php artisan optimize --no-interaction
+php artisan dawat:robots --no-interaction >/dev/null
 php artisan storage:link --force --no-interaction >/dev/null
 
 log "Switching live traffic to $RELEASE"

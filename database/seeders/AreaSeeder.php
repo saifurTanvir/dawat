@@ -4,29 +4,24 @@ namespace Database\Seeders;
 
 use App\Models\Area;
 use App\Support\Geo\GeoPoint;
+use App\Support\Geo\ServiceAreas;
 use Illuminate\Database\Seeder;
 
 /**
- * Starter areas in Dhaka. Centre points are approximate;
- * correct them from the admin panel before printing QR codes.
+ * Dawat's service areas (the Badda side of Dhaka). Centre points are
+ * approximate; correct them from the admin panel.
  */
 class AreaSeeder extends Seeder
 {
     public function run(): void
     {
-        $areas = [
-            ['mirpur-10', 'মিরপুর ১০', 23.8069, 90.3687],
-            ['mohammadpur', 'মোহাম্মদপুর', 23.7662, 90.3589],
-            ['dhanmondi', 'ধানমন্ডি', 23.7461, 90.3742],
-            ['uttara', 'উত্তরা', 23.8728, 90.3984],
-            ['motijheel', 'মতিঝিল', 23.7330, 90.4172],
-            ['gulshan', 'গুলশান', 23.7806, 90.4167],
-        ];
+        // The same list the F31 migration adds; existing areas keep any admin edits.
+        $areas = ServiceAreas::LIST;
 
-        foreach ($areas as $order => [$slug, $name, $lat, $lng]) {
-            Area::updateOrCreate(
+        foreach ($areas as $order => [$slug, $name, $lat, $lng, $radius]) {
+            Area::firstOrCreate(
                 ['slug' => $slug],
-                ['name' => $name, 'center' => GeoPoint::make($lat, $lng), 'radius_m' => 2000, 'sort_order' => $order],
+                ['name' => $name, 'center' => GeoPoint::make($lat, $lng), 'radius_m' => $radius, 'sort_order' => $order],
             );
         }
     }

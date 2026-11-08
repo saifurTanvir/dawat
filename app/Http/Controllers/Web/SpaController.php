@@ -4,50 +4,81 @@ namespace App\Http\Controllers\Web;
 
 use App\Enums\PostStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\Post;
+use App\Support\Seo;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Str;
-use Illuminate\View\View;
 
 /**
  * Serves the Vue app. For /p/{id} it adds Open Graph tags, so a link sent on
- * WhatsApp or Facebook previews with the share card (F19).
+ * WhatsApp or Facebook previews with the share card (F19). F31: the home page
+ * carries readable text and schema.org data, private screens are noindex,
+ * and paths the app does not know answer 404.
  */
 class SpaController extends Controller
 {
-    public function __invoke(): View
+    /** Screens behind a login or a QR code: useful to people, not to search. */
+    private const PRIVATE = ['login', 'cook', 'cook/setup', 'cook/new', 'cook/posts', 'regular', 'orders', 'shahidar'];
+
+    public function __invoke(Request $request): Response
     {
-        return view('spa', ['meta' => $this->defaults()]);
+        $path = trim($request->path(), '/');
+
+        if ($path === '') {
+            $areas = Seo::areas();
+
+            return response()->view('spa', [
+                'meta' => Seo::meta(
+                    'দাওয়াত — ঢাকায় পাড়ার ঘরের খাবার, দুপুরের লাঞ্চ | Dawat',
+                    Seo::of(config('dawat.seo.region')).' গৃহিণীদের ঘরে রান্না খাবার। আজকের দুপুর-রাতের রান্না দেখুন, অ্যাপেই অর্ডার করুন, বা অফিসে প্রতিদিনের লাঞ্চ নিন। Homemade food in Dhaka.',
+                    '/',
+                ),
+                'jsonLd' => Seo::jsonLd(Seo::siteGraph()),
+                'intro' => true,
+                'areas' => $areas,
+            ]);
+        }
+
+        if (in_array($path, self::PRIVATE, true) || preg_match('#^(q|s)/[^/]+$#', $path)) {
+            return response()->view('spa', ['meta' => $this->defaults('noindex,nofollow')]);
+        }
+
+        // Vue shows its "not found" screen; search engines get a real 404.
+        return response()->view('spa', ['meta' => $this->defaults('noindex,follow')], 404);
     }
 
-    public function post(string $id): View
+    public function post(string $id): Response
     {
         $post = ctype_digit($id) ? Post::with(['kitchen', 'area', 'images'])->find($id) : null;
 
         if (! $post || $post->status === PostStatus::Hidden || ! $post->kitchen->isApproved()) {
-            return view('spa', ['meta' => $this->defaults()]);
+            return response()->view('spa', ['meta' => $this->defaults('noindex,follow')], 404);
         }
 
-        $price = '৳'.strtr((string) round($post->price_paisa / 100), ['0' => '০', '1' => '১', '2' => '২', '3' => '৩', '4' => '৪', '5' => '৫', '6' => '৬', '7' => '৭', '8' => '৮', '9' => '৯']);
+        $price = '৳'.Order::banglaDigits((string) round($post->price_paisa / 100));
+        // A post lives for one meal; afterwards it stays reachable but leaves the index.
+        $live = Post::visibleNow()->whereKey($post->id)->exists();
 
-        return view('spa', ['meta' => [
-            'title' => "{$post->title} · {$price} — {$post->kitchen->display_name}",
-            'description' => Str::limit(collect([
-                $post->area ? "{$post->area->name}-এ ঘরের রান্না" : 'ঘরের রান্না',
+        return response()->view('spa', ['meta' => Seo::meta(
+            "{$post->title} · {$price} — {$post->kitchen->display_name}",
+            Str::limit(collect([
+                $post->area ? Seo::in($post->area->name).' ঘরের রান্না' : 'ঘরের রান্না',
                 $post->note,
             ])->filter()->implode('। '), 180),
-            'image' => $post->shareImageUrl() ?? $post->images->first()?->url(),
-            'url' => url('/p/'.$post->id),
-        ]]);
+            '/p/'.$post->id,
+            $live ? 'index,follow' : 'noindex,follow',
+            $post->shareImageUrl() ?? $post->images->first()?->url(),
+        )]);
     }
 
     /** @return array<string, string|null> */
-    private function defaults(): array
+    private function defaults(string $robots): array
     {
         return [
-            'title' => config('app.name').' — পাড়ার ঘরের খাবার',
-            'description' => 'আশেপাশের গৃহিণীদের আজকের রান্না, কাছেরটা আগে।',
-            'image' => asset('icons/icon-512.png'),
-            'url' => url()->current(),
+            ...Seo::meta(Seo::SITE_NAME.' — পাড়ার ঘরের খাবার', 'আশেপাশের গৃহিণীদের আজকের রান্না, কাছেরটা আগে।', null, $robots),
+            'canonical' => null,
         ];
     }
 }

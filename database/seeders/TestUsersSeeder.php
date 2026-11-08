@@ -28,7 +28,7 @@ class TestUsersSeeder extends Seeder
         }
 
         $this->call(DatabaseSeeder::class);
-        $area = Area::where('slug', 'mirpur-10')->firstOrFail();
+        $area = Area::where('slug', 'uttar-badda')->firstOrFail();
 
         $admin = $this->user('01900000000', 'অ্যাডমিন', Roles::ADMIN, 'admin@dawat.test');
 

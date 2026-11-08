@@ -126,9 +126,10 @@ class ShareCardTest extends TestCase
         $post = Post::factory()->create(['status' => PostStatus::Hidden, 'title' => 'গোপন খাবার']);
         $this->withoutVite();
 
-        $this->get("/p/{$post->id}")->assertOk()->assertDontSee('গোপন খাবার');
-        $this->get('/p/999999')->assertOk()->assertSee('পাড়ার ঘরের খাবার');
-        $this->get('/p/abc')->assertOk();
+        // F31: still the app shell (Vue shows "not found"), but a real 404 for search engines.
+        $this->get("/p/{$post->id}")->assertNotFound()->assertDontSee('গোপন খাবার');
+        $this->get('/p/999999')->assertNotFound()->assertSee('পাড়ার ঘরের খাবার');
+        $this->get('/p/abc')->assertNotFound();
     }
 
     /**

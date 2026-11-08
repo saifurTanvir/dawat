@@ -15,6 +15,7 @@ class KitchenSetupTest extends TestCase
 
     public function test_areas_are_public_and_sorted_by_distance_when_asked(): void
     {
+        Area::query()->delete(); // the F31 migration's service areas
         $mirpur = Area::factory()->create(['name' => 'মিরপুর', 'center' => GeoPoint::make(23.8069, 90.3687)]);
         $motijheel = Area::factory()->create(['name' => 'মতিঝিল', 'center' => GeoPoint::make(23.7330, 90.4172)]);
         Area::factory()->create(['is_active' => false]);

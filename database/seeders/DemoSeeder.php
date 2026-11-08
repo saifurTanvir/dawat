@@ -31,7 +31,7 @@ class DemoSeeder extends Seeder
         }
 
         $this->call(DatabaseSeeder::class);
-        $area = Area::where('slug', 'mirpur-10')->firstOrFail();
+        $area = Area::where('slug', 'uttar-badda')->firstOrFail();
         $tags = Tag::pluck('id', 'slug');
 
         $cooks = [
