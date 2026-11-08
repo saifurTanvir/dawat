@@ -47,12 +47,13 @@ class OrderResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['customer.user', 'kitchen', 'shahidar']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['customer.user', 'buyer', 'kitchen', 'shahidar']))
             ->defaultSort('seq', 'desc')
             ->columns([
                 TextColumn::make('seq')->label('বক্স')->state(fn (Order $record) => $record->code())->weight('semibold'),
                 TextColumn::make('meal_slot')->label('বেলা'),
-                TextColumn::make('customer.user.name')->label('গ্রাহক')->searchable(),
+                TextColumn::make('recipient')->label('গ্রাহক')->state(fn (Order $record) => $record->recipient()->name ?: $record->recipient()->phone)
+                    ->description(fn (Order $record) => $record->isOneOff() ? ($record->isSelfPickup() ? 'একবারের · নিজে নেবেন' : 'একবারের') : null),
                 TextColumn::make('kitchen.display_name')->label('গৃহিণী'),
                 TextColumn::make('shahidar.name')->label('শাহিদার'),
                 TextColumn::make('plates')->label('প্লেট'),
@@ -75,6 +76,7 @@ class OrderResource extends Resource
                     ->indicateUsing(fn (array $data) => ($data['date'] ?? null) ? 'তারিখ: '.Carbon::parse($data['date'])->format('j M Y') : null),
                 SelectFilter::make('status')->label('অবস্থা')->options(OrderStatus::class),
                 SelectFilter::make('meal_slot')->label('বেলা')->options(MealSlot::class),
+                SelectFilter::make('kind')->label('ধরন')->options(['regular' => 'নিয়মিত', 'oneoff' => 'একবারের (নিতে চাই)']),
                 Filter::make('unverified')->label('যাচাই বাকি (কোড/স্ক্যান ছাড়া)')
                     ->query(fn (Builder $query) => $query->where('confirm_method', 'shahidar_tap')),
                 SelectFilter::make('shahidar_id')->label('শাহিদার')
@@ -82,11 +84,22 @@ class OrderResource extends Resource
                 SelectFilter::make('kitchen_id')->label('গৃহিণী')->relationship('kitchen', 'display_name'),
             ])
             ->recordActions([
+                Action::make('accept')
+                    ->label('গ্রাহক নেবেন')
+                    ->icon(Heroicon::OutlinedCheck)
+                    ->color('success')
+                    ->visible(fn (Order $record) => $record->status === OrderStatus::Asking)
+                    ->requiresConfirmation()
+                    ->modalDescription('আজকের বেশি দামে গ্রাহক রাজি হয়েছেন। বুক করে ডেলিভারি কোড SMS-এ পাঠানো হবে।')
+                    ->action(function (Order $record) {
+                        app(BookingPlanner::class)->accept($record);
+                        Notification::make()->title('বুক হয়েছে')->success()->send();
+                    }),
                 Action::make('cancel')
                     ->label('আজ বাদ')
                     ->icon(Heroicon::OutlinedXMark)
                     ->color('warning')
-                    ->visible(fn (Order $record) => $record->status === OrderStatus::Booked)
+                    ->visible(fn (Order $record) => in_array($record->status, [OrderStatus::Booked, OrderStatus::Asking], true))
                     ->schema([TextInput::make('reason')->label('কারণ')->required()->maxLength(200)->default('গ্রাহক ফোনে জানিয়েছেন')])
                     ->action(function (Order $record, array $data) {
                         app(BookingPlanner::class)->cancel($record, 'admin', $data['reason']);

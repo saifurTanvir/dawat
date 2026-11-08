@@ -27,7 +27,7 @@ class StickerController extends Controller
         }
 
         $role = match (true) {
-            $user && $order->customer->user_id === $user->id => 'customer',
+            $user && $order->recipient()->id === $user->id => 'customer',
             $user && $order->shahidar_id === $user->id => 'shahidar',
             default => 'other',
         };
@@ -55,7 +55,7 @@ class StickerController extends Controller
     public function received(Request $request, string $code, Delivery $delivery): JsonResponse
     {
         $order = $this->find($code)?->order;
-        abort_unless($order && $order->customer->user_id === $request->user()->id, 404);
+        abort_unless($order && $order->recipient()->id === $request->user()->id, 404);
 
         $delivery->receivedByCustomer($order, $request->user());
 
@@ -66,6 +66,6 @@ class StickerController extends Controller
     {
         $code = Sticker::normalize($code);
 
-        return $code ? Sticker::with(['order.customer', 'order.kitchen'])->where('code', $code)->first() : null;
+        return $code ? Sticker::with(['order.customer.user', 'order.buyer', 'order.kitchen'])->where('code', $code)->first() : null;
     }
 }

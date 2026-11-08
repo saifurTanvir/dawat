@@ -33,6 +33,7 @@ class KitchenForm
                         Toggle::make('allow_call')->label('কল করা যাবে'),
                         Toggle::make('allow_message')->label('মেসেজ করা যাবে'),
                         Toggle::make('allow_comment')->label('কমেন্ট করা যাবে'),
+                        Toggle::make('allow_order')->label('"নিতে চাই" দিয়ে অর্ডার করা যাবে'),
                         TextInput::make('contact_phone')
                             ->label('যোগাযোগের নম্বর (খালি রাখলে গৃহিণীর নিজের নম্বর)')
                             ->tel()

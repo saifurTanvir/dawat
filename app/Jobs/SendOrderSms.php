@@ -18,23 +18,29 @@ class SendOrderSms implements ShouldQueue
 
     public array $backoff = [30, 120];
 
-    public function __construct(public int $orderId, public OtpPurpose $purpose, public string $code = '') {}
+    /** @param  string  $to  recipient (customer/buyer) or cook */
+    public function __construct(public int $orderId, public OtpPurpose $purpose, public string $code = '', public string $to = 'recipient') {}
 
     public function handle(OtpSender $sender): void
     {
-        $order = Order::with(['customer.user', 'kitchen'])->find($this->orderId);
+        $order = Order::with(['customer.user', 'buyer', 'kitchen.user'])->find($this->orderId);
         if (! $order) {
             return;
         }
 
         try {
-            $sender->send($order->customer->user->phone, $this->code, $this->purpose, [
+            $phone = $this->to === 'cook' ? $order->kitchen->user->phone : $order->recipient()->phone;
+            $sender->send($phone, $this->code, $this->purpose, [
                 'slot' => $order->meal_slot->label(),
                 'title' => $order->title ?? '',
                 'plates' => Order::banglaDigits($order->plates),
                 'total' => Order::banglaDigits(intdiv($order->totalPaisa(), 100)),
                 'box' => $order->code(),
                 'kitchen' => $order->kitchen->display_name,
+                'price' => Order::banglaDigits(intdiv($order->food_paisa, max(1, $order->plates) * 100)),
+                'limit' => Order::banglaDigits(intdiv((int) $order->customer?->max_price_paisa, 100)),
+                'receive' => $order->isSelfPickup() ? 'ক্রেতা নিজে নেবেন, তাঁকে ফোন করে জায়গা বলুন।' : 'শাহিদার নিতে আসবেন।',
+                'minutes' => Order::banglaDigits((int) config('dawat.orders.ask_minutes', 45)),
             ]);
         } catch (OtpDeliveryFailedException $e) {
             // Logged by the sender; retry a couple of times, then give up quietly.

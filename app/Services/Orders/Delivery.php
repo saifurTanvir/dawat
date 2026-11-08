@@ -85,6 +85,15 @@ class Delivery
             $this->expect($order, OrderStatus::PickedUp, 'শুধু পিকআপ হওয়া বক্সই "পৌঁছানো যায়নি" হতে পারে।');
             $order->forceFill(['status' => OrderStatus::Failed, 'failure_reason' => $reason, 'confirmed_by' => $shahidar->id])->save();
 
+            // F29: two no-shows in 30 days pause "নিতে চাই" for that buyer.
+            if ($order->isOneOff()) {
+                $misses = Order::where('buyer_id', $order->buyer_id)->where('status', OrderStatus::Failed)
+                    ->where('created_at', '>=', now()->subDays(30))->count();
+                if ($misses >= 2) {
+                    $order->buyer->forceFill(['order_blocked_until' => now()->addDays(30)])->save();
+                }
+            }
+
             return $order;
         });
     }

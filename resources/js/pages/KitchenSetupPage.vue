@@ -83,9 +83,10 @@ const hasLocation = ref(false);
 const locating = ref(false);
 const locateError = ref('');
 const kitchen = ref(null);
-const contact = ref({ allow_call: false, allow_message: true, allow_comment: true });
+const contact = ref({ allow_order: true, allow_call: false, allow_message: true, allow_comment: true });
 
 const contactOptions = [
+    { key: 'allow_order', label: '"নিতে চাই" বাটন', help: 'ক্রেতা অ্যাপেই প্লেট বুক করবেন। শাহিদার পৌঁছে দেবেন, বা ক্রেতা নিজে নেবেন।' },
     { key: 'allow_message', label: 'হোয়াটসঅ্যাপে মেসেজ', help: 'ক্রেতা আগে থেকে লেখা একটা মেসেজ পাঠাবেন।' },
     { key: 'allow_comment', label: 'পোস্টে কমেন্ট', help: 'সবাই দেখতে পাবেন। নম্বর দেখা যায় না।' },
     { key: 'allow_call', label: 'ফোন কল', help: 'ক্রেতা সরাসরি কল করবেন। নম্বর তাঁর ফোনে থেকে যাবে।' },
@@ -109,7 +110,7 @@ onMounted(async () => {
         // The server never sends saved coordinates back; the cook re-pins only to move house.
         hasLocation.value = loaded.data.has_location;
         const k = loaded.data;
-        contact.value = { allow_call: k.allow_call, allow_message: k.allow_message, allow_comment: k.allow_comment };
+        contact.value = { allow_order: k.allow_order, allow_call: k.allow_call, allow_message: k.allow_message, allow_comment: k.allow_comment };
         kitchen.value = k;
     } catch (e) {
         error.value = errorMessage(e);

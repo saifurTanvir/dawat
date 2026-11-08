@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Api\V1\My;
 use App\Enums\MealSlot;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
+use App\Jobs\SendOrderSms;
 use App\Models\Order;
 use App\Models\Pairing;
 use App\Services\Orders\BookingPlanner;
+use App\Services\Otp\OtpPurpose;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * F26: the cook's regular customers today, per meal. Customers appear by first
@@ -29,7 +32,7 @@ class MyBookingController extends Controller
 
         $orders = Order::where('kitchen_id', $kitchen->id)
             ->whereDate('service_date', BookingPlanner::today())
-            ->with('customer.user')
+            ->with(['customer.user', 'buyer'])
             ->get()
             ->groupBy(fn (Order $o) => $o->meal_slot->value);
 
@@ -45,10 +48,21 @@ class MyBookingController extends Controller
                 'label' => $slot->label(),
                 // Still to be booked: they get plates from the next post for this meal.
                 'waiting_plates' => (int) $waiting->sum(fn (Pairing $p) => $p->customer->plates),
+                // F30: the lowest price limit among them; above it they are asked first.
+                'price_limit_paisa' => $waiting->map(fn (Pairing $p) => $p->customer->max_price_paisa)->filter()->min(),
+                'limited_customers' => $waiting->filter(fn (Pairing $p) => $p->customer->max_price_paisa !== null)->count(),
                 'waiting' => $waiting->map(fn (Pairing $p) => ['name' => self::firstName($p->customer->user->name), 'plates' => $p->customer->plates])->values(),
                 'orders' => $done->map(fn (Order $o) => [
+                    'id' => $o->id,
                     'code' => $o->code(),
-                    'name' => self::firstName($o->customer->user->name),
+                    'name' => self::firstName($o->recipient()->name),
+                    // F29: one-off feed orders; for self pickup the cook calls the buyer.
+                    'kind' => $o->kind,
+                    'receive' => $o->receive,
+                    'phone' => $o->isSelfPickup() && $o->status === OrderStatus::Booked ? $o->recipient()->phone : null,
+                    'total_paisa' => $o->totalPaisa(),
+                    'can_decline' => $o->isOneOff() && $o->status === OrderStatus::Booked && $o->created_at->gt(now()->subMinutes(self::DECLINE_MINUTES)),
+                    'can_hand' => $o->isSelfPickup() && $o->status === OrderStatus::Booked,
                     'plates' => $o->plates,
                     'status' => $o->status->value,
                     'status_label' => $o->status === OrderStatus::Cancelled && $o->cancelled_by === 'cook' ? 'আজ রান্না নেই' : $o->status->label(),
@@ -63,6 +77,48 @@ class MyBookingController extends Controller
                 'slots' => $slots,
             ],
         ]);
+    }
+
+    public const DECLINE_MINUTES = 10;
+
+    /** POST /api/v1/my/orders/{order}/decline — F29: can't give this one-off order. */
+    public function decline(Request $request, Order $order): JsonResponse
+    {
+        $this->own($request, $order);
+        abort_unless($order->isOneOff(), 404);
+        if ($order->created_at->lte(now()->subMinutes(self::DECLINE_MINUTES))) {
+            throw ValidationException::withMessages(['order' => '১০ মিনিট পেরিয়ে গেছে। দিতে না পারলে দাওয়াত টিম বা শাহিদারকে জানান।']);
+        }
+
+        $this->planner->cancel($order, 'cook', 'গৃহিণী দিতে পারছেন না');
+        if (config('dawat.orders.sms')) {
+            SendOrderSms::dispatch($order->id, OtpPurpose::OrderDeclined);
+        }
+
+        return response()->json(['message' => 'বাতিল হয়েছে, ক্রেতাকে জানানো হচ্ছে।']);
+    }
+
+    /** POST /api/v1/my/orders/{order}/handed — F29: the buyer collected it and paid the cook. */
+    public function handed(Request $request, Order $order): JsonResponse
+    {
+        $this->own($request, $order);
+        abort_unless($order->isSelfPickup(), 404);
+        if ($order->status !== OrderStatus::Booked) {
+            throw ValidationException::withMessages(['order' => 'এই অর্ডার আগেই শেষ বা বাতিল হয়েছে।']);
+        }
+
+        $order->forceFill([
+            'status' => OrderStatus::Delivered, 'picked_at' => now(), 'delivered_at' => now(),
+            'confirm_method' => 'cook_tap', 'confirmed_by' => $request->user()->id,
+            'paid_at' => now(), 'collected_by' => $request->user()->id,
+        ])->save();
+
+        return response()->json(['message' => 'দেওয়া হয়েছে, লিখে রাখা হলো।']);
+    }
+
+    private function own(Request $request, Order $order): void
+    {
+        abort_unless($order->kitchen_id === $request->user()->kitchen?->id, 404);
     }
 
     /** POST /api/v1/my/bookings/off — "আজ রান্না নেই" for one meal. */

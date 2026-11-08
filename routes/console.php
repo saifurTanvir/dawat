@@ -14,3 +14,6 @@ Schedule::command('model:prune', ['--model' => [OtpCode::class]])->daily();
 
 // F11: close posts whose time is up.
 Schedule::command('posts:expire')->everyFiveMinutes()->withoutOverlapping();
+
+// F30: boxes held for a price answer that never came go back to the feed.
+Schedule::command('orders:expire-asks')->everyMinute()->withoutOverlapping();

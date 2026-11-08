@@ -36,6 +36,7 @@ class User extends Authenticatable implements FilamentUser, HasName
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatus::class,
+            'order_blocked_until' => 'datetime',
         ];
     }
 
@@ -61,9 +62,21 @@ class User extends Authenticatable implements FilamentUser, HasName
         return $this->belongsToMany(Area::class, 'area_shahidar')->withTimestamps();
     }
 
+    /** Boxes this shahidar carries. */
+    public function shahidarOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'shahidar_id');
+    }
+
     public function isShahidar(): bool
     {
         return $this->hasRole(Roles::SHAHIDAR);
+    }
+
+    /** F29: may use "নিতে চাই" (not blocked, no recent run of no-shows). */
+    public function canOrder(): bool
+    {
+        return ! $this->isBlocked() && ($this->order_blocked_until === null || $this->order_blocked_until->isPast());
     }
 
     public function isBlocked(): bool

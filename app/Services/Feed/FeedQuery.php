@@ -48,7 +48,8 @@ class FeedQuery
             ->with([
                 'images',
                 'tags',
-                'kitchen:id,user_id,display_name,allow_call,allow_message,allow_comment',
+                'kitchen:id,user_id,area_id,display_name,allow_call,allow_message,allow_comment,allow_order',
+                'kitchen.area:id,delivery_fee_paisa',
             ])
             ->withCount(['comments as comments_count' => fn (Builder $c) => $c->where('status', 'visible')])
             ->orderBy('distance_m')

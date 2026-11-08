@@ -77,6 +77,9 @@ class CustomerResource extends Resource
                 ->helperText('বাসা, রোড, ফ্ল্যাট, চেনার মতো কিছু। শুধু অ্যাডমিন আর এই গ্রাহকের শাহিদার দেখবেন।'),
             CheckboxList::make('meal_slots')->label('কোন বেলা')->options(MealSlot::options())->required()->columns(4),
             TextInput::make('plates')->label('প্রতি বেলায় কয় প্লেট')->numeric()->minValue(1)->maxValue(10)->default(1)->required(),
+            TextInput::make('max_price_taka')->label('প্রতি প্লেট সর্বোচ্চ দাম (৳)')->numeric()->minValue(20)->maxValue(2000)
+                ->helperText('এর বেশি দাম হলে নিজে থেকে বুক না হয়ে গ্রাহককে জিজ্ঞেস করা হবে। খালি = সীমা নেই।')
+                ->afterStateHydrated(fn ($component, ?Customer $record) => $component->state($record?->max_price_paisa ? intdiv($record->max_price_paisa, 100) : null)),
             CheckboxList::make('weekdays')->label('কোন দিন')
                 ->options(array_combine(Customer::ALL_WEEKDAYS, Customer::WEEKDAY_LABELS))
                 ->default(Customer::ALL_WEEKDAYS)->required()->columns(7),
@@ -116,6 +119,7 @@ class CustomerResource extends Resource
             'note' => filled($data['note'] ?? null) ? trim($data['note']) : null,
             'meal_slots' => array_values($data['meal_slots']),
             'plates' => (int) $data['plates'],
+            'max_price_paisa' => filled($data['max_price_taka'] ?? null) ? (int) $data['max_price_taka'] * 100 : null,
             'weekdays' => array_map('intval', array_values($data['weekdays'])),
         ];
     }

@@ -23,6 +23,8 @@ class UpdateKitchenRequest extends FormRequest
             'allow_call' => ['sometimes', 'boolean'],
             'allow_message' => ['sometimes', 'boolean'],
             'allow_comment' => ['sometimes', 'boolean'],
+            // F29: "নিতে চাই" button on posts
+            'allow_order' => ['sometimes', 'boolean'],
             // Another number must be confirmed first: POST /kitchen/contact.
             'contact_phone' => ['prohibited'],
             'contact_name' => ['prohibited'],
@@ -39,6 +41,7 @@ class UpdateKitchenRequest extends FormRequest
                     'allow_call' => $this->boolean('allow_call', $kitchen->allow_call),
                     'allow_message' => $this->boolean('allow_message', $kitchen->allow_message),
                     'allow_comment' => $this->boolean('allow_comment', $kitchen->allow_comment),
+                    'allow_order' => $this->boolean('allow_order', $kitchen->allow_order),
                 ];
                 if (! in_array(true, $merged, true)) {
                     $validator->errors()->add('allow_comment', 'অন্তত একটা উপায় চালু রাখুন, নইলে ক্রেতা যোগাযোগ করতে পারবেন না।');

@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /** A regular customer (F25) with a standing booking (F26). */
-#[Fillable(['user_id', 'area_id', 'address', 'note', 'status', 'meal_slots', 'plates', 'weekdays', 'source'])]
+#[Fillable(['user_id', 'area_id', 'address', 'note', 'status', 'meal_slots', 'plates', 'max_price_paisa', 'weekdays', 'source'])]
 class Customer extends Model
 {
     /** @use HasFactory<CustomerFactory> */
@@ -32,6 +32,7 @@ class Customer extends Model
             'meal_slots' => 'array',
             'weekdays' => 'array',
             'plates' => 'integer',
+            'max_price_paisa' => 'integer',
         ];
     }
 
@@ -98,6 +99,8 @@ class Customer extends Model
 
         $plates = Order::banglaDigits($this->plates);
 
-        return "{$slots} · {$plates} প্লেট · {$dayText}";
+        $limit = $this->max_price_paisa ? ' · প্লেট সর্বোচ্চ ৳'.Order::banglaDigits(intdiv($this->max_price_paisa, 100)) : '';
+
+        return "{$slots} · {$plates} প্লেট · {$dayText}{$limit}";
     }
 }

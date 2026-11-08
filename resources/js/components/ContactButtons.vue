@@ -1,10 +1,12 @@
 <template>
     <div>
+        <!-- F29: book in the app -->
+        <button v-if="canOrder" type="button" class="btn-primary mb-2" @click="startOrder">নিতে চাই</button>
         <div class="flex gap-2">
             <button
                 v-if="post.contact.message"
                 type="button"
-                class="btn-primary flex-1"
+                :class="canOrder ? 'inline-flex min-h-12 flex-1 items-center justify-center rounded-xl border-2 border-leaf px-4 font-semibold text-leaf hover:bg-leaf-soft' : 'btn-primary flex-1'"
                 :disabled="busy !== null"
                 @click="contact('message')"
             >
@@ -35,11 +37,15 @@
             </button>
         </div>
         <p v-if="error" class="error-text" role="alert">{{ error }}</p>
+        <OrderSheet v-if="ordering" :post="post" @close="ordering = false" @ordered="onOrdered" />
     </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import OrderSheet from '@/components/OrderSheet.vue';
+import { useAuthStore } from '@/stores/auth';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
 import { useFeedStore } from '@/stores/feed';
@@ -48,6 +54,8 @@ const props = defineProps({
     post: { type: Object, required: true },
     /** The post page shows comments below; the feed links to them. */
     showComments: { type: Boolean, default: true },
+    /** Open the order sheet at once (after signing in to order). */
+    openOrder: { type: Boolean, default: false },
 });
 const emit = defineEmits(['gone']);
 
@@ -55,6 +63,29 @@ const feed = useFeedStore();
 const busy = ref(null);
 const error = ref('');
 const copied = ref(false);
+const auth = useAuthStore();
+const router = useRouter();
+const ordering = ref(false);
+
+const canOrder = computed(() => props.post.order?.enabled && !props.post.is_mine && props.post.plates_left > 0);
+
+function startOrder() {
+    if (!auth.isSignedIn) {
+        router.push({ name: 'login', query: { next: `/p/${props.post.id}?order=1` } });
+        return;
+    }
+    ordering.value = true;
+}
+
+function onOrdered(plates) {
+    // Show the new count straight away; the feed reloads it later anyway.
+    // eslint-disable-next-line vue/no-mutating-props
+    props.post.plates_left = Math.max(0, props.post.plates_left - plates);
+}
+
+onMounted(() => {
+    if (props.openOrder && canOrder.value && auth.isSignedIn) ordering.value = true;
+});
 
 async function request(type) {
     const { data } = await api.post(`/posts/${props.post.id}/contact`, { type, qr: feed.qr?.code ?? null });

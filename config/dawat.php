@@ -47,6 +47,8 @@ return [
     'orders' => [
         'sms' => (bool) env('ORDER_SMS_ENABLED', true),
         'max_pause_days' => 60,
+        // F30: minutes a customer has to answer when the price is above their limit.
+        'ask_minutes' => (int) env('ORDER_ASK_MINUTES', 45),
         // F28: Dawat's share of the food price when paying cooks, in percent.
         'commission_percent' => (float) env('ORDER_COMMISSION_PERCENT', 0),
     ],

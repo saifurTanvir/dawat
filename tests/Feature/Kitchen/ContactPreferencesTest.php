@@ -35,8 +35,13 @@ class ContactPreferencesTest extends TestCase
         $kitchen = Kitchen::factory()->create();
 
         $this->actingAs($kitchen->user, 'sanctum')
-            ->patchJson('/api/v1/kitchen', ['allow_call' => false, 'allow_message' => false, 'allow_comment' => false])
+            ->patchJson('/api/v1/kitchen', ['allow_call' => false, 'allow_message' => false, 'allow_comment' => false, 'allow_order' => false])
             ->assertJsonValidationErrors(['allow_comment']);
+
+        // F29: "নিতে চাই" alone is enough for buyers to reach the cook.
+        $this->actingAs($kitchen->user, 'sanctum')
+            ->patchJson('/api/v1/kitchen', ['allow_call' => false, 'allow_message' => false, 'allow_comment' => false, 'allow_order' => true])
+            ->assertOk();
 
         // Turning off one while another stays on is fine.
         $this->actingAs($kitchen->user, 'sanctum')
