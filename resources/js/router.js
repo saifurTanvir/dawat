@@ -8,6 +8,12 @@ const routes = [
         component: () => import('./pages/FeedPage.vue'),
     },
     {
+        // F36: install the PWA; this link is what gets sent on WhatsApp.
+        path: '/app',
+        name: 'install',
+        component: () => import('./pages/InstallPage.vue'),
+    },
+    {
         path: '/q/:code',
         name: 'qr',
         component: () => import('./pages/QrPage.vue'),

@@ -33,6 +33,7 @@ export default defineConfig({
                 short_name: 'দাওয়াত',
                 description: 'আশেপাশের গৃহিণীদের আজকের রান্না, কাছেরটা আগে।',
                 lang: 'bn',
+                id: '/',
                 start_url: '/',
                 scope: '/',
                 display: 'standalone',

@@ -41,6 +41,14 @@ class SpaController extends Controller
             ]);
         }
 
+        if ($path === 'app') {
+            return response()->view('spa', ['meta' => Seo::meta(
+                'দাওয়াত অ্যাপ ইনস্টল করুন — পাড়ার ঘরের খাবার',
+                'দাওয়াত অ্যাপ ফোনের হোম স্ক্রিনে রাখুন। Play Store লাগে না, এক চাপে খুলবে।',
+                '/app',
+            )]);
+        }
+
         if (in_array($path, self::PRIVATE, true) || preg_match('#^(q|s)/[^/]+$#', $path)) {
             return response()->view('spa', ['meta' => $this->defaults('noindex,nofollow')]);
         }

@@ -109,6 +109,18 @@
             </p>
         </template>
 
+        <!-- F36: offer the app once the browser says it can be installed. -->
+        <div v-if="showInstallCard" class="mt-10 flex items-center gap-3 rounded-[var(--radius-plate)] bg-leaf-soft p-4">
+            <img src="/icons/icon-192.png" alt="" width="48" height="48" class="size-12 rounded-xl" />
+            <div class="flex-1">
+                <p class="font-semibold">দাওয়াত অ্যাপ ফোনে রাখুন</p>
+                <p class="text-sm text-muted">হোম স্ক্রিন থেকে এক চাপে খুলবে।</p>
+            </div>
+            <button v-if="install.canPrompt" type="button" class="btn-primary w-auto px-4" @click="promptInstall">ইনস্টল</button>
+            <RouterLink v-else to="/app" class="btn-primary w-auto px-4">কীভাবে</RouterLink>
+            <button type="button" class="-mr-2 grid size-10 place-items-center text-muted" aria-label="আর দেখাবেন না" @click="hideInstallCard">✕</button>
+        </div>
+
         <aside class="mt-12 border-t border-rule pt-6">
             <p class="font-semibold">প্রতিদিন ঘরের খাবার চান?</p>
             <p class="mt-1 text-muted">পাড়ার একজন গৃহিণী রোজ রান্না করবেন, শাহিদার বাসায় পৌঁছে দেবেন।</p>
@@ -131,6 +143,7 @@
                 </ul>
             </template>
             <ul class="mt-5 flex flex-wrap gap-x-4 gap-y-1">
+                <li v-if="!install.standalone"><RouterLink to="/app" class="text-leaf underline-offset-2 hover:underline">📲 অ্যাপ ইনস্টল করুন</RouterLink></li>
                 <li><a href="/lunch" class="text-leaf underline-offset-2 hover:underline">প্রতিদিনের লাঞ্চ</a></li>
                 <li><a href="/rannaghor" class="text-leaf underline-offset-2 hover:underline">গৃহিণীদের জন্য</a></li>
                 <li><a href="/about" class="text-leaf underline-offset-2 hover:underline">দাওয়াত সম্পর্কে</a></li>
@@ -155,6 +168,7 @@ import WhereAmI from '@/components/WhereAmI.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn, placeOf } from '@/lib/bn';
 import { CONTACT } from '@/lib/contact';
+import { install, promptInstall } from '@/lib/pwa';
 import { agoText, clockText, distanceText } from '@/lib/format';
 import { currentPosition, useFeedStore } from '@/stores/feed';
 
@@ -190,6 +204,22 @@ const areaName = ref('');
 const nearArea = ref('');
 const radiusM = ref(3000);
 const areaCenter = ref(null);
+const installCardHidden = ref((() => {
+    try {
+        return localStorage.getItem('dawat.installCardHidden') === '1';
+    } catch {
+        return false;
+    }
+})());
+const showInstallCard = computed(() => !install.standalone && !install.installed && !installCardHidden.value && (install.canPrompt || install.platform === 'ios'));
+function hideInstallCard() {
+    installCardHidden.value = true;
+    try {
+        localStorage.setItem('dawat.installCardHidden', '1');
+    } catch {
+        // Private mode: it just shows again next time.
+    }
+}
 const whereCenter = computed(() => (feed.mode === 'location' ? feed.position : areaCenter.value));
 
 const placeLabel = computed(() => {

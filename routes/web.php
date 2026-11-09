@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\SeoController;
 use App\Http\Controllers\Web\SpaController;
+use App\Support\QrImage;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,6 +17,12 @@ Route::get('/area/{slug}', [SeoController::class, 'area'])->where('slug', '[a-z0
 Route::get('/lunch', [SeoController::class, 'lunch'])->name('seo.lunch');
 Route::get('/rannaghor', [SeoController::class, 'rannaghor'])->name('seo.rannaghor');
 Route::get('/about', [SeoController::class, 'about'])->name('seo.about');
+
+// F36: QR for the install page, to scan from another phone.
+Route::get('/app/qr.svg', fn () => response(QrImage::svg(url('/app')), 200, [
+    'Content-Type' => 'image/svg+xml',
+    'Cache-Control' => 'public, max-age=86400',
+]))->name('app.qr');
 
 // Shared post links get Open Graph tags so chat apps show the share card.
 Route::get('/p/{id}', [SpaController::class, 'post'])->name('spa.post');
