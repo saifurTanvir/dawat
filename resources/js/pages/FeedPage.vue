@@ -1,5 +1,14 @@
 <template>
     <section aria-labelledby="feed-title" class="pt-2">
+        <!-- F34: the full Dawat logo greets everyone on the home page. -->
+        <img
+            src="/brand/lockup.png"
+            alt="দাওয়াত — পাড়ার ঘরের খাবার। পুরো পরিবার এক টেবিলে, পাশের বাসার রান্না"
+            width="800"
+            height="761"
+            class="mx-auto mb-4 w-56"
+        />
+
         <!-- Where we are looking from -->
         <div class="flex items-end justify-between gap-3">
             <div>

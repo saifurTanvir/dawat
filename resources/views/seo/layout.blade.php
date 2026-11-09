@@ -13,8 +13,9 @@
     <div class="mx-auto flex min-h-dvh max-w-lg flex-col">
         <header class="flex items-center justify-between gap-3 px-4 pt-5 pb-3">
             <a href="{{ url('/') }}" class="flex items-center gap-2" aria-label="দাওয়াত — হোম">
-                <img src="/brand/wordmark.png" alt="দাওয়াত" width="112" height="36" class="h-9 w-auto">
-                <span class="hidden text-sm whitespace-nowrap text-muted min-[430px]:inline">পাড়ার ঘরের খাবার</span>
+                <img src="/brand/mark.png" alt="" width="63" height="32" class="h-8 w-auto">
+                <img src="/brand/wordmark.png" alt="দাওয়াত" width="100" height="32" class="h-8 w-auto">
+                <span class="hidden text-sm whitespace-nowrap text-muted min-[480px]:inline">পাড়ার ঘরের খাবার</span>
             </a>
             <a href="{{ url('/') }}" class="btn-quiet -mr-4 min-h-10 whitespace-nowrap">আজকের খাবার</a>
         </header>
