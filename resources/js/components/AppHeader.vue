@@ -1,17 +1,18 @@
 <template>
-    <header class="flex items-center justify-between gap-3 px-4 pt-5 pb-3">
-        <RouterLink to="/" class="flex items-center gap-2" aria-label="দাওয়াত — হোম">
-            <img src="/brand/mark.png" alt="" width="63" height="32" class="h-8 w-auto self-center" />
-            <img src="/brand/wordmark.png" alt="দাওয়াত" width="100" height="32" class="h-8 w-auto self-center" />
+    <header class="flex items-center justify-between gap-2 px-4 pt-5 pb-3">
+        <!-- Logo never shrinks; on narrow phones with an extra link the table picture steps aside. -->
+        <RouterLink to="/" class="flex min-w-0 shrink-0 items-center gap-2" aria-label="দাওয়াত — হোম">
+            <img src="/brand/mark.png" alt="" width="63" height="32" class="h-8 w-auto shrink-0 self-center" :class="middleLink ? 'max-[419px]:hidden' : 'max-[339px]:hidden'" />
+            <img src="/brand/wordmark.png" alt="দাওয়াত" width="100" height="32" class="h-8 w-auto shrink-0 self-center" />
             <span v-if="!middleLink" class="hidden text-sm text-muted min-[440px]:inline">পাড়ার ঘরের খাবার</span>
         </RouterLink>
 
-        <RouterLink v-if="middleLink === 'orders'" to="/orders" class="btn-quiet ml-auto min-h-10 w-auto whitespace-nowrap px-2">আমার খাবার</RouterLink>
-        <RouterLink v-if="middleLink === 'shahidar'" to="/shahidar" class="btn-quiet ml-auto min-h-10 w-auto whitespace-nowrap px-2"><span class="max-[359px]:hidden">আজকের&nbsp;</span>তালিকা</RouterLink>
+        <RouterLink v-if="middleLink === 'orders'" to="/orders" class="btn-quiet ml-auto min-h-10 w-auto shrink-0 whitespace-nowrap px-2">আমার খাবার</RouterLink>
+        <RouterLink v-if="middleLink === 'shahidar'" to="/shahidar" class="btn-quiet ml-auto min-h-10 w-auto shrink-0 whitespace-nowrap px-2"><span class="max-[419px]:hidden">আজকের&nbsp;</span>তালিকা</RouterLink>
         <RouterLink v-if="!auth.isSignedIn && route.name !== 'login'" to="/login" class="btn-quiet -mr-4 min-h-10">
             ঢুকুন
         </RouterLink>
-        <button v-else-if="auth.isSignedIn" type="button" class="btn-quiet -mr-4 min-h-10 w-auto whitespace-nowrap" @click="logout">
+        <button v-else-if="auth.isSignedIn" type="button" class="btn-quiet -mr-4 min-h-10 w-auto shrink-0 whitespace-nowrap" @click="logout">
             বের হন
         </button>
     </header>
