@@ -1,7 +1,7 @@
 <template>
     <header class="flex items-center justify-between gap-3 px-4 pt-5 pb-3">
-        <RouterLink to="/" class="flex items-baseline gap-2" aria-label="দাওয়াত — হোম">
-            <span class="font-serif text-3xl leading-none font-bold text-leaf">দাওয়াত</span>
+        <RouterLink to="/" class="flex items-center gap-2" aria-label="দাওয়াত — হোম">
+            <img src="/brand/wordmark.png" alt="দাওয়াত" width="112" height="36" class="h-9 w-auto self-center" />
             <span v-if="!middleLink" class="hidden text-sm text-muted min-[360px]:inline">পাড়ার ঘরের খাবার</span>
         </RouterLink>
 

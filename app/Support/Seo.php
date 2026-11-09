@@ -22,7 +22,7 @@ final class Seo
         return [
             'title' => $title,
             'description' => $description,
-            'image' => $image ?? asset('icons/icon-512.png'),
+            'image' => $image ?? asset('brand/og.jpg'),
             'url' => $url,
             'canonical' => $url,
             'robots' => $robots,
