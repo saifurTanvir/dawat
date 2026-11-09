@@ -117,8 +117,13 @@
                 <li><a href="/lunch" class="text-leaf underline-offset-2 hover:underline">প্রতিদিনের লাঞ্চ</a></li>
                 <li><a href="/rannaghor" class="text-leaf underline-offset-2 hover:underline">গৃহিণীদের জন্য</a></li>
                 <li><a href="/about" class="text-leaf underline-offset-2 hover:underline">দাওয়াত সম্পর্কে</a></li>
-                <li><a href="https://www.facebook.com/groups/dawat.cloud/" class="text-leaf underline-offset-2 hover:underline" rel="noopener">ফেসবুক গ্রুপ</a></li>
+                <li><a :href="CONTACT.facebook" class="text-leaf underline-offset-2 hover:underline" rel="noopener">ফেসবুক গ্রুপ</a></li>
             </ul>
+            <!-- F33: the same contact as the join popup, for anyone who closed it. -->
+            <p class="mt-5">
+                যোগ দিতে বা জানতে: <a :href="`tel:${CONTACT.phoneIntl}`" class="font-semibold text-ink">{{ bn(CONTACT.phone) }}</a>
+                · <a :href="CONTACT.whatsapp" target="_blank" rel="noopener" class="text-leaf underline-offset-2 hover:underline">হোয়াটসঅ্যাপ</a>
+            </p>
         </footer>
     </section>
 </template>
@@ -131,6 +136,7 @@ import ContactButtons from '@/components/ContactButtons.vue';
 import PostCard from '@/components/PostCard.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn, placeOf } from '@/lib/bn';
+import { CONTACT } from '@/lib/contact';
 import { agoText, clockText, distanceText } from '@/lib/format';
 import { currentPosition, useFeedStore } from '@/stores/feed';
 

@@ -14,6 +14,7 @@
     </ul>
     <p class="mt-5">
         যোগাযোগ: <a href="tel:{{ \App\Support\Seo::phoneIntl() }}" class="font-semibold text-ink">{{ \App\Support\Seo::phoneBangla() }}</a>
+        · <a href="https://wa.me/{{ ltrim(\App\Support\Seo::phoneIntl(), '+') }}" class="text-leaf underline-offset-2 hover:underline" rel="noopener">হোয়াটসঅ্যাপ</a>
         @if (config('dawat.contact.facebook_url'))
             · <a href="{{ config('dawat.contact.facebook_url') }}" class="text-leaf underline-offset-2 hover:underline" rel="noopener">ফেসবুক গ্রুপ</a>
         @endif
