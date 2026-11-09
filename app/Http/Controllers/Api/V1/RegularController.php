@@ -6,9 +6,11 @@ use App\Enums\CustomerStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Regular\SaveRegularRequest;
 use App\Http\Resources\RegularResource;
+use App\Models\Bill;
 use App\Models\Customer;
 use App\Models\CustomerPause;
 use App\Models\Order;
+use App\Services\Orders\Billing;
 use App\Services\Orders\BookingPlanner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,6 +29,31 @@ class RegularController extends Controller
         }
 
         return RegularResource::make($customer->load(self::WITH));
+    }
+
+    /** GET /api/v1/regular/bills — F39: what is owed and the bills. */
+    public function bills(Request $request, Billing $billing): JsonResponse
+    {
+        $customer = Customer::where('user_id', $request->user()->id)->firstOrFail();
+        $unbilled = $billing->unbilled($customer);
+
+        return response()->json(['data' => [
+            'billing' => $customer->billing,
+            'billing_label' => Customer::BILLING_LABELS[$customer->billing] ?? '',
+            'unbilled_paisa' => $billing->unbilledTotal($customer),
+            'unbilled_boxes' => $unbilled->count(),
+            'bills' => $customer->bills()->where('status', '!=', 'void')->limit(12)->get()->map(fn (Bill $b) => [
+                'number' => $b->number,
+                'period_from' => $b->period_from->toDateString(),
+                'period_to' => $b->period_to->toDateString(),
+                'total_paisa' => $b->total_paisa,
+                'paid_paisa' => $b->paid_paisa,
+                'due_paisa' => $b->duePaisa(),
+                'status' => $b->status,
+                'status_label' => $b->statusLabel(),
+                'url' => $b->publicUrl(),
+            ]),
+        ]]);
     }
 
     private const WITH = ['user', 'area', 'pairing.kitchen', 'pairing.shahidar', 'todayOrders', 'upcomingPauses'];

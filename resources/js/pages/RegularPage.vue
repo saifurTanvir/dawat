@@ -169,6 +169,24 @@
         </form>
 
         <p v-if="notice" class="mt-4 rounded-xl bg-leaf-soft p-3" role="status">{{ notice }}</p>
+
+        <!-- F39: what is owed, and the weekly/monthly bills -->
+        <section v-if="bills && (bills.unbilled_paisa || bills.bills.length)" class="mt-6 rounded-[var(--radius-plate)] bg-plate p-5" aria-labelledby="bills-title">
+            <h2 id="bills-title" class="text-lg font-semibold">বিল ও বাকি</h2>
+            <p class="text-sm text-muted">টাকা দেওয়ার নিয়ম: {{ bills.billing_label }}</p>
+            <p v-if="bills.unbilled_paisa" class="mt-2">
+                এখনো বিল হয়নি: <strong>{{ taka(bills.unbilled_paisa) }}</strong> ({{ bn(bills.unbilled_boxes) }}টা বক্স)
+            </p>
+            <ul class="mt-3 divide-y divide-rule">
+                <li v-for="b in bills.bills" :key="b.number" class="flex items-center justify-between gap-3 py-2">
+                    <span>
+                        <span class="font-semibold">{{ b.number }}</span>
+                        <span class="block text-sm text-muted">মোট {{ taka(b.total_paisa) }}<template v-if="b.due_paisa"> · বাকি <strong class="text-chili">{{ taka(b.due_paisa) }}</strong></template> · {{ b.status_label }}</span>
+                    </span>
+                    <a :href="b.url" class="shrink-0 font-semibold text-leaf">দেখুন</a>
+                </li>
+            </ul>
+        </section>
     </section>
 </template>
 
@@ -287,12 +305,23 @@ onMounted(async () => {
         areas.value = a.data;
         booking.value = r.data;
         fill(r.data);
+        if (r.data) loadBills();
     } catch (e) {
         error.value = errorMessage(e);
     } finally {
         loading.value = false;
     }
 });
+
+const bills = ref(null);
+async function loadBills() {
+    try {
+        const { data } = await api.get('/regular/bills');
+        bills.value = data.data;
+    } catch {
+        bills.value = null;
+    }
+}
 
 async function save() {
     busy.value = true;

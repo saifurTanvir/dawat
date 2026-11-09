@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Kitchen;
 use App\Models\Settlement;
 use App\Models\User;
+use App\Services\Orders\Billing;
 use App\Services\Orders\Settlements;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -39,6 +40,7 @@ class Money extends Page
             'shahidars' => $money->shahidarCash(),
             'cooks' => $money->cooksDue(),
             'owing' => $money->customersOwing(),
+            'dues' => app(Billing::class)->dues()->filter(fn (array $r) => $r['customer']->paysByBill() || $r['billed_due'] > 0)->values(),
             'recent' => Settlement::with(['kitchen', 'shahidar'])->latest('id')->limit(15)->get(),
             'commission' => (float) config('dawat.orders.commission_percent', 0),
         ];

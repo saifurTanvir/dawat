@@ -114,6 +114,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         // F25: regular home food (customer side)
         Route::get('/regular', [RegularController::class, 'show'])->name('regular.show');
+        Route::get('/regular/bills', [RegularController::class, 'bills'])->name('regular.bills');
         Route::put('/regular', [RegularController::class, 'save'])->middleware('throttle:comments')->name('regular.save');
         // F26: skip today's box, days off
         Route::post('/regular/orders/{order}/skip', [RegularController::class, 'skip'])->name('regular.orders.skip');

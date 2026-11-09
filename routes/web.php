@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Web\BillController;
 use App\Http\Controllers\Web\SeoController;
 use App\Http\Controllers\Web\SpaController;
 use App\Support\QrImage;
@@ -23,6 +24,9 @@ Route::get('/app/qr.svg', fn () => response(QrImage::svg(url('/app')), 200, [
     'Content-Type' => 'image/svg+xml',
     'Cache-Control' => 'public, max-age=86400',
 ]))->name('app.qr');
+
+// F39: a customer's bill, from a link.
+Route::get('/bill/{token}', [BillController::class, 'show'])->where('token', '[A-Za-z0-9]{40}')->name('bill.show');
 
 // Shared post links get Open Graph tags so chat apps show the share card.
 Route::get('/p/{id}', [SpaController::class, 'post'])->name('spa.post');

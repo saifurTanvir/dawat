@@ -101,7 +101,12 @@
                         <p class="font-semibold">বক্স {{ o.code }} · {{ o.customer.name }}<span v-if="o.kind === 'oneoff'" class="ml-1 rounded-full bg-turmeric-soft px-2 text-xs font-normal">একবারের</span></p>
                         <p class="text-sm text-muted">{{ o.customer.address }}</p>
                         <p v-if="o.customer.note" class="text-sm">{{ o.customer.note }}</p>
-                        <p class="mt-1 text-sm">{{ bn(o.plates) }} প্লেট · নেবেন <strong>{{ taka(o.total_paisa) }}</strong><template v-if="o.sticker"> · স্টিকার {{ o.sticker }}</template></p>
+                        <p class="mt-1 text-sm">
+                            {{ bn(o.plates) }} প্লেট ·
+                            <template v-if="o.pays_by_bill"><strong>বিলে যোগ হবে — টাকা নেবেন না</strong></template>
+                            <template v-else>নেবেন <strong>{{ taka(o.total_paisa) }}</strong></template>
+                            <template v-if="o.sticker"> · স্টিকার {{ o.sticker }}</template>
+                        </p>
                     </div>
                     <a :href="`tel:${o.customer.phone}`" class="shrink-0 font-semibold text-leaf">ফোন</a>
                 </div>
@@ -112,7 +117,7 @@
                         <input :id="`code-${o.id}`" v-model="code" class="field flex-1" inputmode="numeric" maxlength="4" autocomplete="one-time-code" />
                         <button type="submit" class="btn-primary w-auto px-5" :disabled="busy || code.length !== 4">দিয়েছি</button>
                     </div>
-                    <label class="mt-2 flex items-center gap-2 text-sm">
+                    <label v-if="!o.pays_by_bill" class="mt-2 flex items-center gap-2 text-sm">
                         <input v-model="cash" type="checkbox" class="size-5 accent-leaf" />
                         {{ taka(o.total_paisa) }} নগদ পেয়েছি
                     </label>
@@ -131,7 +136,10 @@
                 <ul class="mt-2 divide-y divide-rule rounded-[var(--radius-plate)] bg-plate px-4">
                     <li v-for="o in finished" :key="o.id" class="py-2 text-sm">
                         বক্স {{ o.code }} · {{ o.customer.name }} · {{ o.status_label }}<template v-if="o.cancel_reason"> ({{ o.cancel_reason }})</template>
-                        <template v-if="o.status === 'delivered'">
+                        <template v-if="o.status === 'delivered' && o.pays_by_bill">
+                            <span class="text-muted"> · বিলে যোগ হবে</span>
+                        </template>
+                        <template v-else-if="o.status === 'delivered'">
                             <span v-if="o.paid" class="text-muted"> · টাকা পেয়েছি</span>
                             <button v-else type="button" class="ml-1 font-semibold text-leaf" :disabled="busy" @click="act(o, 'paid')">{{ taka(o.total_paisa) }} পেয়েছি</button>
                         </template>

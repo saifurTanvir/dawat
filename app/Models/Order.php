@@ -30,6 +30,12 @@ class Order extends Model
         ];
     }
 
+    /** F39: the bill this box was charged on. */
+    public function bill(): BelongsTo
+    {
+        return $this->belongsTo(Bill::class);
+    }
+
     public function post(): BelongsTo
     {
         return $this->belongsTo(Post::class);
