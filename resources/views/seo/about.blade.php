@@ -3,7 +3,7 @@
 @section('content')
     <img src="/brand/mark.png" alt="এক টেবিলে পুরো পরিবার, টেবিলে ঘরের রান্না" width="720" height="364" class="mx-auto mt-4 w-full max-w-sm">
     <h1 class="mt-3 font-serif text-3xl font-bold">দাওয়াত — পাড়ার ঘরের খাবার</h1>
-    <p class="mt-1 text-muted">পুরো পরিবার এক টেবিলে, পাশের বাসার রান্না</p>
+    <p class="mt-1 text-muted">ঘর থেকে দূরে, তবু খাবারটা ঘরের</p>
     <p class="mt-3 text-lg leading-relaxed">
         দাওয়াত ঢাকার {{ \App\Support\Seo::of(config('dawat.seo.region')) }} গৃহিণীদের ঘরে রান্না খাবার পাড়ার মানুষের কাছে পৌঁছে দেয়।
         ফিডে আজকের রান্না দেখে অর্ডার করা যায়, আবার অফিসে বা বাসায় প্রতিদিনের লাঞ্চও নেওয়া যায়।
