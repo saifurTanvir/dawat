@@ -101,10 +101,9 @@ class PlaceOrder
                 }
             }
 
-            if (config('dawat.orders.sms')) {
-                SendOrderSms::dispatch($order->id, $receive === 'self' ? OtpPurpose::OneOffSelf : OtpPurpose::OrderBooked, $code)->afterCommit();
-                SendOrderSms::dispatch($order->id, OtpPurpose::CookNewOrder, '', 'cook')->afterCommit();
-            }
+            // F37: always queued: a free push goes out; the SMS only when ORDER_SMS_ENABLED.
+            SendOrderSms::dispatch($order->id, $receive === 'self' ? OtpPurpose::OneOffSelf : OtpPurpose::OrderBooked, $code)->afterCommit();
+            SendOrderSms::dispatch($order->id, OtpPurpose::CookNewOrder, '', 'cook')->afterCommit();
 
             return $order;
         });

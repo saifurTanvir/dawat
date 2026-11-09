@@ -50,6 +50,8 @@ export default defineConfig({
                 globDirectory: 'public',
                 globPatterns: ['build/assets/*.{js,css,woff2}'],
                 navigateFallback: null,
+                // F37: notification handlers live in their own small file.
+                importScripts: ['/push-sw.js'],
                 runtimeCaching: [
                     {
                         urlPattern: ({ url }) => url.pathname.startsWith('/storage/'),

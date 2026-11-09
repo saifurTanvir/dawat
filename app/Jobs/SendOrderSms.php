@@ -6,10 +6,14 @@ use App\Models\Order;
 use App\Services\Otp\OtpDeliveryFailedException;
 use App\Services\Otp\OtpPurpose;
 use App\Services\Otp\OtpSender;
+use App\Services\Push\OrderPushes;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
-/** F26: tells a regular customer about today's box (or that there is none). */
+/**
+ * F26: tells a regular customer about today's box (or that there is none).
+ * F37: also sends free phone notifications; the SMS goes only when ORDER_SMS_ENABLED.
+ */
 class SendOrderSms implements ShouldQueue
 {
     use Queueable;
@@ -25,6 +29,15 @@ class SendOrderSms implements ShouldQueue
     {
         $order = Order::with(['customer.user', 'buyer', 'kitchen.user'])->find($this->orderId);
         if (! $order) {
+            return;
+        }
+
+        // F37: the free phone notification goes first, once (not on SMS retries).
+        if ($this->attempts() === 1) {
+            OrderPushes::send($order, $this->purpose, $this->code, $this->to);
+        }
+
+        if (! config('dawat.orders.sms')) {
             return;
         }
 

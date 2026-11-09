@@ -2,6 +2,7 @@
     <section class="pt-4" aria-labelledby="sh-title">
         <h1 id="sh-title" class="font-serif text-2xl font-bold">আজকের তালিকা</h1>
         <p class="text-muted">{{ dateLabel }}</p>
+        <PushToggle off-title="নতুন বক্স বা দাম জিজ্ঞেস করার কাজ এলে ফোনে জানুন" />
 
         <p v-if="loading" class="mt-6 text-muted">লোড হচ্ছে…</p>
         <p v-else-if="error" class="error-text mt-6" role="alert">{{ error }}</p>
@@ -122,6 +123,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import PushToggle from '@/components/PushToggle.vue';
 import StickerScanner from '@/components/StickerScanner.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';

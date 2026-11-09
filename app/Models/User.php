@@ -40,6 +40,12 @@ class User extends Authenticatable implements FilamentUser, HasName
         ];
     }
 
+    /** F37: devices that get Dawat notifications. */
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
+
     public function kitchen(): HasOne
     {
         return $this->hasOne(Kitchen::class);

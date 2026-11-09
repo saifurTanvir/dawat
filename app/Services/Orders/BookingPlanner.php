@@ -135,9 +135,8 @@ class BookingPlanner
                 'delivery_fee_paisa' => (int) $order->customer->area->delivery_fee_paisa,
             ])->save();
 
-            if (config('dawat.orders.sms')) {
-                SendOrderSms::dispatch($order->id, OtpPurpose::OrderBooked, $code)->afterCommit();
-            }
+            // F37: always queued: a free push goes out; the SMS only when ORDER_SMS_ENABLED.
+            SendOrderSms::dispatch($order->id, OtpPurpose::OrderBooked, $code)->afterCommit();
 
             return $order;
         });
@@ -229,14 +228,13 @@ class BookingPlanner
             }
         }
 
-        if (config('dawat.orders.sms')) {
-            $purpose = match ($status) {
-                OrderStatus::Booked => OtpPurpose::OrderBooked,
-                OrderStatus::Asking => OtpPurpose::PriceAsk,
-                default => OtpPurpose::CookOff,
-            };
-            SendOrderSms::dispatch($order->id, $purpose, $code)->afterCommit();
-        }
+        // F37: always queued: a free push goes out; the SMS only when ORDER_SMS_ENABLED.
+        $purpose = match ($status) {
+            OrderStatus::Booked => OtpPurpose::OrderBooked,
+            OrderStatus::Asking => OtpPurpose::PriceAsk,
+            default => OtpPurpose::CookOff,
+        };
+        SendOrderSms::dispatch($order->id, $purpose, $code)->afterCommit();
 
         return $order;
     }

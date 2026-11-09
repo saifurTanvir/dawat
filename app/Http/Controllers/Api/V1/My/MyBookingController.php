@@ -91,9 +91,8 @@ class MyBookingController extends Controller
         }
 
         $this->planner->cancel($order, 'cook', 'গৃহিণী দিতে পারছেন না');
-        if (config('dawat.orders.sms')) {
-            SendOrderSms::dispatch($order->id, OtpPurpose::OrderDeclined);
-        }
+        // F37: always queued: a free push goes out; the SMS only when ORDER_SMS_ENABLED.
+        SendOrderSms::dispatch($order->id, OtpPurpose::OrderDeclined);
 
         return response()->json(['message' => 'বাতিল হয়েছে, ক্রেতাকে জানানো হচ্ছে।']);
     }

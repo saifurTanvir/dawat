@@ -59,4 +59,10 @@ return [
         'timeout' => (int) env('AI_TIMEOUT', 30),
     ],
 
+    // F37: Web Push (free phone notifications). Keys are written to .env by `dawat:webpush-keys` on deploy.
+    'webpush' => [
+        'public_key' => env('WEBPUSH_PUBLIC_KEY'),
+        'private_key' => env('WEBPUSH_PRIVATE_KEY'),
+        'subject' => env('WEBPUSH_SUBJECT', env('APP_URL', 'https://dawat.cloud')),
+    ],
 ];

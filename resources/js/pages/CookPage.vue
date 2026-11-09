@@ -1,6 +1,7 @@
 <template>
     <section class="pt-4" aria-labelledby="cook-title">
         <h1 id="cook-title" class="font-serif text-2xl font-bold">আমার রান্নাঘর</h1>
+        <PushToggle off-title="নতুন অর্ডার এলে ফোনে জানুন" />
 
         <p v-if="loading" class="mt-6 text-muted">লোড হচ্ছে…</p>
 
@@ -90,6 +91,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import PushToggle from '@/components/PushToggle.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
 import { taka } from '@/lib/format';
