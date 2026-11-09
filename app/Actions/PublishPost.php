@@ -54,6 +54,12 @@ class PublishPost
 
                 $post->tags()->sync($data['tag_ids'] ?? []);
 
+                // F35: a kitchen the admin widened gets the same reach on every new post.
+                $areaIds = $kitchen->reachAreas()->pluck('areas.id')->all();
+                if ($kitchen->reach_m || $areaIds) {
+                    $post->setReach($kitchen->reach_m, $areaIds);
+                }
+
                 // F26: paired regular customers get their plates first.
                 $this->bookings->bookForPost($post);
 

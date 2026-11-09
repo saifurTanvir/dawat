@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Kitchens\Schemas;
 
+use App\Filament\Support\ReachFields;
 use App\Support\PhoneNumber;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -27,6 +28,9 @@ class KitchenForm
                             ->numeric()->minValue(0)->maxValue(50)->required()
                             ->helperText('প্রতিদিন কতজন নিয়মিত গ্রাহককে খাওয়াতে পারবেন।'),
                     ]),
+                Section::make('কোথায় দেখাবে (পরিধি)')
+                    ->description('এই রান্নাঘরের পোস্ট কতদূর পর্যন্ত দেখাবে। বদলালে আজকের চালু পোস্ট আর পরের সব পোস্টে লাগবে।')
+                    ->schema(ReachFields::make(relationship: true)),
                 Section::make('যোগাযোগ')
                     ->description('পোস্টে কোন বাটন দেখাবে, আর ক্রেতা কোন নম্বরে যোগাযোগ করবে।')
                     ->schema([

@@ -6,6 +6,7 @@ use App\Enums\PostStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\FeedPostResource;
 use App\Models\Post;
+use App\Services\Feed\PostViews;
 use App\Support\Geo\Bangladesh;
 use App\Support\Geo\GeoPoint;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class PostShowController extends Controller
      * GET /api/v1/posts/{post}[?lat=&lng=] — one post, e.g. from a shared link.
      * Sold-out or finished posts still open (marked unavailable); hidden ones do not.
      */
-    public function __invoke(Request $request, Post $post): FeedPostResource
+    public function __invoke(Request $request, Post $post, PostViews $views): FeedPostResource
     {
         abort_if($post->status === PostStatus::Hidden || ! $post->kitchen->isApproved(), 404, 'এই পোস্টটি আর দেখা যাচ্ছে না।');
 
@@ -28,9 +29,11 @@ class PostShowController extends Controller
         $post->load(['images', 'tags', 'kitchen.area'])
             ->loadCount(['comments as comments_count' => fn ($c) => $c->where('status', 'visible')]);
 
-        if (isset($near['lat'], $near['lng'])) {
-            $post->distance_m = $post->location->distanceTo(GeoPoint::make($near['lat'], $near['lng']));
+        $origin = isset($near['lat'], $near['lng']) ? GeoPoint::make($near['lat'], $near['lng']) : null;
+        if ($origin) {
+            $post->distance_m = $post->location->distanceTo($origin);
         }
+        $views->record([$post], $request, $origin, 'detail');
 
         return FeedPostResource::make($post)->additional([
             'meta' => ['is_available' => Post::visibleNow()->whereKey($post->id)->exists()],
