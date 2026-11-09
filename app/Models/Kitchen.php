@@ -11,12 +11,13 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 #[Fillable([
     'user_id', 'display_name', 'area_id', 'pickup_address', 'location', 'status',
-    'allow_call', 'allow_message', 'allow_comment', 'allow_order', 'contact_phone', 'contact_name', 'max_regular_customers',
+    'allow_call', 'allow_message', 'allow_comment', 'allow_order', 'contact_phone', 'contact_name', 'max_regular_customers', 'reach_m',
 ])]
 #[Hidden(['location', 'public_location', 'pickup_address'])]
 class Kitchen extends Model
@@ -37,6 +38,7 @@ class Kitchen extends Model
             'allow_order' => 'boolean',
             'rating_avg' => 'decimal:2',
             'max_regular_customers' => 'integer',
+            'reach_m' => 'integer',
             'contact_verified_at' => 'datetime',
             'pending_contact_requested_at' => 'datetime',
         ];
@@ -79,6 +81,12 @@ class Kitchen extends Model
     }
 
     /** F25: regular customers paired with this cook (open pairings). */
+    /** F35: areas where this kitchen's new posts also show. */
+    public function reachAreas(): BelongsToMany
+    {
+        return $this->belongsToMany(Area::class, 'kitchen_reach_areas');
+    }
+
     public function pairings(): HasMany
     {
         return $this->hasMany(Pairing::class)->whereNull('ended_at');

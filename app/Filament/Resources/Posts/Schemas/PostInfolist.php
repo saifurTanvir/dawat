@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Posts\Schemas;
 
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -38,6 +39,13 @@ class PostInfolist
                             ->placeholder('এখনো তৈরি হয়নি')
                             ->columnSpanFull(),
                     ]),
+                Section::make('কোথায় দেখাচ্ছে')
+                    ->description('কোন এলাকার ক্রেতারা এই পোস্ট পাচ্ছেন।')
+                    ->columnSpanFull()
+                    ->schema([ViewEntry::make('reach')->hiddenLabel()->view('filament.posts.reach')]),
+                Section::make('কারা দেখেছে')
+                    ->columnSpanFull()
+                    ->schema([ViewEntry::make('viewers')->hiddenLabel()->view('filament.posts.viewers')]),
             ]);
     }
 }

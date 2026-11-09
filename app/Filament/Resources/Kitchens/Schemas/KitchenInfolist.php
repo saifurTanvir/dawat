@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Kitchens\Schemas;
 
+use App\Services\Feed\PostReach;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -30,6 +31,13 @@ class KitchenInfolist
                         TextEntry::make('rejection_reason')->label('কারণ')->placeholder('—')->columnSpanFull(),
                         TextEntry::make('approver.name')->label('সিদ্ধান্ত দিয়েছেন')->placeholder('—'),
                         TextEntry::make('approved_at')->label('অনুমোদনের সময়')->dateTime()->placeholder('—'),
+                    ]),
+                Section::make('কোথায় দেখাবে (পরিধি)')
+                    ->columns(2)
+                    ->schema([
+                        TextEntry::make('reach_m')->label('পরিধি')
+                            ->state(fn ($record) => $record->reach_m ? PostReach::REACH_OPTIONS[$record->reach_m] ?? PostReach::km($record->reach_m) : 'স্বাভাবিক — ক্রেতা নিজে দূরত্ব বাছেন'),
+                        TextEntry::make('reachAreas.name')->label('আরও যেসব এলাকায় দেখাবে')->badge()->placeholder('—'),
                     ]),
                 Section::make('যোগাযোগ')
                     ->columns(3)

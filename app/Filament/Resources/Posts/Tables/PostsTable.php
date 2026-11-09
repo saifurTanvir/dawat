@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Posts\Tables;
 use App\Enums\MealSlot;
 use App\Enums\PostStatus;
 use App\Filament\Actions\PostModerationActions;
+use App\Services\Feed\PostReach;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
@@ -17,6 +18,7 @@ class PostsTable
     {
         return $table
             ->defaultSort('created_at', 'desc')
+            ->modifyQueryUsing(fn ($query) => $query->withCount('reachAreas'))
             ->columns([
                 TextColumn::make('title')->label('খাবার')->searchable()->weight('semibold')->wrap(),
                 TextColumn::make('kitchen.display_name')->label('রান্নাঘর')->searchable(),
@@ -26,6 +28,10 @@ class PostsTable
                     ->formatStateUsing(fn ($record) => "{$record->plates_left}/{$record->plates_total}"),
                 TextColumn::make('meal_slot')->label('বেলা')->badge()->color('gray'),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
+                TextColumn::make('reach_m')->label('পরিধি')
+                    ->state(fn ($record) => PostReach::summary($record->reach_m, $record->reach_areas_count ?? 0))
+                    ->badge()->color(fn ($record) => $record->boosted ? 'success' : 'gray'),
+                TextColumn::make('views_count')->label('দেখেছে')->counts('views')->sortable(),
                 TextColumn::make('contact_events_count')->label('যোগাযোগ')->counts('contactEvents')->sortable(),
                 TextColumn::make('available_until')->label('পাওয়া যাবে')->dateTime('d M, h:i A')->sortable(),
                 TextColumn::make('created_at')->label('পোস্ট')->since()->sortable(),

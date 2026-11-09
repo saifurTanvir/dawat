@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'kitchen_id', 'area_id', 'title', 'price_paisa', 'plates_total', 'plates_left',
-    'meal_slot', 'note', 'available_until', 'location', 'status', 'published_at',
+    'meal_slot', 'note', 'available_until', 'location', 'status', 'published_at', 'reach_m', 'boosted',
 ])]
 #[Hidden(['location'])]
 class Post extends Model
@@ -39,6 +39,8 @@ class Post extends Model
             'available_until' => 'datetime',
             'published_at' => 'datetime',
             'preorder_for_date' => 'date',
+            'reach_m' => 'integer',
+            'boosted' => 'boolean',
         ];
     }
 
@@ -81,6 +83,25 @@ class Post extends Model
     public function reports(): MorphMany
     {
         return $this->morphMany(Report::class, 'reportable');
+    }
+
+    /** F35: whole areas where this post also shows, besides its own surroundings. */
+    public function reachAreas(): BelongsToMany
+    {
+        return $this->belongsToMany(Area::class, 'post_reach_areas');
+    }
+
+    /** F35: who saw it (one row per viewer per day). */
+    public function views(): HasMany
+    {
+        return $this->hasMany(PostView::class);
+    }
+
+    /** F35: set a wider reach; null and [] mean the normal, buyer-chosen distance. */
+    public function setReach(?int $reachM, array $areaIds): void
+    {
+        $this->reachAreas()->sync($areaIds);
+        $this->forceFill(['reach_m' => $reachM ?: null, 'boosted' => (bool) $reachM || $areaIds !== []])->save();
     }
 
     /** Posts a buyer can see right now. */

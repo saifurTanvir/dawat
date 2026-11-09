@@ -23,6 +23,8 @@ class FeedQuery
         private readonly GeoPoint $origin,
         private readonly FeedRadius $radius = FeedRadius::ThreeKm,
         private readonly ?MealSlot $meal = null,
+        /** F35: active areas the buyer stands in; widened posts aimed there show too. */
+        private readonly ?array $areaIds = null,
     ) {}
 
     public function paginate(int $perPage = self::PER_PAGE): LengthAwarePaginator
@@ -40,8 +42,17 @@ class FeedQuery
             ->visibleNow()
             ->select('posts.*')
             ->selectRaw("ST_Distance_Sphere(posts.location, {$point}) AS distance_m", [$wkt])
-            ->whereRaw("MBRContains(ST_GeomFromText(?, 4326, 'axis-order=long-lat'), posts.location)", [$this->boundingBox($metres)])
-            ->whereRaw("ST_Distance_Sphere(posts.location, {$point}) <= ?", [$wkt, $metres])
+            ->where(function (Builder $q) use ($point, $wkt, $metres) {
+                // Within the distance the buyer picked…
+                $q->where(fn (Builder $near) => $near
+                    ->whereRaw("MBRContains(ST_GeomFromText(?, 4326, 'axis-order=long-lat'), posts.location)", [$this->boundingBox($metres)])
+                    ->whereRaw("ST_Distance_Sphere(posts.location, {$point}) <= ?", [$wkt, $metres]))
+                    // …or a post the admin widened (F35): a larger radius, or the buyer's area added.
+                    ->orWhere(fn (Builder $wide) => $wide->where('posts.boosted', true)
+                        ->where(fn (Builder $how) => $how
+                            ->whereRaw("(posts.reach_m IS NOT NULL AND ST_Distance_Sphere(posts.location, {$point}) <= posts.reach_m)", [$wkt])
+                            ->when($this->areaIds(), fn (Builder $a, array $ids) => $a->orWhereHas('reachAreas', fn (Builder $r) => $r->whereIn('areas.id', $ids)))));
+            })
             ->whereHas('kitchen', fn (Builder $k) => $k->where('status', 'approved')
                 ->whereHas('user', fn (Builder $u) => $u->where('status', 'active')))
             ->when($this->meal, fn (Builder $q) => $q->where('meal_slot', $this->meal))
@@ -54,6 +65,12 @@ class FeedQuery
             ->withCount(['comments as comments_count' => fn (Builder $c) => $c->where('status', 'visible')])
             ->orderBy('distance_m')
             ->orderByDesc('published_at');
+    }
+
+    /** @return list<int> */
+    private function areaIds(): array
+    {
+        return $this->areaIds ?? app(PostReach::class)->areaIdsContaining($this->origin);
     }
 
     /** WKT polygon (long-lat order) around the origin, slightly larger than the radius. */

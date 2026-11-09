@@ -20,6 +20,14 @@
             </button>
         </div>
 
+        <WhereAmI
+            v-if="feed.mode && !choosing && whereCenter"
+            :mode="feed.mode"
+            :near-area="nearArea"
+            :center="whereCenter"
+            :radius-m="radiusM"
+        />
+
         <!-- First visit: choose how to find food -->
         <div v-if="!feed.mode || choosing" class="mt-6 rounded-[var(--radius-plate)] bg-plate p-5">
             <p class="font-semibold">কোথাকার খাবার দেখবেন?</p>
@@ -143,6 +151,7 @@ import { useRoute, useRouter } from 'vue-router';
 import ChoiceChip from '@/components/ChoiceChip.vue';
 import ContactButtons from '@/components/ContactButtons.vue';
 import PostCard from '@/components/PostCard.vue';
+import WhereAmI from '@/components/WhereAmI.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn, placeOf } from '@/lib/bn';
 import { CONTACT } from '@/lib/contact';
@@ -177,9 +186,14 @@ const choosing = ref(false);
 const locating = ref(false);
 const locateError = ref('');
 const areaName = ref('');
+// F35: where the feed is looking from, for the "you are here" line.
+const nearArea = ref('');
+const radiusM = ref(3000);
+const areaCenter = ref(null);
+const whereCenter = computed(() => (feed.mode === 'location' ? feed.position : areaCenter.value));
 
 const placeLabel = computed(() => {
-    if (feed.mode === 'location') return 'আপনার আশেপাশে, কাছেরটা আগে';
+    if (feed.mode === 'location') return nearArea.value ? `আপনার আশেপাশে (${nearArea.value}), কাছেরটা আগে` : 'আপনার আশেপাশে, কাছেরটা আগে';
     if (feed.mode === 'area') return `${placeOf(areaName.value || 'এলাকা')} আশেপাশে, কাছেরটা আগে`;
     return 'আশেপাশের গৃহিণীদের আজকের রান্না';
 });
@@ -199,6 +213,9 @@ async function load(page = 1) {
         posts.value = page === 1 ? data.data : [...posts.value, ...data.data];
         nextPage.value = data.meta.current_page < data.meta.last_page ? data.meta.current_page + 1 : null;
         areaName.value = data.meta.area?.name ?? areaName.value;
+        nearArea.value = data.meta.area?.name ?? data.meta.near_area?.name ?? '';
+        radiusM.value = data.meta.radius_m ?? radiusM.value;
+        areaCenter.value = data.meta.area?.center ?? null;
         loadedAt.value = new Date().toISOString();
     } catch (e) {
         error.value = errorMessage(e);
