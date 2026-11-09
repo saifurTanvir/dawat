@@ -102,20 +102,41 @@
             <p class="mt-1 text-muted">পরিবারের রান্না থেকে এক-দুই প্লেট পাড়ার মানুষের কাছে বিক্রি করুন।</p>
             <RouterLink to="/cook" class="btn-quiet -ml-4 mt-1">দাওয়াতে রাঁধুনি হিসেবে যোগ দিন</RouterLink>
         </aside>
+
+        <!-- F31: plain links (full page loads) to the public pages search engines index. -->
+        <footer class="mt-10 border-t border-rule pt-6 text-sm text-muted">
+            <template v-if="areas.length">
+                <p class="font-semibold text-ink">যেসব এলাকায় দাওয়াত আছে</p>
+                <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                    <li v-for="a in areas" :key="a.slug">
+                        <a :href="`/area/${a.slug}`" class="text-leaf underline-offset-2 hover:underline">{{ a.name }}</a>
+                    </li>
+                </ul>
+            </template>
+            <ul class="mt-5 flex flex-wrap gap-x-4 gap-y-1">
+                <li><a href="/lunch" class="text-leaf underline-offset-2 hover:underline">প্রতিদিনের লাঞ্চ</a></li>
+                <li><a href="/rannaghor" class="text-leaf underline-offset-2 hover:underline">গৃহিণীদের জন্য</a></li>
+                <li><a href="/about" class="text-leaf underline-offset-2 hover:underline">দাওয়াত সম্পর্কে</a></li>
+                <li><a href="https://www.facebook.com/groups/dawat.cloud/" class="text-leaf underline-offset-2 hover:underline" rel="noopener">ফেসবুক গ্রুপ</a></li>
+            </ul>
+        </footer>
     </section>
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import ChoiceChip from '@/components/ChoiceChip.vue';
 import ContactButtons from '@/components/ContactButtons.vue';
 import PostCard from '@/components/PostCard.vue';
 import { api, errorMessage } from '@/lib/api';
-import { bn } from '@/lib/bn';
+import { bn, placeOf } from '@/lib/bn';
 import { agoText, clockText, distanceText } from '@/lib/format';
 import { currentPosition, useFeedStore } from '@/stores/feed';
 
 const feed = useFeedStore();
+const route = useRoute();
+const router = useRouter();
 
 const radiusOptions = [
     { value: 'walk', label: '৫ মিনিট হাঁটা' },
@@ -144,7 +165,7 @@ const areaName = ref('');
 
 const placeLabel = computed(() => {
     if (feed.mode === 'location') return 'আপনার আশেপাশে, কাছেরটা আগে';
-    if (feed.mode === 'area') return `${areaName.value || 'এলাকা'}-এর আশেপাশে, কাছেরটা আগে`;
+    if (feed.mode === 'area') return `${placeOf(areaName.value || 'এলাকা')} আশেপাশে, কাছেরটা আগে`;
     return 'আশেপাশের গৃহিণীদের আজকের রান্না';
 });
 
@@ -231,6 +252,16 @@ onMounted(async () => {
         areaName.value = areas.value.find((a) => a.slug === feed.areaSlug)?.name ?? '';
     } catch {
         // The area list is only needed for the chooser.
+    }
+
+    // F31: an area page links here as /?area=uttar-badda.
+    const wanted = route.query.area;
+    if (typeof wanted === 'string') {
+        router.replace({ query: {} });
+        if (areas.value.some((a) => a.slug === wanted)) {
+            await pickArea(wanted);
+            return;
+        }
     }
 
     if (feed.mode === 'location') {

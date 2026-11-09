@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#1E5B3F">
+    @include('partials.meta')
+    <link rel="icon" type="image/png" href="/icons/favicon-48.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    @vite(['resources/css/app.css'])
+</head>
+<body>
+    <div class="mx-auto flex min-h-dvh max-w-lg flex-col">
+        <header class="flex items-center justify-between gap-3 px-4 pt-5 pb-3">
+            <a href="{{ url('/') }}" class="flex items-baseline gap-2" aria-label="দাওয়াত — হোম">
+                <span class="font-serif text-3xl leading-none font-bold text-leaf">দাওয়াত</span>
+                <span class="hidden text-sm text-muted min-[360px]:inline">পাড়ার ঘরের খাবার</span>
+            </a>
+            <a href="{{ url('/') }}" class="btn-quiet -mr-4 min-h-10">আজকের খাবার</a>
+        </header>
+        <main class="flex-1 px-4 pt-2">
+            <nav aria-label="আপনি এখানে" class="text-sm text-muted">
+                <a href="{{ url('/') }}" class="text-leaf">দাওয়াত</a> / {{ $crumb }}
+            </nav>
+            @yield('content')
+            @include('seo.footer')
+        </main>
+    </div>
+</body>
+</html>

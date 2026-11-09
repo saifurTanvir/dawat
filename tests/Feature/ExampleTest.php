@@ -18,8 +18,9 @@ class ExampleTest extends TestCase
         $this->withoutVite();
 
         $this->get('/')->assertOk()->assertSee('id="app"', false);
-        $this->get('/q/mirpur-10')->assertOk()->assertSee('id="app"', false);
-        $this->get('/updates')->assertOk();
+        $this->get('/q/uttar-badda')->assertOk()->assertSee('id="app"', false);
+        // F31: Vue shows its "not found" screen, search engines get a real 404.
+        $this->get('/updates')->assertNotFound()->assertSee('id="app"', false);
     }
 
     public function test_unknown_api_paths_return_json_404(): void
