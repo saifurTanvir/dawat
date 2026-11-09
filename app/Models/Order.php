@@ -26,6 +26,7 @@ class Order extends Model
             'delivered_at' => 'datetime',
             'paid_at' => 'datetime',
             'ask_until' => 'datetime',
+            'ready_at' => 'datetime',
         ];
     }
 
