@@ -30,6 +30,8 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName('দাওয়াত অ্যাডমিন')
+            ->brandLogo(asset('brand/wordmark.png'))
+            ->brandLogoHeight('2.25rem')
             ->favicon(asset('icons/favicon-48.png'))
             ->colors([
                 'primary' => Color::hex('#1e5b3f'),

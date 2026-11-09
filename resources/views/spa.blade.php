@@ -8,7 +8,7 @@
 
     <link rel="manifest" href="/build/manifest.webmanifest">
     <link rel="icon" type="image/png" href="/icons/favicon-48.png">
-    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>

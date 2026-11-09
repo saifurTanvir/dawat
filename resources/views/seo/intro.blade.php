@@ -1,6 +1,6 @@
 <div class="mx-auto max-w-lg">
-    <header class="flex items-baseline gap-2 px-4 pt-5 pb-3">
-        <a href="{{ url('/') }}" class="font-serif text-3xl leading-none font-bold text-leaf">দাওয়াত</a>
+    <header class="flex items-center gap-2 px-4 pt-5 pb-3">
+        <a href="{{ url('/') }}"><img src="/brand/wordmark.png" alt="দাওয়াত" width="112" height="36" class="h-9 w-auto"></a>
         <span class="text-sm text-muted">পাড়ার ঘরের খাবার</span>
     </header>
     <main class="px-4 pt-2">
