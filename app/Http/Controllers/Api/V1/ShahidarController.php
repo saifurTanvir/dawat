@@ -78,7 +78,8 @@ class ShahidarController extends Controller
         ], ['code.digits' => 'কোড ৪ অঙ্কের।']);
 
         $order = $this->delivery->deliverByShahidar($order, $request->user(), $data['code'] ?? null);
-        if ($request->boolean('cash_received', true)) {
+        // F39: weekly/monthly customers pay on their bill, not at the door.
+        if ($request->boolean('cash_received', true) && ! $order->customer?->paysByBill()) {
             $order = $this->money->markPaid($order, $request->user());
         }
 
@@ -163,6 +164,7 @@ class ShahidarController extends Controller
                 'note' => $o->recipientNote(),
             ],
             'paid' => $o->paid_at !== null,
+            'pays_by_bill' => (bool) $o->customer?->paysByBill(),
             // F38: the cook's "ready" and where/when to collect; new boxes are highlighted.
             'ready_at' => $o->ready_at?->toIso8601String(),
             'ready_note' => $o->ready_note,

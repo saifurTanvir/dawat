@@ -28,6 +28,9 @@ class Settlements
             if ($order->status !== OrderStatus::Delivered) {
                 throw ValidationException::withMessages(['order' => 'আগে খাবার পৌঁছানো চিহ্নিত করুন।']);
             }
+            if ($order->customer?->paysByBill()) {
+                throw ValidationException::withMessages(['order' => 'এই গ্রাহক বিলে টাকা দেন; শাহিদার টাকা নেবেন না।']);
+            }
             if ($order->paid_at === null) {
                 $order->forceFill(['paid_at' => now(), 'collected_by' => $collector->id, 'payment_method' => 'cash'])->save();
             }
@@ -80,6 +83,9 @@ class Settlements
         return Order::where(fn ($q) => $q->where('status', OrderStatus::Failed)
             ->orWhere(fn ($q) => $q->where('status', OrderStatus::Delivered)->whereNull('paid_at')))
             ->whereNull('paid_at')
+            // F39: boxes on a bill are followed up on the bill.
+            ->whereNull('bill_id')
+            ->where(fn ($q) => $q->whereNull('customer_id')->orWhereHas('customer', fn ($c) => $c->where('billing', 'each')))
             ->where('payment_method', '!=', 'cash_to_cook')
             ->with(['customer.user', 'buyer', 'shahidar'])
             ->orderBy('service_date')

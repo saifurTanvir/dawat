@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /** A regular customer (F25) with a standing booking (F26). */
-#[Fillable(['user_id', 'area_id', 'address', 'note', 'status', 'meal_slots', 'plates', 'max_price_paisa', 'weekdays', 'source'])]
+#[Fillable(['user_id', 'area_id', 'address', 'note', 'status', 'meal_slots', 'plates', 'max_price_paisa', 'weekdays', 'source', 'billing'])]
 class Customer extends Model
 {
     /** @use HasFactory<CustomerFactory> */
@@ -34,6 +34,19 @@ class Customer extends Model
             'plates' => 'integer',
             'max_price_paisa' => 'integer',
         ];
+    }
+
+    /** F39: how this customer pays. */
+    public const BILLING_LABELS = ['each' => 'প্রতিবার নগদ', 'weekly' => 'সাপ্তাহিক বিল', 'monthly' => 'মাসিক বিল'];
+
+    public function paysByBill(): bool
+    {
+        return in_array($this->billing, ['weekly', 'monthly'], true);
+    }
+
+    public function bills(): HasMany
+    {
+        return $this->hasMany(Bill::class)->latest('id');
     }
 
     public function user(): BelongsTo

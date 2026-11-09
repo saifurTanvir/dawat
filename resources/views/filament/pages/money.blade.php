@@ -45,6 +45,33 @@
         @endif
     </x-filament::section>
 
+    <x-filament::section heading="বিলের গ্রাহকদের বাকি" description="সাপ্তাহিক/মাসিক বিলের গ্রাহক: খোলা বিলের বাকি আর এখনো বিল হয়নি এমন বক্স।">
+        @if ($dues->isEmpty())
+            <p class="text-sm text-gray-500">বিলের কোনো বাকি নেই।</p>
+        @else
+            <table class="dawat-money w-full text-sm">
+                <thead><tr class="text-left text-gray-500"><th class="py-2">গ্রাহক</th><th>খোলা বিল</th><th class="r">বিলের বাকি</th><th class="r">বিল হয়নি</th><th class="r">মোট বাকি</th></tr></thead>
+                <tbody>
+                    @foreach ($dues as $row)
+                        <tr class="border-t border-gray-200 dark:border-white/10">
+                            <td class="py-2 font-medium"><a href="{{ \App\Filament\Resources\Customers\CustomerResource::getUrl('view', ['record' => $row['customer']]) }}" style="text-decoration:underline">{{ $row['customer']->user->name }}</a> <span class="muted">{{ $row['customer']->user->phone }}</span></td>
+                            <td>
+                                @forelse ($row['bills'] as $b)
+                                    <a href="{{ \App\Filament\Resources\Bills\BillResource::getUrl('view', ['record' => $b]) }}" style="text-decoration:underline">{{ $b->number }}</a>@if (! $loop->last), @endif
+                                @empty
+                                    <span class="muted">—</span>
+                                @endforelse
+                            </td>
+                            <td class="r">{{ $tk($row['billed_due']) }}</td>
+                            <td class="r">{{ $tk($row['unbilled']) }} <span class="muted">({{ $row['unbilled_boxes'] }} বক্স)</span></td>
+                            <td class="r" style="font-weight:600">{{ $tk($row['total']) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+    </x-filament::section>
+
     <x-filament::section heading="গ্রাহকের বাকি" description="খাবার পেয়েছেন কিন্তু টাকা তোলা হয়নি, বা বাসায় না থাকায় ফেরত গেছে।" collapsible>
         @if ($owing->isEmpty())
             <p class="text-sm text-gray-500">কারো বাকি নেই।</p>

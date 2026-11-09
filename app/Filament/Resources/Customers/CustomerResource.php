@@ -7,13 +7,17 @@ use App\Actions\PairCustomer;
 use App\Enums\CustomerStatus;
 use App\Enums\KitchenStatus;
 use App\Enums\MealSlot;
+use App\Filament\Resources\Bills\BillResource;
 use App\Filament\Resources\Customers\Pages\ListCustomers;
 use App\Filament\Resources\Customers\Pages\ViewCustomer;
 use App\Filament\Support\PhoneField;
 use App\Models\Area;
+use App\Models\Bill;
 use App\Models\Customer;
 use App\Models\Kitchen;
+use App\Models\Order;
 use App\Models\User;
+use App\Services\Orders\Billing;
 use App\Services\Orders\BookingPlanner;
 use App\Support\Roles;
 use BackedEnum;
@@ -84,6 +88,8 @@ class CustomerResource extends Resource
                 ->options(array_combine(Customer::ALL_WEEKDAYS, Customer::WEEKDAY_LABELS))
                 ->default(Customer::ALL_WEEKDAYS)->required()->columns(7),
             Textarea::make('note')->label('খাবার নিয়ে কিছু (ঝাল কম, ডায়াবেটিস…)')->maxLength(300)->rows(2),
+            Select::make('billing')->label('টাকা কীভাবে দেবেন')->options(Customer::BILLING_LABELS)->default('each')->required()->native(false)
+                ->helperText('সাপ্তাহিক বিল: প্রতি শনিবার সকালে আগের সপ্তাহের বিল। মাসিক: মাসের ১ তারিখে। বিলের গ্রাহকের কাছে শাহিদার টাকা নেবেন না।'),
         ];
     }
 
@@ -121,6 +127,7 @@ class CustomerResource extends Resource
             'plates' => (int) $data['plates'],
             'max_price_paisa' => filled($data['max_price_taka'] ?? null) ? (int) $data['max_price_taka'] * 100 : null,
             'weekdays' => array_map('intval', array_values($data['weekdays'])),
+            'billing' => array_key_exists($data['billing'] ?? '', Customer::BILLING_LABELS) ? $data['billing'] : 'each',
         ];
     }
 
@@ -228,6 +235,26 @@ class CustomerResource extends Resource
             });
     }
 
+    /** F39: bill the boxes received so far (or up to a date). */
+    public static function issueBillAction(): Action
+    {
+        return Action::make('issueBill')
+            ->label('বিল তৈরি করুন')
+            ->icon(Heroicon::OutlinedDocumentText)
+            ->color('warning')
+            ->visible(fn (Customer $record) => app(Billing::class)->unbilled($record)->exists())
+            ->modalDescription(fn (Customer $record) => 'বিল হয়নি এমন '.Order::banglaDigits((string) app(Billing::class)->unbilled($record)->count())
+                .'টা বক্স, মোট ৳'.Order::banglaDigits((string) intdiv(app(Billing::class)->unbilledTotal($record), 100)).'। গ্রাহক অ্যাপে নোটিফিকেশন পাবেন।')
+            ->schema([
+                DatePicker::make('to')->label('কোন তারিখ পর্যন্ত')->native(false)->default(BookingPlanner::today())->required(),
+            ])
+            ->action(function (Customer $record, array $data, $livewire) {
+                $bill = app(Billing::class)->issue($record, auth()->user(), Carbon::parse($data['to'])->toDateString());
+                Notification::make()->title('বিল '.$bill->number.' তৈরি হয়েছে')->success()->send();
+                $livewire->redirect(BillResource::getUrl('view', ['record' => $bill]));
+            });
+    }
+
     public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
@@ -239,7 +266,23 @@ class CustomerResource extends Resource
                 TextEntry::make('address')->label('ঠিকানা')->columnSpan(2),
                 TextEntry::make('booking')->label('বুকিং')->state(fn (Customer $record) => $record->bookingSummary())->columnSpan(2),
                 TextEntry::make('note')->label('খাবার নিয়ে')->placeholder('—'),
+                TextEntry::make('billing')->label('টাকা দেন')->formatStateUsing(fn (?string $state) => Customer::BILLING_LABELS[$state] ?? '—'),
+                TextEntry::make('unbilled')->label('বিল হয়নি এমন')
+                    ->state(fn (Customer $record) => '৳'.Order::banglaDigits((string) intdiv(app(Billing::class)->unbilledTotal($record), 100))),
+                TextEntry::make('billed_due')->label('বিলের বাকি')
+                    ->state(fn (Customer $record) => '৳'.Order::banglaDigits((string) intdiv((int) $record->bills()->whereIn('status', ['open', 'partial'])->get()->sum(fn (Bill $b) => $b->duePaisa()), 100))),
             ]),
+            Section::make('বিল')->schema([
+                RepeatableEntry::make('bills')->hiddenLabel()->columns(5)->schema([
+                    TextEntry::make('number')->label('বিল নং')
+                        ->url(fn (Bill $record) => BillResource::getUrl('view', ['record' => $record])),
+                    TextEntry::make('period')->label('সময়')->state(fn (Bill $record) => $record->period_from->format('j M').' – '.$record->period_to->format('j M')),
+                    TextEntry::make('total_paisa')->label('মোট')->formatStateUsing(fn (int $state) => '৳'.number_format(intdiv($state, 100))),
+                    TextEntry::make('due')->label('বাকি')->state(fn (Bill $record) => '৳'.number_format(intdiv($record->duePaisa(), 100))),
+                    TextEntry::make('status')->label('অবস্থা')->badge()->formatStateUsing(fn (string $state) => Bill::STATUS_LABELS[$state] ?? $state)
+                        ->color(fn (string $state) => BillResource::statusColor($state)),
+                ])->placeholder('এখনো কোনো বিল নেই'),
+            ])->collapsible(),
             Section::make('বিরতি')->schema([
                 RepeatableEntry::make('upcomingPauses')->hiddenLabel()->columns(3)->schema([
                     TextEntry::make('starts_on')->label('থেকে')->date('j M Y'),
@@ -272,11 +315,13 @@ class CustomerResource extends Resource
                 TextColumn::make('pairing.kitchen.display_name')->label('গৃহিণী')->placeholder('—'),
                 TextColumn::make('pairing.shahidar.name')->label('শাহিদার')->placeholder('—'),
                 TextColumn::make('booking')->label('বুকিং')->state(fn (Customer $record) => $record->bookingSummary())->wrap(),
+                TextColumn::make('billing')->label('টাকা')->badge()->color('gray')->formatStateUsing(fn (?string $state) => Customer::BILLING_LABELS[$state] ?? '—'),
                 TextColumn::make('created_at')->label('যোগ')->since()->sortable(),
             ])
             ->filters([
                 SelectFilter::make('status')->label('অবস্থা')->options(CustomerStatus::class),
                 SelectFilter::make('area_id')->label('এলাকা')->relationship('area', 'name'),
+                SelectFilter::make('billing')->label('টাকা দেন')->options(Customer::BILLING_LABELS),
             ])
             ->recordActions([
                 ViewAction::make(),
