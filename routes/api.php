@@ -62,6 +62,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/push/subscribe', [PushController::class, 'subscribe'])->middleware('throttle:comments')->name('push.subscribe');
         Route::delete('/push/subscribe', [PushController::class, 'unsubscribe'])->name('push.unsubscribe');
         Route::patch('/me', [MeController::class, 'update'])->name('me.update');
+        Route::put('/me/contact-hours', [MeController::class, 'contactHours'])->name('me.contact-hours');
 
         // F3: become a cook (pending until an admin approves)
         Route::get('/kitchen', [KitchenController::class, 'show'])->name('kitchen.show');

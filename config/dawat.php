@@ -60,6 +60,18 @@ return [
     'contact' => [
         'phone' => env('DAWAT_PHONE', '01685284290'),
         'facebook_url' => env('DAWAT_FACEBOOK_URL', 'https://www.facebook.com/groups/dawat.cloud/'),
+        // F41: when people may be called unless they choose otherwise (Dhaka time).
+        'default_hours' => ['09:00', '21:00'],
+        // Hours a person may pick from: nobody can be called before 7 am or after 10 pm.
+        'earliest' => '07:00',
+        'latest' => '22:00',
+        // Fixed by Dawat: on a day with a box, its meal's delivery window is always open.
+        'meal_windows' => [
+            'breakfast' => ['07:00', '09:30'],
+            'lunch' => ['11:30', '14:30'],
+            'snack' => ['16:00', '18:00'],
+            'dinner' => ['19:00', '21:30'],
+        ],
     ],
 
     'seo' => [

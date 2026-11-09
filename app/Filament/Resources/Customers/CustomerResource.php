@@ -19,6 +19,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Services\Orders\Billing;
 use App\Services\Orders\BookingPlanner;
+use App\Support\ContactHours;
 use App\Support\Roles;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -262,6 +263,10 @@ class CustomerResource extends Resource
                 TextEntry::make('user.name')->label('নাম'),
                 TextEntry::make('user.phone')->label('ফোন')->copyable(),
                 TextEntry::make('status')->label('অবস্থা')->badge(),
+                TextEntry::make('call_now')->label('কল করা যাবে?')->columnSpan(2)
+                    ->state(fn (Customer $record) => ContactHours::adminLine($record->user, $record->todayOrders()->pluck('meal_slot')->all()))
+                    ->url(fn (Customer $record) => ContactHours::whatsappUrl($record->user->phone), shouldOpenInNewTab: true)
+                    ->helperText('ক্লিক করলে হোয়াটসঅ্যাপ খুলবে — ফ্রি মেসেজ বা কল।'),
                 TextEntry::make('area.name')->label('এলাকা'),
                 TextEntry::make('address')->label('ঠিকানা')->columnSpan(2),
                 TextEntry::make('booking')->label('বুকিং')->state(fn (Customer $record) => $record->bookingSummary())->columnSpan(2),

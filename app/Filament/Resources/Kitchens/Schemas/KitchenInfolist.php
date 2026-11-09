@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Kitchens\Schemas;
 
+use App\Models\Kitchen;
 use App\Services\Feed\PostReach;
+use App\Support\ContactHours;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -21,6 +23,10 @@ class KitchenInfolist
                         TextEntry::make('status')->label('অবস্থা')->badge(),
                         TextEntry::make('user.name')->label('গৃহিণী')->placeholder('—'),
                         TextEntry::make('user.phone')->label('ফোন')->copyable(),
+                        TextEntry::make('call_now')->label('কল করা যাবে?')
+                            ->state(fn (Kitchen $record) => ContactHours::adminLine($record->user))
+                            ->url(fn (Kitchen $record) => ContactHours::whatsappUrl($record->user->phone), shouldOpenInNewTab: true)
+                            ->helperText('ক্লিক করলে হোয়াটসঅ্যাপ খুলবে — ফ্রি মেসেজ বা কল।'),
                         TextEntry::make('area.name')->label('এলাকা')->placeholder('এখনো ঠিক করা হয়নি'),
                         TextEntry::make('location')
                             ->label('বাসার লোকেশন')

@@ -38,7 +38,7 @@
                 <ul class="mt-1 space-y-1 text-sm">
                     <li v-for="(w, i) in day.waiting" :key="i">
                         {{ w.meal_slot_label }} · {{ w.kitchen }} → {{ w.customer }} ({{ bn(w.plates) }})
-                        <a :href="`tel:${w.kitchen_phone}`" class="ml-1 font-semibold text-leaf">ফোন</a>
+                        <CallButtons class="ml-1 inline-flex" :phone="w.kitchen_phone" :contact="w.kitchen_contact" />
                     </li>
                 </ul>
             </div>
@@ -52,7 +52,7 @@
                             <span class="font-semibold">{{ o.customer.name }}</span> · {{ o.meal_slot_label }} · {{ o.kitchen.name }}
                             <span class="block text-sm text-muted">প্লেট {{ taka(o.price_paisa) }}, সীমা {{ taka(o.max_price_paisa) }} · {{ clockText(o.ask_until) }} পর্যন্ত</span>
                         </p>
-                        <a :href="`tel:${o.customer.phone}`" class="shrink-0 font-semibold text-leaf">ফোন</a>
+                        <CallButtons :phone="o.customer.phone" :contact="o.customer.contact" />
                     </div>
                     <div class="mt-2 flex gap-4 text-sm">
                         <button type="button" class="font-semibold text-leaf" :disabled="busy" @click="act(o, 'accept')">নেবেন</button>
@@ -70,7 +70,7 @@
                         <p class="font-semibold"><span class="text-leaf">{{ g.orders[0].meal_slot_label }}</span> · {{ g.kitchen.name }}</p>
                         <p class="text-sm text-muted">{{ g.kitchen.address }}</p>
                     </div>
-                    <a :href="`tel:${g.kitchen.phone}`" class="shrink-0 font-semibold text-leaf">ফোন</a>
+                    <CallButtons :phone="g.kitchen.phone" :contact="g.kitchen.contact" />
                 </div>
                 <p v-if="g.ready" class="mt-2 rounded-lg bg-leaf-soft px-3 py-2 text-sm">
                     ✅ <strong>খাবার রেডি</strong> · {{ clockText(g.ready.ready_at) }}<template v-if="g.ready.ready_note"> · “{{ g.ready.ready_note }}”</template>
@@ -108,7 +108,7 @@
                             <template v-if="o.sticker"> · স্টিকার {{ o.sticker }}</template>
                         </p>
                     </div>
-                    <a :href="`tel:${o.customer.phone}`" class="shrink-0 font-semibold text-leaf">ফোন</a>
+                    <CallButtons :phone="o.customer.phone" :contact="o.customer.contact" />
                 </div>
 
                 <form v-if="handing === o.id" class="mt-3" @submit.prevent="deliver(o, code)">
@@ -154,6 +154,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import CallButtons from '@/components/CallButtons.vue';
 import PushToggle from '@/components/PushToggle.vue';
 import StickerScanner from '@/components/StickerScanner.vue';
 import { api, errorMessage } from '@/lib/api';
