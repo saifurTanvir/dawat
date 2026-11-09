@@ -9,6 +9,8 @@ use App\Models\Pairing;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Orders\Delivery;
 use App\Services\Orders\Settlements;
+use App\Support\ContactHours;
+use App\Support\DhakaTime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -44,6 +46,7 @@ class ShahidarController extends Controller
                     $waiting[] = [
                         'kitchen' => $kitchen->display_name,
                         'kitchen_phone' => $kitchen->user->phone,
+                        'kitchen_contact' => ContactHours::card($kitchen->user, [$slot], 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। আজ '.$slot->label().'র রান্নার খবর জানতে চাই।'),
                         'customer' => $p->customer->user->name,
                         'meal_slot_label' => $slot->label(),
                         'plates' => $p->customer->plates,
@@ -133,6 +136,9 @@ class ShahidarController extends Controller
 
     private function row(Order $o): array
     {
+        // On the day of the box, its meal's delivery window is open whatever hours they chose.
+        $todaySlots = $o->service_date?->isSameDay(now(DhakaTime::TZ)) ? [$o->meal_slot] : [];
+
         return [
             'id' => $o->id,
             'code' => $o->code(),
@@ -156,12 +162,15 @@ class ShahidarController extends Controller
                 'name' => $o->kitchen->display_name,
                 'phone' => $o->kitchen->user->phone,
                 'address' => $o->kitchen->pickup_address ?? $o->kitchen->area?->name,
+                // F41: may they be called now, and a free WhatsApp link.
+                'contact' => ContactHours::card($o->kitchen->user, $todaySlots, 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। বক্স '.$o->code().' নিয়ে।'),
             ],
             'customer' => [
                 'name' => $o->recipient()->name ?: 'ক্রেতা',
                 'phone' => $o->recipient()->phone,
                 'address' => $o->recipientAddress(),
                 'note' => $o->recipientNote(),
+                'contact' => ContactHours::card($o->recipient(), $todaySlots, 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। আপনার বক্স '.$o->code().' নিয়ে।'),
             ],
             'paid' => $o->paid_at !== null,
             'pays_by_bill' => (bool) $o->customer?->paysByBill(),
