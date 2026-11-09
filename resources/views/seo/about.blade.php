@@ -23,7 +23,7 @@
         <h2 id="contact" class="font-serif text-xl font-bold">যোগাযোগ</h2>
         <p class="mt-2">ফোন: <a href="tel:{{ \App\Support\Seo::phoneIntl() }}" class="font-semibold">{{ \App\Support\Seo::phoneBangla() }}</a></p>
         @if (config('dawat.contact.facebook_url'))
-            <p class="mt-1">ফেসবুক: <a href="{{ config('dawat.contact.facebook_url') }}" class="text-leaf" rel="noopener">দাওয়াতের পেজ</a></p>
+            <p class="mt-1">ফেসবুক: <a href="{{ config('dawat.contact.facebook_url') }}" class="text-leaf" rel="noopener">দাওয়াতের গ্রুপ</a></p>
         @endif
     </section>
 @endsection

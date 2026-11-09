@@ -36,6 +36,7 @@ class SeoTest extends TestCase
             ->assertSee('application/ld+json', false)
             ->assertSee('"alternateName":["Dawat"', false)
             ->assertSee('+8801685284290', false)
+            ->assertSee('"sameAs":["https://www.facebook.com/groups/dawat.cloud/"]', false)
             ->assertSee('<h1', false)
             ->assertSee('href="'.url('/area/uttar-badda').'"', false)
             ->assertSee('id="app"', false);

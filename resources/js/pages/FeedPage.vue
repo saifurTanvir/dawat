@@ -117,6 +117,7 @@
                 <li><a href="/lunch" class="text-leaf underline-offset-2 hover:underline">প্রতিদিনের লাঞ্চ</a></li>
                 <li><a href="/rannaghor" class="text-leaf underline-offset-2 hover:underline">গৃহিণীদের জন্য</a></li>
                 <li><a href="/about" class="text-leaf underline-offset-2 hover:underline">দাওয়াত সম্পর্কে</a></li>
+                <li><a href="https://www.facebook.com/groups/dawat.cloud/" class="text-leaf underline-offset-2 hover:underline" rel="noopener">ফেসবুক গ্রুপ</a></li>
             </ul>
         </footer>
     </section>

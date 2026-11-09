@@ -12,6 +12,11 @@
         <li><a href="{{ url('/rannaghor') }}" class="text-leaf underline-offset-2 hover:underline">গৃহিণীদের জন্য</a></li>
         <li><a href="{{ url('/about') }}" class="text-leaf underline-offset-2 hover:underline">দাওয়াত সম্পর্কে</a></li>
     </ul>
-    <p class="mt-5">যোগাযোগ: <a href="tel:{{ \App\Support\Seo::phoneIntl() }}" class="font-semibold text-ink">{{ \App\Support\Seo::phoneBangla() }}</a></p>
+    <p class="mt-5">
+        যোগাযোগ: <a href="tel:{{ \App\Support\Seo::phoneIntl() }}" class="font-semibold text-ink">{{ \App\Support\Seo::phoneBangla() }}</a>
+        @if (config('dawat.contact.facebook_url'))
+            · <a href="{{ config('dawat.contact.facebook_url') }}" class="text-leaf underline-offset-2 hover:underline" rel="noopener">ফেসবুক গ্রুপ</a>
+        @endif
+    </p>
     <p class="mt-1">Dawat — homemade food in Dhaka.</p>
 </footer>

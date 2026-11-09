@@ -59,7 +59,7 @@ return [
     */
     'contact' => [
         'phone' => env('DAWAT_PHONE', '01685284290'),
-        'facebook_url' => env('DAWAT_FACEBOOK_URL'),
+        'facebook_url' => env('DAWAT_FACEBOOK_URL', 'https://www.facebook.com/groups/dawat.cloud/'),
     ],
 
     'seo' => [
