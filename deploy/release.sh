@@ -15,6 +15,11 @@ APP_DIR="${1:?app dir required}"
 RELEASE="${2:?release name required}"
 KEEP=5
 PHP_FPM_SERVICE="${PHP_FPM_SERVICE:-php8.3-fpm}"
+# Staging (/var/www/dawat-staging) has its own Supervisor worker.
+case "$APP_DIR" in
+    *-staging) WORKER=dawat-staging-worker ;;
+    *) WORKER=dawat-worker ;;
+esac
 
 RELEASES="$APP_DIR/releases"
 SHARED="$APP_DIR/shared"
@@ -46,6 +51,10 @@ php artisan migrate --force --no-interaction
 
 log "Seeding reference data (roles, tags, areas; safe to repeat)"
 php artisan db:seed --force --no-interaction
+if grep -q '^APP_ENV=staging' "$SHARED/.env"; then
+    log "Staging: one test login per role (password 123456)"
+    php artisan db:seed --class=TestUsersSeeder --force --no-interaction || true
+fi
 
 log "Caching config, routes, views and events"
 php artisan optimize --no-interaction
@@ -59,7 +68,7 @@ mv -Tf "$APP_DIR/current.tmp" "$APP_DIR/current"
 log "Reloading PHP and restarting queue workers"
 sudo -n /usr/bin/systemctl reload "$PHP_FPM_SERVICE" || echo "warning: could not reload $PHP_FPM_SERVICE (check sudoers)"
 # Restart (or start, on the very first deploy) the Supervisor worker; fall back to a graceful signal.
-sudo -n /usr/bin/supervisorctl restart dawat-worker 2>/dev/null || php artisan queue:restart --no-interaction
+sudo -n /usr/bin/supervisorctl restart "$WORKER" 2>/dev/null || php artisan queue:restart --no-interaction
 
 log "Removing old releases (keeping $KEEP)"
 cd "$RELEASES"

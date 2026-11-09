@@ -15,7 +15,8 @@ use RuntimeException;
 /**
  * One login per role for trying the app by hand:
  *   php artisan db:seed --class=TestUsersSeeder
- * Password 123456 everywhere, so it only runs with APP_ENV=local.
+ * Password 123456 everywhere, so it only runs with APP_ENV=local or staging
+ * (staging sits behind an nginx password).
  */
 class TestUsersSeeder extends Seeder
 {
@@ -23,8 +24,8 @@ class TestUsersSeeder extends Seeder
 
     public function run(): void
     {
-        if (! app()->environment('local')) {
-            throw new RuntimeException('TestUsersSeeder only runs with APP_ENV=local (weak test passwords).');
+        if (! app()->environment('local', 'staging')) {
+            throw new RuntimeException('TestUsersSeeder only runs with APP_ENV=local or staging (weak test passwords).');
         }
 
         $this->call(DatabaseSeeder::class);
@@ -36,7 +37,7 @@ class TestUsersSeeder extends Seeder
         $kitchen = Kitchen::updateOrCreate(['user_id' => $cook->id], [
             'display_name' => 'টেস্ট রান্নাঘর',
             'area_id' => $area->id,
-            'location' => GeoPoint::make(23.8075, 90.3680),
+            'location' => GeoPoint::make(23.7872, 90.4268),
             'allow_call' => true,
             'allow_message' => true,
             'allow_comment' => true,
@@ -48,7 +49,7 @@ class TestUsersSeeder extends Seeder
         Kitchen::updateOrCreate(['user_id' => $pending->id], [
             'display_name' => 'নতুন রান্নাঘর',
             'area_id' => $area->id,
-            'location' => GeoPoint::make(23.8050, 90.3700),
+            'location' => GeoPoint::make(23.7850, 90.4240),
             'status' => KitchenStatus::Pending,
         ]);
 

@@ -123,7 +123,7 @@ class OtpService
      */
     public static function anyCodeAccepted(): bool
     {
-        return config('services.otp.any_code') === true && app()->environment('local');
+        return config('services.otp.any_code') === true && app()->environment('local', 'staging');
     }
 
     private function generateCode(): string

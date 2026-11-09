@@ -1,21 +1,26 @@
 name: Deploy
 
-# Deploys to the VPS after CI passes on main. Can also be started by hand
-# from the Actions tab ("Run workflow").
+# Deploys to the VPS after CI passes: main -> production (dawat.cloud),
+# develop -> staging (staging.dawat.cloud, set up once with deploy/setup-staging.sh).
+# Can also be started by hand from the Actions tab ("Run workflow").
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
-    branches: [main]
+    branches: [main, develop]
   workflow_dispatch:
+    inputs:
+      target:
+        description: production or staging
+        default: production
 
 concurrency:
-  group: deploy-production
+  group: deploy-${{ (github.event.workflow_run.head_branch == 'develop' || inputs.target == 'staging') && 'staging' || 'production' }}
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Build and deploy to production
+    name: Build and deploy to ${{ (github.event.workflow_run.head_branch == 'develop' || inputs.target == 'staging') && 'staging' || 'production' }}
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-24.04
     environment: production
@@ -25,7 +30,9 @@ jobs:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/var/www/dawat' }}
+      TARGET: ${{ (github.event.workflow_run.head_branch == 'develop' || inputs.target == 'staging') && 'staging' || 'production' }}
+      DEPLOY_PATH: ${{ (github.event.workflow_run.head_branch == 'develop' || inputs.target == 'staging') && '/var/www/dawat-staging' || (secrets.DEPLOY_PATH || '/var/www/dawat') }}
+      SITE_URL: ${{ (github.event.workflow_run.head_branch == 'develop' || inputs.target == 'staging') && (vars.STAGING_URL || 'https://staging.dawat.cloud') || vars.APP_URL }}
 
     steps:
       - name: Check that deploy secrets are set
@@ -103,10 +110,16 @@ jobs:
           chmod 600 ~/.ssh/known_hosts
 
       - name: Upload and activate release
+        id: upload
         env:
           RELEASE: ${{ steps.package.outputs.release }}
         run: |
           SSH="ssh -i ~/.ssh/deploy_key -p $DEPLOY_PORT -o BatchMode=yes"
+          if [ "$TARGET" = "staging" ] && ! $SSH "$DEPLOY_USER@$DEPLOY_HOST" "test -f '$DEPLOY_PATH/shared/.env'"; then
+            echo "::notice::Staging is not set up on the server yet (run deploy/setup-staging.sh once). Skipping."
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           $SSH "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/releases'"
           scp -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" -o BatchMode=yes \
               "/tmp/$RELEASE.tar.gz" deploy/release.sh \
@@ -115,17 +128,19 @@ jobs:
               "bash '$DEPLOY_PATH/releases/release.sh' '$DEPLOY_PATH' '$RELEASE' && rm -f '$DEPLOY_PATH/releases/release.sh'"
 
       - name: Check the site answers
-        if: ${{ vars.APP_URL != '' }}
+        if: ${{ env.SITE_URL != '' && steps.upload.outputs.skipped != 'true' }}
         run: |
+          # Staging sits behind a password, so 401 also means "nginx and PHP answer".
           for i in 1 2 3 4 5; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' "${{ vars.APP_URL }}/up") && [ "$code" = "200" ] && { echo "Site is up"; exit 0; }
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE_URL/up")
+            if [ "$code" = "200" ] || { [ "$TARGET" = "staging" ] && [ "$code" = "401" ]; }; then echo "Site is up ($code)"; exit 0; fi
             sleep 5
           done
-          echo "::error::${{ vars.APP_URL }}/up did not return 200 after deploy"
+          echo "::error::$SITE_URL/up did not answer after deploy (last code $code)"
           exit 1
 
       - name: Tell the owner on WhatsApp
-        if: ${{ always() }}
+        if: ${{ always() && steps.upload.outputs.skipped != 'true' }}
         env:
           WHATSAPP_NOTIFY_PHONE: ${{ secrets.WHATSAPP_NOTIFY_PHONE }}
           CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
@@ -135,7 +150,11 @@ jobs:
           title=$(printf '%s' "$TITLE" | grep -v '^Merge pull request' | grep -v '^$' | head -n1)
           [ -n "$title" ] || title=$(printf '%s' "$TITLE" | head -n1)
           if [ "$OUTCOME" = "success" ]; then
-            msg="দাওয়াত: নতুন আপডেট সাইটে লাইভ ✅ ${title} — dawat.cloud"
+            if [ "$TARGET" = "staging" ]; then
+              msg="দাওয়াত: স্টেজিংয়ে নতুন আপডেট ✅ ${title} — staging.dawat.cloud"
+            else
+              msg="দাওয়াত: নতুন আপডেট সাইটে লাইভ ✅ ${title} — dawat.cloud"
+            fi
           else
             msg="দাওয়াত: ডেপ্লয় ব্যর্থ ❌ ${title}. সাইট আগের মতোই চলছে।"
           fi

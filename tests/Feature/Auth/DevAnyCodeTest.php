@@ -61,11 +61,12 @@ class DevAnyCodeTest extends TestCase
         $this->assertNull(User::where('phone', '01712345678')->first());
     }
 
-    public function test_staging_ignores_the_setting(): void
+    /** Staging (behind an nginx password, no real SMS) accepts any code, like local. */
+    public function test_staging_accepts_any_code(): void
     {
         $this->environment('staging');
 
-        $this->postJson('/api/v1/auth/otp', ['phone' => '01712345678']);
-        $this->postJson('/api/v1/auth/verify', ['phone' => '01712345678', 'code' => '123456'])->assertUnprocessable();
+        $this->postJson('/api/v1/auth/otp', ['phone' => '01712345678'])->assertJsonPath('dev_any_code', true);
+        $this->postJson('/api/v1/auth/verify', ['phone' => '01712345678', 'code' => '123456'])->assertOk();
     }
 }

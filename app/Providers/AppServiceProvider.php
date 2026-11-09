@@ -42,9 +42,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        if (config('services.otp.any_code') && ! $this->app->environment('local')) {
-            // Has no effect outside local, but someone left it on: say so.
-            logger()->warning('OTP_ANY_CODE is set but ignored because APP_ENV is not "local". Remove it from this .env.');
+        if (config('services.otp.any_code') && ! $this->app->environment('local', 'staging')) {
+            // Has no effect in production, but someone left it on: say so.
+            logger()->warning('OTP_ANY_CODE is set but ignored because APP_ENV is not "local" or "staging". Remove it from this .env.');
         }
 
         // Read from config (not env) so it still works after `php artisan optimize`.
