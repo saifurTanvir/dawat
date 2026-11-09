@@ -4,7 +4,7 @@
         <span class="text-sm text-muted">পাড়ার ঘরের খাবার</span>
     </header>
     <main class="px-4 pt-2">
-        <img src="/brand/lockup.png" alt="দাওয়াত — পাড়ার ঘরের খাবার। পুরো পরিবার এক টেবিলে, পাশের বাসার রান্না" width="800" height="761" class="mx-auto mb-4 w-56">
+        <img src="/brand/lockup.png" alt="দাওয়াত — পাড়ার ঘরের খাবার। ঘর থেকে দূরে, তবু খাবারটা ঘরের" width="800" height="761" class="mx-auto mb-4 w-56">
         <h1 class="font-serif text-2xl font-bold">আজকের দাওয়াত — ঢাকায় পাড়ার ঘরের খাবার</h1>
         <p class="mt-2 text-muted">
             {{ \App\Support\Seo::of(config('dawat.seo.region')) }} গৃহিণীরা নিজের বাসার রান্না থেকে কয়েক প্লেট বিক্রি করেন।
