@@ -1,0 +1,25 @@
+name: Notify
+
+# Sends a WhatsApp message to the owner. Claude starts it with
+#   gh workflow run notify.yml -f message="..."
+# Secrets: WHATSAPP_NOTIFY_PHONE (8801XXXXXXXXX) and CALLMEBOT_APIKEY.
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: Message text
+        required: true
+
+jobs:
+  whatsapp:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+      - name: Send WhatsApp message
+        env:
+          WHATSAPP_NOTIFY_PHONE: ${{ secrets.WHATSAPP_NOTIFY_PHONE }}
+          CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
+          MESSAGE: ${{ inputs.message }}
+        run: bash .github/scripts/whatsapp.sh "$MESSAGE"

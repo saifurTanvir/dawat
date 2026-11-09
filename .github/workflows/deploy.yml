@@ -123,3 +123,20 @@ jobs:
           done
           echo "::error::${{ vars.APP_URL }}/up did not return 200 after deploy"
           exit 1
+
+      - name: Tell the owner on WhatsApp
+        if: ${{ always() }}
+        env:
+          WHATSAPP_NOTIFY_PHONE: ${{ secrets.WHATSAPP_NOTIFY_PHONE }}
+          CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
+          TITLE: ${{ github.event.workflow_run.head_commit.message }}
+          OUTCOME: ${{ job.status }}
+        run: |
+          title=$(printf '%s' "$TITLE" | grep -v '^Merge pull request' | grep -v '^$' | head -n1)
+          [ -n "$title" ] || title=$(printf '%s' "$TITLE" | head -n1)
+          if [ "$OUTCOME" = "success" ]; then
+            msg="দাওয়াত: নতুন আপডেট সাইটে লাইভ ✅ ${title} — dawat.cloud"
+          else
+            msg="দাওয়াত: ডেপ্লয় ব্যর্থ ❌ ${title}. সাইট আগের মতোই চলছে।"
+          fi
+          bash .github/scripts/whatsapp.sh "$msg"
