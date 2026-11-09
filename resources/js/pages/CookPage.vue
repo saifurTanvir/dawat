@@ -57,6 +57,29 @@
                             </span>
                         </li>
                     </ul>
+                    <!-- F38: tell the shahidar the food is ready -->
+                    <div v-if="slot.can_ready" class="mt-3 rounded-xl bg-leaf-soft p-3">
+                        <p v-if="slot.ready_at" class="text-sm">
+                            ✅ শাহিদারকে জানানো হয়েছে {{ clockText(slot.ready_at) }}<template v-if="slot.ready_note"> · “{{ slot.ready_note }}”</template>
+                        </p>
+                        <template v-if="readySlot === slot.meal_slot">
+                            <label :for="`ready-${slot.meal_slot}`" class="mb-1 block text-sm font-semibold">শাহিদারের জন্য কিছু বলবেন? (ঐচ্ছিক)</label>
+                            <input
+                                :id="`ready-${slot.meal_slot}`"
+                                v-model="readyNote"
+                                class="field text-base"
+                                maxlength="200"
+                                placeholder="যেমন: ২টা পর্যন্ত বাসায় আছি, তারপর দারোয়ানের কাছে"
+                            />
+                            <div class="mt-2 flex gap-2">
+                                <button type="button" class="btn-primary w-auto px-4" :disabled="busy" @click="sendReady(slot)">জানান</button>
+                                <button type="button" class="btn-quiet" @click="readySlot = null">থাক</button>
+                            </div>
+                        </template>
+                        <button v-else type="button" class="btn-primary mt-1" :disabled="busy" @click="openReady(slot)">
+                            {{ slot.ready_at ? 'আবার জানান' : `${placeOf(slot.label)} খাবার রেডি — শাহিদারকে জানান` }}
+                        </button>
+                    </div>
                     <button
                         v-if="slot.waiting_plates"
                         type="button"
@@ -93,8 +116,8 @@
 import { computed, onMounted, ref } from 'vue';
 import PushToggle from '@/components/PushToggle.vue';
 import { api, errorMessage } from '@/lib/api';
-import { bn } from '@/lib/bn';
-import { taka } from '@/lib/format';
+import { bn, placeOf } from '@/lib/bn';
+import { clockText, taka } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
 
 const auth = useAuthStore();
@@ -121,6 +144,29 @@ async function orderAct(order, path, question) {
     try {
         const { data } = await api.post(`/my/orders/${order.id}/${path}`);
         bookingNotice.value = data.message;
+        await loadBookings();
+    } catch (e) {
+        bookingNotice.value = errorMessage(e);
+    } finally {
+        busy.value = false;
+    }
+}
+
+// F38
+const readySlot = ref(null);
+const readyNote = ref('');
+
+function openReady(slot) {
+    readySlot.value = slot.meal_slot;
+    readyNote.value = slot.ready_note ?? '';
+}
+
+async function sendReady(slot) {
+    busy.value = true;
+    try {
+        const { data } = await api.post('/my/bookings/ready', { meal_slot: slot.meal_slot, note: readyNote.value || null });
+        bookingNotice.value = data.message;
+        readySlot.value = null;
         await loadBookings();
     } catch (e) {
         bookingNotice.value = errorMessage(e);

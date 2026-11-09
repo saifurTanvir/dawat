@@ -14,6 +14,24 @@
                 হাতে জমা টাকা <strong>{{ taka(day.cash_held_paisa) }}</strong> · দাওয়াত টিমকে বুঝিয়ে দিন
             </p>
 
+            <!-- F38: what is waiting right now, meal by meal -->
+            <div class="mt-4 rounded-[var(--radius-plate)] bg-plate p-4">
+                <p class="font-semibold">এখন: তুলতে {{ bn(pickupCount) }}টা বক্স · পৌঁছাতে {{ bn(onTheWay.length) }}টা<template v-if="asking.length"> · ফোন {{ bn(asking.length) }}টা</template></p>
+                <p v-if="newCount" class="mt-1 text-sm font-semibold text-leaf">🆕 শেষবার দেখার পর নতুন {{ bn(newCount) }}টা বক্স</p>
+                <div v-if="slotChips.length > 1" class="-mx-1 mt-3 flex flex-wrap gap-2" role="group" aria-label="বেলা">
+                    <button
+                        v-for="c in slotChips"
+                        :key="c.value"
+                        type="button"
+                        class="min-h-10 rounded-full border px-4 text-sm font-semibold"
+                        :class="slotFilter === c.value ? 'border-leaf bg-leaf text-white' : 'border-rule bg-plate text-ink'"
+                        :aria-pressed="slotFilter === c.value"
+                        @click="slotFilter = c.value"
+                    >{{ c.label }} ({{ bn(c.count) }})</button>
+                </div>
+                <p class="mt-2 text-xs text-muted">তালিকা প্রতি মিনিটে নিজে হালনাগাদ হয় · শেষ {{ loadedAt ? clockText(loadedAt) : '' }}</p>
+            </div>
+
             <!-- Cooks who have not posted yet -->
             <div v-if="day.waiting.length" class="mt-4 rounded-[var(--radius-plate)] bg-turmeric-soft p-4">
                 <p class="font-semibold">এখনো পোস্ট আসেনি</p>
@@ -46,18 +64,23 @@
             <!-- Pickups, cook by cook -->
             <h2 class="mt-6 text-lg font-semibold">পিকআপ</h2>
             <p v-if="!pickups.length" class="mt-1 text-muted">এখন তোলার মতো কিছু নেই।</p>
-            <div v-for="g in pickups" :key="g.kitchen.id" class="mt-3 rounded-[var(--radius-plate)] bg-plate p-4">
+            <div v-for="g in pickups" :key="g.key" class="mt-3 rounded-[var(--radius-plate)] bg-plate p-4">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="font-semibold">{{ g.kitchen.name }}</p>
+                        <p class="font-semibold"><span class="text-leaf">{{ g.orders[0].meal_slot_label }}</span> · {{ g.kitchen.name }}</p>
                         <p class="text-sm text-muted">{{ g.kitchen.address }}</p>
                     </div>
                     <a :href="`tel:${g.kitchen.phone}`" class="shrink-0 font-semibold text-leaf">ফোন</a>
                 </div>
+                <p v-if="g.ready" class="mt-2 rounded-lg bg-leaf-soft px-3 py-2 text-sm">
+                    ✅ <strong>খাবার রেডি</strong> · {{ clockText(g.ready.ready_at) }}<template v-if="g.ready.ready_note"> · “{{ g.ready.ready_note }}”</template>
+                </p>
+                <p v-else class="mt-2 text-sm text-muted">গৃহিণী এখনো "রেডি" জানাননি।</p>
                 <ul class="mt-2 divide-y divide-rule">
                     <li v-for="o in g.orders" :key="o.id" class="flex items-center justify-between gap-3 py-2">
                         <span>
                             <span class="font-semibold">বক্স {{ o.code }}</span>
+                            <span v-if="isNew(o)" class="ml-1 rounded-full bg-leaf px-2 text-xs text-white">নতুন</span>
                             <span v-if="o.kind === 'oneoff'" class="ml-1 rounded-full bg-turmeric-soft px-2 text-xs">একবারের</span>
                             <span class="block text-sm text-muted">{{ o.meal_slot_label }} · {{ o.customer.name }} · {{ bn(o.plates) }} প্লেট</span>
                         </span>
@@ -122,7 +145,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import PushToggle from '@/components/PushToggle.vue';
 import StickerScanner from '@/components/StickerScanner.vue';
 import { api, errorMessage } from '@/lib/api';
@@ -143,29 +166,86 @@ const dateLabel = computed(() => day.value.date
     ? new Intl.DateTimeFormat('bn-BD', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${day.value.date}T00:00:00Z`))
     : '');
 
+// F38: meal filter, newest boxes, cook's "ready".
+const SLOT_ORDER = ['breakfast', 'lunch', 'snack', 'dinner'];
+const slotFilter = ref('all');
+const active = computed(() => day.value.orders.filter((o) => ['asking', 'booked', 'picked_up'].includes(o.status)));
+const slotChips = computed(() => {
+    const chips = [{ value: 'all', label: 'সব', count: active.value.length }];
+    for (const s of SLOT_ORDER) {
+        const list = active.value.filter((o) => o.meal_slot === s);
+        if (list.length) chips.push({ value: s, label: list[0].meal_slot_label, count: list.length });
+    }
+    return chips;
+});
+const inSlot = (o) => slotFilter.value === 'all' || o.meal_slot === slotFilter.value;
+
+const SEEN_KEY = 'dawat.shahidar.seenAt';
+const seenBefore = ref(null);
+function isNew(o) {
+    return Boolean(seenBefore.value && o.created_at && new Date(o.created_at) > new Date(seenBefore.value));
+}
+const newCount = computed(() => active.value.filter(isNew).length);
+
 const pickups = computed(() => {
     const groups = new Map();
-    for (const o of day.value.orders.filter((x) => x.status === 'booked')) {
-        if (!groups.has(o.kitchen.id)) groups.set(o.kitchen.id, { kitchen: o.kitchen, orders: [] });
-        groups.get(o.kitchen.id).orders.push(o);
+    const booked = day.value.orders.filter((x) => x.status === 'booked' && inSlot(x))
+        .sort((a, b) => SLOT_ORDER.indexOf(a.meal_slot) - SLOT_ORDER.indexOf(b.meal_slot));
+    for (const o of booked) {
+        const key = `${o.meal_slot}-${o.kitchen.id}`;
+        if (!groups.has(key)) groups.set(key, { key, kitchen: o.kitchen, orders: [], ready: null });
+        const g = groups.get(key);
+        g.orders.push(o);
+        if (o.ready_at && (!g.ready || o.ready_at > g.ready.ready_at)) g.ready = o;
     }
-    return [...groups.values()];
+    // Ready kitchens first: that food is waiting.
+    return [...groups.values()].sort((a, b) => Number(Boolean(b.ready)) - Number(Boolean(a.ready)));
 });
-const onTheWay = computed(() => day.value.orders.filter((o) => o.status === 'picked_up'));
-const asking = computed(() => day.value.orders.filter((o) => o.status === 'asking'));
+const pickupCount = computed(() => day.value.orders.filter((o) => o.status === 'booked' && inSlot(o)).length);
+const onTheWay = computed(() => day.value.orders.filter((o) => o.status === 'picked_up' && inSlot(o)));
+const asking = computed(() => day.value.orders.filter((o) => o.status === 'asking' && inSlot(o)));
 const finished = computed(() => day.value.orders.filter((o) => !['asking', 'booked', 'picked_up'].includes(o.status)));
+
+const loadedAt = ref(null);
+let timer = null;
 
 async function load() {
     try {
         const { data } = await api.get('/shahidar/today');
         day.value = data.data;
+        loadedAt.value = new Date().toISOString();
+        error.value = '';
     } catch (e) {
-        error.value = errorMessage(e);
+        if (!day.value.date) error.value = errorMessage(e);
     } finally {
         loading.value = false;
     }
 }
-onMounted(load);
+
+function refreshIfVisible() {
+    // Don't redraw while the shahidar is typing a delivery code or scanning.
+    if (document.visibilityState === 'visible' && !handing.value && !scanning.value && !busy.value) load();
+}
+
+onMounted(async () => {
+    try {
+        seenBefore.value = localStorage.getItem(SEEN_KEY);
+    } catch {
+        seenBefore.value = null;
+    }
+    await load();
+    try {
+        localStorage.setItem(SEEN_KEY, new Date().toISOString());
+    } catch {
+        // private mode: no "new" badges next time
+    }
+    timer = setInterval(refreshIfVisible, 60_000);
+    document.addEventListener('visibilitychange', refreshIfVisible);
+});
+onBeforeUnmount(() => {
+    clearInterval(timer);
+    document.removeEventListener('visibilitychange', refreshIfVisible);
+});
 
 async function refreshCash() {
     try {

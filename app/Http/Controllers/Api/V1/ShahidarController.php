@@ -163,6 +163,10 @@ class ShahidarController extends Controller
                 'note' => $o->recipientNote(),
             ],
             'paid' => $o->paid_at !== null,
+            // F38: the cook's "ready" and where/when to collect; new boxes are highlighted.
+            'ready_at' => $o->ready_at?->toIso8601String(),
+            'ready_note' => $o->ready_note,
+            'created_at' => $o->created_at?->toIso8601String(),
         ];
     }
 }

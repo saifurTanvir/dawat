@@ -94,6 +94,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         // F26: the cook's regular bookings today
         Route::get('/my/bookings', [MyBookingController::class, 'index'])->name('my.bookings.index');
+        Route::post('/my/bookings/ready', [MyBookingController::class, 'ready'])->middleware('can:publish-posts')->name('my.bookings.ready');
         Route::post('/my/bookings/off', [MyBookingController::class, 'off'])->middleware('can:publish-posts')->name('my.bookings.off');
         // F29: the cook's one-off orders
         Route::post('/my/orders/{order}/decline', [MyBookingController::class, 'decline'])->name('my.orders.decline');
