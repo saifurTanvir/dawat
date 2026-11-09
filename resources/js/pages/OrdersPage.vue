@@ -1,6 +1,7 @@
 <template>
     <section class="pt-4" aria-labelledby="orders-title">
         <h1 id="orders-title" class="font-serif text-2xl font-bold">আমার খাবার</h1>
+        <PushToggle off-title="অর্ডারের খবর ফোনে জানুন" />
 
         <RouterLink to="/regular" class="mt-3 flex items-center justify-between rounded-[var(--radius-plate)] bg-plate p-4">
             <span>
@@ -31,6 +32,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
+import PushToggle from '@/components/PushToggle.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
 import { taka } from '@/lib/format';

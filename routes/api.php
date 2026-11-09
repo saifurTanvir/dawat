@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\My\MyPostController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\PostShowController;
+use App\Http\Controllers\Api\V1\PushController;
 use App\Http\Controllers\Api\V1\QrController;
 use App\Http\Controllers\Api\V1\RegularController;
 use App\Http\Controllers\Api\V1\ReportController;
@@ -34,6 +35,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('/ping', fn () => ['ok' => true, 'app' => config('app.name')])->name('ping');
     Route::get('/areas', [AreaController::class, 'index'])->name('areas.index');
     Route::get('/tags', [TagController::class, 'index'])->name('tags.index');
+    Route::get('/push/key', [PushController::class, 'key'])->name('push.key');
 
     // F12–F14: what buyers see. Public, so a QR scan works without signing in.
     Route::get('/feed', [FeedController::class, 'index'])->middleware('throttle:feed')->name('feed');
@@ -57,6 +59,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::post('/auth/logout', [OtpController::class, 'logout'])->name('auth.logout');
         Route::get('/me', [MeController::class, 'show'])->name('me');
+        Route::post('/push/subscribe', [PushController::class, 'subscribe'])->middleware('throttle:comments')->name('push.subscribe');
+        Route::delete('/push/subscribe', [PushController::class, 'unsubscribe'])->name('push.unsubscribe');
         Route::patch('/me', [MeController::class, 'update'])->name('me.update');
 
         // F3: become a cook (pending until an admin approves)

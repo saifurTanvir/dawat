@@ -1,6 +1,7 @@
 <template>
     <section class="pt-4" aria-labelledby="regular-title">
         <h1 id="regular-title" class="font-serif text-2xl font-bold">প্রতিদিন ঘরের খাবার</h1>
+        <PushToggle off-title="বক্স বুক হলে বা দাম জিজ্ঞেস করলে ফোনে জানুন" />
 
         <p v-if="loading" class="mt-6 text-muted">লোড হচ্ছে…</p>
 
@@ -173,6 +174,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
+import PushToggle from '@/components/PushToggle.vue';
 import ChoiceChip from '@/components/ChoiceChip.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';

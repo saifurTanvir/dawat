@@ -56,6 +56,9 @@ if grep -q '^APP_ENV=staging' "$SHARED/.env"; then
     php artisan db:seed --class=TestUsersSeeder --force --no-interaction || true
 fi
 
+log "Web Push keys (created once, kept in shared .env)"
+php artisan dawat:webpush-keys --env-file="$SHARED/.env" --no-interaction
+
 log "Caching config, routes, views and events"
 php artisan optimize --no-interaction
 php artisan dawat:robots --no-interaction >/dev/null
