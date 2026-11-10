@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Posts\Tables;
 use App\Enums\MealSlot;
 use App\Enums\PostStatus;
 use App\Filament\Actions\PostModerationActions;
+use App\Filament\Actions\RemovalActions;
 use App\Services\Feed\PostReach;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
@@ -43,7 +44,7 @@ class PostsTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                ActionGroup::make(PostModerationActions::make()),
+                ActionGroup::make([...PostModerationActions::make(), RemovalActions::deletePost()]),
             ]);
     }
 }

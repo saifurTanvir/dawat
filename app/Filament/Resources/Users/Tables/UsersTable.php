@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users\Tables;
 
 use App\Enums\UserStatus;
+use App\Filament\Actions\RemovalActions;
 use App\Filament\Actions\UserBlockActions;
 use App\Support\Roles;
 use Filament\Actions\ActionGroup;
@@ -31,7 +32,7 @@ class UsersTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                ActionGroup::make(UserBlockActions::make()),
+                ActionGroup::make([...UserBlockActions::make(), RemovalActions::deleteUser()]),
             ]);
     }
 }

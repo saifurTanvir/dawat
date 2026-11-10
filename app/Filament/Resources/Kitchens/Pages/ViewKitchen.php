@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Kitchens\Pages;
 
 use App\Filament\Actions\KitchenModerationActions;
+use App\Filament\Actions\RemovalActions;
 use App\Filament\Resources\Kitchens\KitchenResource;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -16,6 +17,7 @@ class ViewKitchen extends ViewRecord
         return [
             ...KitchenModerationActions::make(),
             EditAction::make(),
+            RemovalActions::deleteKitchen(),
         ];
     }
 }

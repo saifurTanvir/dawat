@@ -3,17 +3,16 @@
 namespace App\Filament\Resources\Shahidars;
 
 use App\Actions\EnsurePerson;
+use App\Filament\Actions\RemovalActions;
 use App\Filament\Resources\Shahidars\Pages\ManageShahidars;
 use App\Filament\Support\PhoneField;
 use App\Models\Area;
 use App\Models\User;
 use App\Support\Roles;
 use BackedEnum;
-use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -95,17 +94,7 @@ class ShahidarResource extends Resource
             ])
             ->recordActions([
                 EditAction::make(),
-                Action::make('removeRole')
-                    ->label('শাহিদার থেকে বাদ')
-                    ->icon(Heroicon::OutlinedUserMinus)
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalDescription('এই ব্যক্তি আর শাহিদারের কাজ দেখতে পাবেন না। চলমান জুটিগুলো আগে অন্য শাহিদারকে দিন।')
-                    ->action(function (User $record) {
-                        $record->shahidarAreas()->detach();
-                        $record->removeRole(Roles::SHAHIDAR);
-                        Notification::make()->title('শাহিদার রোল সরানো হয়েছে')->success()->send();
-                    }),
+                RemovalActions::removeShahidar(),
             ]);
     }
 
