@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Kitchens\Tables;
 
 use App\Enums\KitchenStatus;
 use App\Filament\Actions\KitchenModerationActions;
+use App\Filament\Actions\RemovalActions;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -52,6 +53,7 @@ class KitchensTable
                 ActionGroup::make([
                     ...KitchenModerationActions::make(),
                     EditAction::make(),
+                    RemovalActions::deleteKitchen(),
                 ]),
             ]);
     }

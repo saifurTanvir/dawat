@@ -7,6 +7,7 @@ use App\Actions\PairCustomer;
 use App\Enums\CustomerStatus;
 use App\Enums\KitchenStatus;
 use App\Enums\MealSlot;
+use App\Filament\Actions\RemovalActions;
 use App\Filament\Resources\Bills\BillResource;
 use App\Filament\Resources\Customers\Pages\ListCustomers;
 use App\Filament\Resources\Customers\Pages\ViewCustomer;
@@ -23,6 +24,7 @@ use App\Support\ContactHours;
 use App\Support\Roles;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\CheckboxList;
@@ -331,7 +333,12 @@ class CustomerResource extends Resource
             ->recordActions([
                 ViewAction::make(),
                 self::pairAction(),
-                EditAction::make()->mutateDataUsing(fn (array $data) => self::bookingData($data)),
+                ActionGroup::make([
+                    EditAction::make()->mutateDataUsing(fn (array $data) => self::bookingData($data)),
+                    RemovalActions::unpair(),
+                    RemovalActions::restart(),
+                    RemovalActions::deleteCustomer(),
+                ]),
             ]);
     }
 
