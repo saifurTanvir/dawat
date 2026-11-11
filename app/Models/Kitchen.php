@@ -37,6 +37,7 @@ class Kitchen extends Model
             'allow_comment' => 'boolean',
             'allow_order' => 'boolean',
             'rating_avg' => 'decimal:2',
+            'rating_count' => 'integer',
             'max_regular_customers' => 'integer',
             'reach_m' => 'integer',
             'contact_verified_at' => 'datetime',
@@ -82,6 +83,12 @@ class Kitchen extends Model
 
     /** F25: regular customers paired with this cook (open pairings). */
     /** F35: areas where this kitchen's new posts also show. */
+    /** F47: customers' reviews of her boxes. */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(BoxReview::class);
+    }
+
     /** F43: standing daily menus, one per meal. */
     public function menus(): HasMany
     {

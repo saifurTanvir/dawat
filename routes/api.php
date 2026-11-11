@@ -6,12 +6,14 @@ use App\Http\Controllers\Api\V1\Auth\OtpController;
 use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\FeedController;
+use App\Http\Controllers\Api\V1\HistoryController;
 use App\Http\Controllers\Api\V1\KitchenContactController;
 use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\My\MyBookingController;
 use App\Http\Controllers\Api\V1\My\MyMenuController;
 use App\Http\Controllers\Api\V1\My\MyPostController;
+use App\Http\Controllers\Api\V1\My\MySalesController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\PostShowController;
@@ -101,6 +103,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/my/bookings/off', [MyBookingController::class, 'off'])->middleware('can:publish-posts')->name('my.bookings.off');
         // F43: daily menus that post themselves
         Route::get('/my/menus', [MyMenuController::class, 'index'])->name('my.menus.index');
+        // F47: sales, reviews and history
+        Route::get('/my/sales', [MySalesController::class, 'index'])->name('my.sales');
+        Route::post('/my/reviews/{review}/reply', [MySalesController::class, 'reply'])->middleware('throttle:comments')->name('my.reviews.reply');
+        Route::get('/my/history', [HistoryController::class, 'index'])->name('my.history');
+        Route::post('/my/history/{order}/review', [HistoryController::class, 'review'])->middleware('throttle:comments')->name('my.history.review');
         // F44: before posting, where the plates will go
         Route::get('/my/posts/preview', [PostController::class, 'preview'])->name('my.posts.preview');
         Route::put('/my/menus/{slot}', [MyMenuController::class, 'save'])->middleware('can:publish-posts')->name('my.menus.save');
@@ -131,6 +138,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/posts/{post}/sold-out', [ShahidarKitchenController::class, 'soldOut'])->name('posts.sold-out');
             Route::post('/kitchen-orders/{order}/decline', [ShahidarKitchenController::class, 'decline'])->name('kitchen-orders.decline');
             Route::post('/kitchen-orders/{order}/handed', [ShahidarKitchenController::class, 'handed'])->name('kitchen-orders.handed');
+            Route::post('/reviews/{review}/reply', [ShahidarKitchenController::class, 'reply'])->middleware('throttle:comments')->name('reviews.reply');
         });
         Route::post('/stickers/{code}/received', [StickerController::class, 'received'])->name('stickers.received');
 

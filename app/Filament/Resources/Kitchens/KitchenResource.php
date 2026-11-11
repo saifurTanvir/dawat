@@ -6,6 +6,7 @@ use App\Enums\KitchenStatus;
 use App\Filament\Resources\Kitchens\Pages\EditKitchen;
 use App\Filament\Resources\Kitchens\Pages\ListKitchens;
 use App\Filament\Resources\Kitchens\Pages\ViewKitchen;
+use App\Filament\Resources\Kitchens\RelationManagers\ReviewsRelationManager;
 use App\Filament\Resources\Kitchens\Schemas\KitchenForm;
 use App\Filament\Resources\Kitchens\Schemas\KitchenInfolist;
 use App\Filament\Resources\Kitchens\Tables\KitchensTable;
@@ -68,6 +69,11 @@ class KitchenResource extends Resource
     {
         // Cooks register themselves from the app.
         return false;
+    }
+
+    public static function getRelations(): array
+    {
+        return [ReviewsRelationManager::class];
     }
 
     public static function getPages(): array

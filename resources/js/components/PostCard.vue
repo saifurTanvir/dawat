@@ -47,6 +47,8 @@
                     {{ bn(post.plates_left) }} প্লেট বাকি
                 </span>
                 · {{ clockText(post.available_until) }} পর্যন্ত
+                <!-- F47: only the stars are public -->
+                <span v-if="post.kitchen?.rating_count" class="whitespace-nowrap">· <span class="text-turmeric">★</span> {{ bn(post.kitchen.rating_avg.toFixed(1)) }} ({{ bn(post.kitchen.rating_count) }})</span>
             </p>
 
             <p v-if="$slots.meta" class="mt-1 text-sm text-muted"><slot name="meta" /></p>

@@ -136,5 +136,7 @@ class CookActions
             'confirm_method' => 'cook_tap', 'confirmed_by' => $by->id,
             'paid_at' => now(), 'collected_by' => $by->id,
         ])->save();
+        // F47
+        Push::toUser($order->recipient(), 'খাবার কেমন লাগল?', 'বক্স '.$order->code().' নিয়েছেন। ৩ দিনের মধ্যে তারা দিয়ে জানান।', '/history', 'order-'.$order->id);
     }
 }

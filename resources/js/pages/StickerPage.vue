@@ -12,6 +12,7 @@
 
             <button v-if="info.order.can_confirm && !done" type="button" class="btn-primary mt-4" :disabled="busy" @click="confirm">খাবার পেয়েছি</button>
             <p v-if="message" class="mt-3 rounded-lg bg-leaf-soft p-3" role="status">{{ message }}</p>
+            <RouterLink v-if="done" :to="{ name: 'history' }" class="btn-primary mt-3">★ খাবার কেমন লাগল? রিভিউ দিন</RouterLink>
             <RouterLink v-if="info.state === 'shahidar'" to="/shahidar" class="btn-quiet -ml-4 mt-2">আজকের তালিকায় যান</RouterLink>
         </div>
 

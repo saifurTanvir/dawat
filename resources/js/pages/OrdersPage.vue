@@ -11,6 +11,14 @@
             <span aria-hidden="true" class="text-leaf">›</span>
         </RouterLink>
 
+        <RouterLink :to="{ name: 'history' }" class="mt-3 flex items-center justify-between rounded-[var(--radius-plate)] bg-plate p-4">
+            <span>
+                <span class="block font-semibold">যা পেয়েছি</span>
+                <span class="text-sm text-muted">আগের সব বক্স, টাকা, রিভিউ দিন</span>
+            </span>
+            <span aria-hidden="true" class="text-leaf">›</span>
+        </RouterLink>
+
         <h2 class="mt-6 text-lg font-semibold">"নিতে চাই" অর্ডার</h2>
         <p v-if="loading" class="mt-2 text-muted">লোড হচ্ছে…</p>
         <p v-else-if="!orders.length" class="mt-2 text-muted">এই সপ্তাহে কোনো অর্ডার নেই। ফিডে পছন্দের খাবারে "নিতে চাই" চাপুন।</p>

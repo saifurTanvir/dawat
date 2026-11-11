@@ -149,7 +149,7 @@ class LateBookingTest extends TestCase
         Queue::assertPushed(SendWebPush::class, fn ($j) => $j->userId === $this->customer->user_id && str_contains($j->title, 'পথে'));
 
         app(Delivery::class)->deliverByShahidar($order->fresh(), $this->shahidar, null);
-        Queue::assertPushed(SendWebPush::class, fn ($j) => $j->userId === $this->customer->user_id && $j->title === 'খাবার পৌঁছেছে');
+        Queue::assertPushed(SendWebPush::class, fn ($j) => $j->userId === $this->customer->user_id && $j->title === 'খাবার কেমন লাগল?');
 
         $this->getJson('/api/v1/regular')->assertJsonPath('data.today.0.status', 'delivered')
             ->assertJsonPath('data.today.0.delivered_at', fn ($v) => $v !== null);

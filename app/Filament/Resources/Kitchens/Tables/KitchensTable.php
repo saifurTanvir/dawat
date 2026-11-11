@@ -39,6 +39,8 @@ class KitchensTable
                     ->state(fn ($record) => $record->location !== null)
                     ->boolean(),
                 TextColumn::make('posts_count')->label('পোস্ট')->counts('posts')->sortable(),
+                TextColumn::make('rating_avg')->label('রেটিং')->sortable()
+                    ->formatStateUsing(fn ($state, $record) => $record->rating_count ? '★ '.number_format((float) $state, 1).' ('.$record->rating_count.')' : '—')->placeholder('—'),
                 TextColumn::make('created_at')->label('নিবন্ধন')->since()->sortable(),
                 TextColumn::make('approved_at')->label('অনুমোদন')->dateTime('d M Y')->placeholder('—')->toggleable(isToggledHiddenByDefault: true),
             ])

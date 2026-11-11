@@ -127,6 +127,21 @@
                 <button v-else-if="data.menus.length < 4" type="button" class="btn-quiet -ml-4 mt-1" @click="newMenu">+ মেনু যোগ করুন</button>
             </div>
 
+            <!-- F47: what she sold this week and what customers said -->
+            <div v-if="data.sales" class="mt-4 rounded-[var(--radius-plate)] bg-plate p-4">
+                <div class="flex items-start justify-between gap-2">
+                    <h2 class="font-semibold">বিক্রি আর রিভিউ (৭ দিন)</h2>
+                    <p class="text-sm"><span class="text-turmeric">★</span> {{ data.sales.rating_avg ? bn(data.sales.rating_avg.toFixed(1)) : '—' }} ({{ bn(data.sales.rating_count) }})</p>
+                </div>
+                <p class="text-xs text-muted">{{ bn(data.sales.totals.plates) }} প্লেট · গৃহিণীর পাওনা বাকি {{ taka(data.sales.totals.due_paisa) }}</p>
+                <p v-for="d in data.sales.days.slice(0, 6)" :key="`${d.date}-${d.meal_slot}`" class="mt-1 text-xs">
+                    {{ d.date.slice(5) }} {{ d.meal_slot_label }} · নিয়মিত {{ bn(d.regular_plates) }} · ফিড {{ bn(d.feed_plates) }} · পৌঁছেছে {{ bn(d.delivered) }}<template v-if="d.cancelled"> · বাতিল {{ bn(d.cancelled) }}</template>
+                </p>
+                <div class="mt-3 border-t border-rule pt-3">
+                    <ReviewList :reviews="data.sales.reviews" :reply-path="(r) => `/shahidar/reviews/${r.id}/reply`" @replied="(m) => { notice = m; load(); }" />
+                </div>
+            </div>
+
             <!-- Today's log -->
             <div v-if="data.log.length" class="mt-4 rounded-[var(--radius-plate)] bg-plate p-4 text-sm">
                 <h2 class="font-semibold">আজ গৃহিণীর হয়ে যা করা হয়েছে</h2>
@@ -141,6 +156,7 @@ import { onMounted, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import CallButtons from '@/components/CallButtons.vue';
 import PlateSplitBar from '@/components/PlateSplitBar.vue';
+import ReviewList from '@/components/ReviewList.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
 import { clockText, taka } from '@/lib/format';
