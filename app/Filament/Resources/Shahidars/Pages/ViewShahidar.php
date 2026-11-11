@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Shahidars\Pages;
 
 use App\Filament\Actions\LoginHelpActions;
 use App\Filament\Actions\RemovalActions;
+use App\Filament\Actions\ViewAsAction;
 use App\Filament\Resources\Shahidars\ShahidarResource;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -20,6 +21,6 @@ class ViewShahidar extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [LoginHelpActions::group(fn ($record) => $record), EditAction::make(), RemovalActions::removeShahidar()];
+        return [ViewAsAction::make(fn ($record) => $record, 'শাহিদারের অ্যাপ দেখুন'), LoginHelpActions::group(fn ($record) => $record), EditAction::make(), RemovalActions::removeShahidar()];
     }
 }

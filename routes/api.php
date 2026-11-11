@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\FeedController;
 use App\Http\Controllers\Api\V1\HistoryController;
+use App\Http\Controllers\Api\V1\ImpersonationController;
 use App\Http\Controllers\Api\V1\KitchenContactController;
 use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
@@ -63,7 +64,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/no-code', [OtpController::class, 'noCode'])->name('no-code');
     });
 
-    Route::middleware(['auth:sanctum', 'active'])->group(function () {
+    // F51: opening the app as someone else (the code comes from the admin or a shahidar)
+    Route::post('/impersonate/claim', [ImpersonationController::class, 'claim'])->middleware('throttle:otp')->name('impersonate.claim');
+
+    Route::middleware(['auth:sanctum', 'active', 'impersonation'])->group(function () {
+        Route::post('/impersonate/end', [ImpersonationController::class, 'end'])->name('impersonate.end');
         Route::post('/auth/logout', [OtpController::class, 'logout'])->name('auth.logout');
         Route::get('/me', [MeController::class, 'show'])->name('me');
         Route::post('/push/subscribe', [PushController::class, 'subscribe'])->middleware('throttle:comments')->name('push.subscribe');
@@ -133,6 +138,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('/kitchens/{kitchen}/preview', [ShahidarController::class, 'preview'])->name('kitchens.preview');
             // F46: act for a cook
             Route::get('/kitchens/{kitchen}', [ShahidarKitchenController::class, 'show'])->name('kitchens.show');
+            Route::post('/kitchens/{kitchen}/view-as', [ImpersonationController::class, 'shahidarStart'])->name('kitchens.view-as');
             Route::post('/kitchens/{kitchen}/ready', [ShahidarKitchenController::class, 'ready'])->name('kitchens.ready');
             Route::post('/kitchens/{kitchen}/off', [ShahidarKitchenController::class, 'off'])->name('kitchens.off');
             Route::put('/kitchens/{kitchen}/menus/{slot}', [ShahidarKitchenController::class, 'saveMenu'])->name('kitchens.menus.save');
