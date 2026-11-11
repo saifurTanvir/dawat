@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Kitchens\Pages;
 
 use App\Filament\Actions\ActForCookActions;
 use App\Filament\Actions\KitchenModerationActions;
+use App\Filament\Actions\LoginHelpActions;
 use App\Filament\Actions\PostForCookActions;
 use App\Filament\Actions\RemovalActions;
 use App\Filament\Resources\Kitchens\KitchenResource;
@@ -20,6 +21,7 @@ class ViewKitchen extends ViewRecord
     {
         return [
             PostForCookActions::postFor(),
+            LoginHelpActions::group(fn ($record) => $record->user),
             ActionGroup::make([
                 ActForCookActions::ready(),
                 ActForCookActions::off(),

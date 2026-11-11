@@ -70,7 +70,7 @@ class BulkSmsBdSender implements OtpSender
                 'code' => $status,
                 'reason' => self::ERRORS[$status] ?? $response->json('error_message'),
             ]);
-            throw new OtpDeliveryFailedException("BulkSMSBD error {$status}.");
+            throw new OtpDeliveryFailedException("BulkSMSBD error {$status}: ".(self::ERRORS[$status] ?? $response->json('error_message') ?? 'unknown'));
         }
     }
 }

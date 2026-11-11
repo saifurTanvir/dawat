@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Customers\Pages;
 
+use App\Filament\Actions\LoginHelpActions;
 use App\Filament\Actions\RemovalActions;
 use App\Filament\Resources\Customers\CustomerResource;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,6 +14,7 @@ class ViewCustomer extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            LoginHelpActions::group(fn ($record) => $record->user),
             CustomerResource::pairAction(),
             CustomerResource::bookNowAction(),
             CustomerResource::issueBillAction(),

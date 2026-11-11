@@ -27,6 +27,9 @@ class UsersTable
             ])
             ->filters([
                 SelectFilter::make('status')->label('অবস্থা')->options(UserStatus::class),
+                // F50
+                SelectFilter::make('verified_via')->label('নম্বর যাচাই')
+                    ->options(['sms' => 'SMS-এ যাচাই', 'whatsapp' => 'হোয়াটসঅ্যাপ কোডে (SMS-এ না)', 'link' => 'লগইন লিংকে (SMS-এ না)']),
                 SelectFilter::make('roles')->label('রোল')->relationship('roles', 'name')
                     ->options(array_combine(Roles::all(), Roles::all())),
             ])

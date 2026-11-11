@@ -69,6 +69,12 @@ class User extends Authenticatable implements FilamentUser, HasName
         return $this->belongsToMany(Area::class, 'area_shahidar')->withTimestamps();
     }
 
+    /** F50: codes sent to this number. */
+    public function smsLogs(): HasMany
+    {
+        return $this->hasMany(SmsLog::class, 'phone', 'phone');
+    }
+
     /** F49: one-off feed orders this person bought. */
     public function boughtOrders(): HasMany
     {

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['phone', 'code_hash', 'expires_at', 'ip'])]
+#[Fillable(['phone', 'code_hash', 'expires_at', 'ip', 'channel', 'created_by'])]
 class OtpCode extends Model
 {
     use MassPrunable;

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Users\Schemas;
 use App\Filament\Resources\Customers\CustomerResource;
 use App\Filament\Support\Links;
 use App\Models\User;
+use App\Services\Otp\LoginHelp;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Section;
@@ -26,6 +27,9 @@ class UserInfolist
                         TextEntry::make('kitchen.display_name')->label('রান্নাঘর')->placeholder('—'),
                         TextEntry::make('email')->label('ইমেইল (অ্যাডমিন)')->placeholder('—'),
                         TextEntry::make('phone_verified_at')->label('নম্বর যাচাই')->dateTime()->placeholder('—'),
+                        // F50: how the number was confirmed.
+                        TextEntry::make('verified_via')->label('কীভাবে যাচাই')->state(fn (User $record) => LoginHelp::label($record))
+                            ->badge()->color(fn (User $record) => $record->verified_via === 'sms' ? 'success' : ($record->verified_via ? 'warning' : 'gray')),
                         TextEntry::make('created_at')->label('যোগ দিয়েছেন')->dateTime(),
                     ]),
                 // F49: this person's other pages, and their history as a buyer.

@@ -4,6 +4,7 @@ use App\Http\Controllers\Web\BillController;
 use App\Http\Controllers\Web\SeoController;
 use App\Http\Controllers\Web\SpaController;
 use App\Support\QrImage;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,6 +25,15 @@ Route::get('/app/qr.svg', fn () => response(QrImage::svg(url('/app')), 200, [
     'Content-Type' => 'image/svg+xml',
     'Cache-Control' => 'public, max-age=86400',
 ]))->name('app.qr');
+
+// F50: the admin shows a one-time login link as a QR on their own screen.
+Route::get('/admin-tools/login-qr', function (Request $request) {
+    abort_unless($request->user()?->hasRole('admin'), 403);
+    $url = (string) $request->query('u');
+    abort_unless(str_starts_with($url, url('/l/')), 404);
+
+    return response()->view('admin.login-qr', ['url' => $url, 'svg' => QrImage::svg($url)])->header('Cache-Control', 'no-store');
+})->name('admin.login-qr');
 
 // F39: a customer's bill, from a link.
 Route::get('/bill/{token}', [BillController::class, 'show'])->where('token', '[A-Za-z0-9]{40}')->name('bill.show');

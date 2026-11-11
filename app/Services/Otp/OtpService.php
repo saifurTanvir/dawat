@@ -18,6 +18,11 @@ class OtpService
 
     public const MAX_ATTEMPTS = 5;
 
+    /** F50: how the code that was just used had been sent. */
+    private ?string $lastChannel = null;
+
+    private ?int $lastCreatedBy = null;
+
     public function __construct(private readonly OtpSender $sender) {}
 
     /**
@@ -39,6 +44,8 @@ class OtpService
         }
 
         $code = $this->generateCode();
+        // F50: asking again soon after: send it worded differently, in case a filter held the first one back.
+        $retry = $latest && $latest->created_at->gt(now()->subMinutes(15));
 
         $otp = DB::transaction(function () use ($phone, $code, $ip) {
             // Only the newest code works.
@@ -53,7 +60,7 @@ class OtpService
         });
 
         try {
-            $this->sender->send($phone, $code, $purpose, $context);
+            $this->sender->send($phone, $code, $purpose, $context + ($retry ? ['retry' => true] : []));
         } catch (OtpDeliveryFailedException $e) {
             // Not delivered: let the person ask again straight away.
             $otp->delete();
@@ -77,9 +84,8 @@ class OtpService
                 // Everyone starts as a buyer; becoming a cook is a separate, reviewed step.
                 $user->assignRole(Roles::BUYER);
             }
-            if (! $user->phone_verified_at) {
-                $user->forceFill(['phone_verified_at' => now()])->save();
-            }
+            // F50: an SMS code confirms the number; a code the admin sent on WhatsApp does not.
+            LoginHelp::markVerified($user, $this->lastChannel === 'whatsapp' ? 'whatsapp' : 'sms', $this->lastCreatedBy);
 
             return $user;
         });
@@ -112,6 +118,8 @@ class OtpService
             }
 
             $otp->forceFill(['consumed_at' => now()])->save();
+            $this->lastChannel = $otp->channel ?? 'sms';
+            $this->lastCreatedBy = $otp->created_by;
 
             return true;
         });
