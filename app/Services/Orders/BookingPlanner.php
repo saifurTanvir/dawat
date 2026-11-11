@@ -15,6 +15,7 @@ use App\Models\Order;
 use App\Models\Pairing;
 use App\Models\Post;
 use App\Services\Otp\OtpPurpose;
+use App\Services\Push\Push;
 use App\Support\DhakaTime;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
@@ -81,18 +82,7 @@ class BookingPlanner
             ]);
         }
 
-        $orders = $pairings->map(function (Pairing $p) use ($post) {
-            // F30: above the customer's limit → hold the plates and ask first.
-            $limit = $p->customer->max_price_paisa;
-            $ask = $limit !== null && $post->price_paisa > $limit;
-
-            return $this->createOrder($p, $post->meal_slot, $ask ? OrderStatus::Asking : OrderStatus::Booked, [
-                'post_id' => $post->id,
-                'title' => $post->title,
-                'food_paisa' => $post->price_paisa * $p->customer->plates,
-                'ask_until' => $ask ? now()->addMinutes((int) config('dawat.orders.ask_minutes', 45)) : null,
-            ]);
-        });
+        $orders = $pairings->map(fn (Pairing $p) => $this->bookOne($p, $post));
 
         if ($needed > 0) {
             $post->plates_left = $post->plates_total - $needed;
@@ -103,6 +93,118 @@ class BookingPlanner
         }
 
         return $orders;
+    }
+
+    /** One customer's box from a post: booked, or held while they are asked about a higher price (F30). */
+    private function bookOne(Pairing $p, Post $post): Order
+    {
+        $limit = $p->customer->max_price_paisa;
+        $ask = $limit !== null && $post->price_paisa > $limit;
+
+        return $this->createOrder($p, $post->meal_slot, $ask ? OrderStatus::Asking : OrderStatus::Booked, [
+            'post_id' => $post->id,
+            'title' => $post->title,
+            'food_paisa' => $post->price_paisa * $p->customer->plates,
+            'ask_until' => $ask ? now()->addMinutes((int) config('dawat.orders.ask_minutes', 45)) : null,
+        ]);
+    }
+
+    /** Today's live post of this cook for this meal that still has plates on the feed. */
+    private function livePost(Kitchen $kitchen, MealSlot $slot, bool $lock = false): ?Post
+    {
+        return Post::where('kitchen_id', $kitchen->id)->where('meal_slot', $slot->value)
+            ->where('status', PostStatus::Live)->where('available_until', '>', now())
+            ->where('published_at', '>=', now(DhakaTime::TZ)->startOfDay())
+            ->when($lock, fn ($q) => $q->lockForUpdate())
+            ->latest('id')->first();
+    }
+
+    /**
+     * F45: a customer paired (or whose booking changed) after the cook posted
+     * today gets a box from that post at once, if enough plates are left.
+     *
+     * @return Collection<int, Order>
+     */
+    public function bookLate(Customer $customer): Collection
+    {
+        $customer->refresh();
+        $pairing = $customer->pairing()->with(['customer.user', 'customer.area', 'kitchen'])->first();
+        if (! $pairing || $customer->status !== CustomerStatus::Active) {
+            return collect();
+        }
+
+        $made = collect();
+        foreach (MealSlot::cases() as $slot) {
+            $order = DB::transaction(function () use ($pairing, $slot) {
+                if (! $this->expected($pairing->kitchen, $slot)->contains('id', $pairing->id)) {
+                    return null;
+                }
+                $post = $this->livePost($pairing->kitchen, $slot, lock: true);
+                if (! $post || $post->plates_left < $pairing->customer->plates) {
+                    return null;
+                }
+                $order = $this->bookOne($pairing, $post);
+                $post->plates_left -= $pairing->customer->plates;
+                if ($post->plates_left === 0) {
+                    $post->status = PostStatus::SoldOut;
+                }
+                $post->save();
+
+                return $order;
+            });
+            if ($order) {
+                // The post's summary (F44) went out before this customer joined: tell the shahidar now.
+                Push::toUser($pairing->shahidar_id, "নতুন বক্স {$order->code()} · {$slot->label()}",
+                    "{$pairing->kitchen->display_name} থেকে {$pairing->customer->user->name}-এর জন্য (পোস্টের পরে জুটি)।", '/shahidar', "order-{$order->id}");
+                $made->push($order);
+            }
+        }
+
+        return $made;
+    }
+
+    /**
+     * F45: for each meal of the customer's booking, what happens today and,
+     * when there is no box, why.
+     *
+     * @return list<array{slot: string, label: string, line: string, ok: bool, can_book: bool}>
+     */
+    public function todayReasons(Customer $customer): array
+    {
+        $today = self::today();
+        $weekday = Carbon::parse($today, DhakaTime::TZ)->dayOfWeek;
+        $pairing = $customer->pairing()->with('kitchen')->first();
+        $rows = [];
+
+        foreach (MealSlot::cases() as $slot) {
+            if (! in_array($slot->value, $customer->meal_slots ?? [], true)) {
+                continue;
+            }
+            $order = Order::where('customer_id', $customer->id)->whereDate('service_date', $today)->where('meal_slot', $slot->value)->latest('id')->first();
+            $post = $pairing ? $this->livePost($pairing->kitchen, $slot) : null;
+            $canBook = false;
+
+            $line = match (true) {
+                $order !== null => 'বক্স '.$order->code().' · '.($order->cancelled_by === 'cook' ? 'আজ রান্না নেই' : $order->status->label())
+                    .($order->status === OrderStatus::Cancelled && $order->cancel_reason ? ' ('.$order->cancel_reason.')' : ''),
+                $customer->status !== CustomerStatus::Active => 'গ্রাহক এখন "'.$customer->status->getLabel().'" — জুটি চালু নেই',
+                $pairing === null => 'জুটি বাঁধা হয়নি',
+                ! in_array($weekday, array_map('intval', $customer->weekdays ?? []), true) => 'আজ বুকিংয়ের দিন না',
+                CustomerPause::where('customer_id', $customer->id)->covering($today)->exists() => 'আজ বিরতিতে আছেন',
+                KitchenDayOff::where('kitchen_id', $pairing->kitchen_id)->whereDate('date', $today)->where('meal_slot', $slot->value)->exists() => 'গৃহিণী আজ এই বেলায় রাঁধছেন না',
+                $post !== null && $post->plates_left < $customer->plates => 'পোস্ট এসেছে, কিন্তু ফিডে যথেষ্ট প্লেট বাকি নেই ('.Order::banglaDigits((string) $post->plates_left).' বাকি)',
+                $post !== null => (function () use (&$canBook) {
+                    $canBook = true;
+
+                    return 'পোস্ট এসেছে, এখনো বক্স হয়নি — এখন বুক করা যায়';
+                })(),
+                default => 'গৃহিণী এখনো পোস্ট দেননি',
+            };
+
+            $rows[] = ['slot' => $slot->value, 'label' => $slot->label(), 'line' => $line, 'ok' => $order !== null && $order->status !== OrderStatus::Cancelled, 'can_book' => $canBook];
+        }
+
+        return $rows;
     }
 
     /**

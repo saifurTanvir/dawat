@@ -99,17 +99,18 @@ class RegularController extends Controller
     }
 
     /** DELETE /api/v1/regular/pauses/{pause} */
-    public function unpause(Request $request, CustomerPause $pause): RegularResource
+    public function unpause(Request $request, CustomerPause $pause, BookingPlanner $planner): RegularResource
     {
         $customer = Customer::where('user_id', $request->user()->id)->firstOrFail();
         abort_unless($pause->customer_id === $customer->id, 404);
         $pause->delete();
+        $planner->bookLate($customer);
 
         return RegularResource::make($customer->fresh(self::WITH))->additional(['message' => 'বিরতি তুলে নেওয়া হয়েছে।']);
     }
 
     /** PUT /api/v1/regular — ask, ask again after stopping, or change the booking. */
-    public function save(SaveRegularRequest $request): RegularResource
+    public function save(SaveRegularRequest $request, BookingPlanner $planner): RegularResource
     {
         $data = $request->validated();
         $user = $request->user();
@@ -141,6 +142,9 @@ class RegularController extends Controller
 
             return $customer;
         });
+
+        // F45: a meal added for today gets a box from a post already up.
+        $planner->bookLate($customer);
 
         return RegularResource::make($customer->fresh(self::WITH))
             ->additional(['message' => $customer->wasRecentlyCreated || $customer->status === CustomerStatus::Waiting

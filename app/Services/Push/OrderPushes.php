@@ -42,7 +42,10 @@ class OrderPushes
         // The shahidar acts on new boxes and on price questions.
         if ($o->shahidar_id && ! $o->isSelfPickup()) {
             match ($purpose) {
-                OtpPurpose::OrderBooked => Push::toUser($o->shahidar_id, "নতুন বক্স {$box} · {$slot}", "{$o->kitchen->display_name} থেকে {$first}-এর জন্য {$plates} প্লেট।", '/shahidar', "order-{$o->id}"),
+                // F44: regular boxes from a post are in the post's summary push (and late ones get their own, F45).
+                OtpPurpose::OrderBooked => $o->post_id && ! $o->isOneOff()
+                    ? null
+                    : Push::toUser($o->shahidar_id, "নতুন বক্স {$box} · {$slot}", "{$o->kitchen->display_name} থেকে {$first}-এর জন্য {$plates} প্লেট।", '/shahidar', "order-{$o->id}"),
                 OtpPurpose::PriceAsk => Push::toUser($o->shahidar_id, "দাম বেশি: {$first}-কে জিজ্ঞেস করুন", "{$title} · বক্স {$box}। উত্তর না এলে প্লেট ফিডে চলে যাবে।", '/shahidar', "order-{$o->id}"),
                 default => null,
             };

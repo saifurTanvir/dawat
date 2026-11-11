@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\Sticker;
 use App\Models\User;
+use App\Services\Push\Push;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -42,6 +43,11 @@ class Delivery
             }
 
             $order->forceFill(['status' => OrderStatus::PickedUp, 'picked_at' => now()])->save();
+
+            // F45: the customer learns the food is on its way.
+            Push::toUser($order->recipient(), "আপনার {$order->meal_slot->label()}র খাবার পথে",
+                'শাহিদার '.($shahidar->name ?: '').' খাবার নিয়ে আসছেন · বক্স '.$order->code().'। ডেলিভারি কোড হাতের কাছে রাখুন।',
+                $order->isOneOff() ? '/orders' : '/regular', 'order-'.$order->id);
 
             return $order;
         });
@@ -84,6 +90,8 @@ class Delivery
             $order = $this->lock($order);
             $this->expect($order, OrderStatus::PickedUp, 'শুধু পিকআপ হওয়া বক্সই "পৌঁছানো যায়নি" হতে পারে।');
             $order->forceFill(['status' => OrderStatus::Failed, 'failure_reason' => $reason, 'confirmed_by' => $shahidar->id])->save();
+            Push::toUser($order->recipient(), 'খাবার পৌঁছানো যায়নি', "বক্স {$order->code()}: {$reason}। দরকার হলে শাহিদারকে ফোন করুন।",
+                $order->isOneOff() ? '/orders' : '/regular', 'order-'.$order->id);
 
             // F29: two no-shows in 30 days pause "নিতে চাই" for that buyer.
             if ($order->isOneOff()) {
@@ -106,6 +114,12 @@ class Delivery
             'confirm_method' => $method,
             'confirmed_by' => $by->id,
         ])->save();
+
+        // F45: unless the customer confirmed it themselves by scanning.
+        if ($method !== self::BY_CUSTOMER_SCAN) {
+            Push::toUser($order->recipient(), 'খাবার পৌঁছেছে', 'বক্স '.$order->code().' আপনার হাতে দেওয়া হয়েছে। ভালো লাগলে জানাবেন।',
+                $order->isOneOff() ? '/orders' : '/regular', 'order-'.$order->id);
+        }
 
         return $order;
     }

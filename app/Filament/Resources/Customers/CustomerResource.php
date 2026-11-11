@@ -238,6 +238,23 @@ class CustomerResource extends Resource
             });
     }
 
+    /** F45: the cook posted before the pairing (or booking change): book from that post now. */
+    public static function bookNowAction(): Action
+    {
+        return Action::make('bookNow')
+            ->label('আজকের পোস্ট থেকে বুক করুন')
+            ->icon(Heroicon::OutlinedBolt)
+            ->color('success')
+            ->visible(fn (Customer $record) => collect(app(BookingPlanner::class)->todayReasons($record))->contains('can_book', true))
+            ->requiresConfirmation()
+            ->modalDescription('গৃহিণীর আজকের চালু পোস্ট থেকে এই গ্রাহকের বক্স বুক হবে। গ্রাহক আর শাহিদার নোটিফিকেশন পাবেন।')
+            ->action(function (Customer $record) {
+                $n = app(BookingPlanner::class)->bookLate($record)->count();
+                Notification::make()->title($n ? Order::banglaDigits((string) $n).'টা বক্স বুক হয়েছে' : 'বুক করার মতো প্লেট পাওয়া যায়নি')
+                    ->{$n ? 'success' : 'warning'}()->send();
+            });
+    }
+
     /** F39: bill the boxes received so far (or up to a date). */
     public static function issueBillAction(): Action
     {
@@ -279,6 +296,13 @@ class CustomerResource extends Resource
                 TextEntry::make('billed_due')->label('বিলের বাকি')
                     ->state(fn (Customer $record) => '৳'.Order::banglaDigits((string) intdiv((int) $record->bills()->whereIn('status', ['open', 'partial'])->get()->sum(fn (Bill $b) => $b->duePaisa()), 100))),
             ]),
+            Section::make('আজ')
+                ->description('বুকিংয়ের প্রতিটা বেলায় আজ কী হলো, বক্স না থাকলে কেন।')
+                ->schema([
+                    TextEntry::make('today_reasons')->hiddenLabel()->listWithLineBreaks()
+                        ->state(fn (Customer $record) => collect(app(BookingPlanner::class)->todayReasons($record))
+                            ->map(fn ($r) => ($r['ok'] ? '✅ ' : '⚠️ ').$r['label'].': '.$r['line'])->all() ?: ['বুকিংয়ে কোনো বেলা নেই']),
+                ]),
             Section::make('বিল')->schema([
                 RepeatableEntry::make('bills')->hiddenLabel()->columns(5)->schema([
                     TextEntry::make('number')->label('বিল নং')
@@ -334,7 +358,8 @@ class CustomerResource extends Resource
                 ViewAction::make(),
                 self::pairAction(),
                 ActionGroup::make([
-                    EditAction::make()->mutateDataUsing(fn (array $data) => self::bookingData($data)),
+                    EditAction::make()->mutateDataUsing(fn (array $data) => self::bookingData($data))
+                        ->after(fn (Customer $record) => app(BookingPlanner::class)->bookLate($record)),
                     RemovalActions::unpair(),
                     RemovalActions::restart(),
                     RemovalActions::deleteCustomer(),

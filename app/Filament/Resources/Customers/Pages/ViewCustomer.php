@@ -14,6 +14,7 @@ class ViewCustomer extends ViewRecord
     {
         return [
             CustomerResource::pairAction(),
+            CustomerResource::bookNowAction(),
             CustomerResource::issueBillAction(),
             CustomerResource::pauseAction(),
             CustomerResource::stopAction(),
