@@ -27,6 +27,11 @@
                 </dl>
             </div>
 
+            <RouterLink :to="{ name: 'history' }" class="flex items-center justify-between rounded-[var(--radius-plate)] bg-plate p-4">
+                <span><span class="block font-semibold">যা পেয়েছি</span><span class="text-sm text-muted">আগের সব বক্স, টাকা, রিভিউ দিন</span></span>
+                <span aria-hidden="true" class="text-leaf">›</span>
+            </RouterLink>
+
             <!-- F45: meals of the booking with no box yet today, and why -->
             <div v-if="booking.today_missing?.length" class="rounded-[var(--radius-plate)] bg-plate p-5">
                 <h2 class="font-semibold">আজ যে বেলায় বক্স নেই</h2>

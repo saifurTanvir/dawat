@@ -117,8 +117,7 @@ class Delivery
 
         // F45: unless the customer confirmed it themselves by scanning.
         if ($method !== self::BY_CUSTOMER_SCAN) {
-            Push::toUser($order->recipient(), 'খাবার পৌঁছেছে', 'বক্স '.$order->code().' আপনার হাতে দেওয়া হয়েছে। ভালো লাগলে জানাবেন।',
-                $order->isOneOff() ? '/orders' : '/regular', 'order-'.$order->id);
+            Push::toUser($order->recipient(), 'খাবার কেমন লাগল?', 'বক্স '.$order->code().' পৌঁছেছে। ৩ দিনের মধ্যে তারা দিয়ে জানান।', '/history', 'order-'.$order->id);
         }
 
         return $order;

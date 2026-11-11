@@ -7,6 +7,7 @@ use App\Enums\MealSlot;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Api\V1\My\MyMenuController;
 use App\Http\Controllers\Controller;
+use App\Models\BoxReview;
 use App\Models\Kitchen;
 use App\Models\KitchenMenu;
 use App\Models\Order;
@@ -17,6 +18,8 @@ use App\Services\Kitchens\CookActions;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Posts\PlateSplit;
 use App\Services\Posts\PostForCook;
+use App\Services\Reviews\BoxReviews;
+use App\Services\Reviews\Sales;
 use App\Support\ContactHours;
 use App\Support\DhakaTime;
 use Illuminate\Http\JsonResponse;
@@ -104,6 +107,8 @@ class ShahidarKitchenController extends Controller
             'slots' => $slots,
             'menus' => MyMenuController::rows($kitchen),
             'log' => ActForCook::today($kitchen),
+            // F47: what she sold and what customers said (shahidars may see who).
+            'sales' => app(Sales::class)->forKitchen($kitchen, 7, withNames: true),
         ]]);
     }
 
@@ -211,6 +216,16 @@ class ShahidarKitchenController extends Controller
             fn () => KitchenMenu::where('kitchen_id', $kitchen->id)->where('meal_slot', $slot->value)->delete());
 
         return response()->json(['data' => MyMenuController::rows($kitchen), 'message' => 'মেনু সরানো হয়েছে।']);
+    }
+
+    /** POST /api/v1/shahidar/reviews/{review}/reply — F47 */
+    public function reply(Request $request, BoxReview $review, BoxReviews $reviews): JsonResponse
+    {
+        $this->allow($request, $review->kitchen);
+        $data = $request->validate(['reply' => ['required', 'string', 'min:2', 'max:500']]);
+        $reviews->reply($review, $request->user(), 'shahidar', $data['reply']);
+
+        return response()->json(['message' => 'উত্তর দেওয়া হয়েছে, গ্রাহক দেখতে পাবেন।']);
     }
 
     private function allow(Request $request, ?Kitchen $kitchen): void

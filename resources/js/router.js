@@ -48,6 +48,19 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        // F47
+        path: '/cook/sales',
+        name: 'sales',
+        component: () => import('./pages/SalesPage.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/history',
+        name: 'history',
+        component: () => import('./pages/HistoryPage.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
         path: '/cook/posts',
         name: 'my-posts',
         component: () => import('./pages/MyPostsPage.vue'),

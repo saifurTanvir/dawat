@@ -56,6 +56,9 @@ class FeedPostResource extends JsonResource
             'tags' => TagResource::collection($this->tags),
             'kitchen' => [
                 'name' => $kitchen->display_name,
+                // F47: only the stars are public, never the words.
+                'rating_avg' => $kitchen->rating_count ? round((float) $kitchen->rating_avg, 1) : null,
+                'rating_count' => (int) $kitchen->rating_count,
             ],
             'contact' => [
                 'call' => $kitchen->allow_call,

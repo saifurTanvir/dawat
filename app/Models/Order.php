@@ -31,6 +31,12 @@ class Order extends Model
     }
 
     /** F39: the bill this box was charged on. */
+    /** F47: the customer's stars for this box. */
+    public function review(): HasOne
+    {
+        return $this->hasOne(BoxReview::class);
+    }
+
     public function bill(): BelongsTo
     {
         return $this->belongsTo(Bill::class);

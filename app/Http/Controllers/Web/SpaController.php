@@ -20,7 +20,7 @@ use Illuminate\Support\Str;
 class SpaController extends Controller
 {
     /** Screens behind a login or a QR code: useful to people, not to search. */
-    private const PRIVATE = ['login', 'cook', 'cook/setup', 'cook/new', 'cook/posts', 'regular', 'orders', 'shahidar'];
+    private const PRIVATE = ['login', 'cook', 'cook/setup', 'cook/new', 'cook/posts', 'cook/sales', 'history', 'regular', 'orders', 'shahidar'];
 
     public function __invoke(Request $request): Response
     {
