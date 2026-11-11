@@ -3,6 +3,10 @@
 namespace App\Filament\Resources\Kitchens;
 
 use App\Enums\KitchenStatus;
+use App\Filament\RelationManagers\KitchenOrdersRelationManager;
+use App\Filament\RelationManagers\PairingsRelationManager;
+use App\Filament\RelationManagers\PostsRelationManager;
+use App\Filament\RelationManagers\SettlementsRelationManager;
 use App\Filament\Resources\Kitchens\Pages\EditKitchen;
 use App\Filament\Resources\Kitchens\Pages\ListKitchens;
 use App\Filament\Resources\Kitchens\Pages\ViewKitchen;
@@ -16,6 +20,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class KitchenResource extends Resource
@@ -33,6 +38,17 @@ class KitchenResource extends Resource
     protected static ?string $pluralModelLabel = 'রান্নাঘর';
 
     protected static ?string $recordTitleAttribute = 'display_name';
+
+    /** F49: find a cook by name or phone from the admin search box. */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['display_name', 'user.phone', 'user.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return ['গৃহিণী' => $record->user?->name.' · '.$record->user?->phone];
+    }
 
     /** Pending kitchens waiting for a decision, shown as a badge in the menu. */
     public static function getNavigationBadge(): ?string
@@ -73,7 +89,7 @@ class KitchenResource extends Resource
 
     public static function getRelations(): array
     {
-        return [ReviewsRelationManager::class];
+        return [KitchenOrdersRelationManager::class, PostsRelationManager::class, SettlementsRelationManager::class, PairingsRelationManager::class, ReviewsRelationManager::class];
     }
 
     public static function getPages(): array

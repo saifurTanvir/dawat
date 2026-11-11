@@ -49,6 +49,12 @@ class Customer extends Model
         return $this->hasMany(Bill::class)->latest('id');
     }
 
+    /** F49: reviews this customer gave. */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(BoxReview::class, 'user_id', 'user_id');
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
