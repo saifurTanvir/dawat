@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -66,6 +67,42 @@ class User extends Authenticatable implements FilamentUser, HasName
     public function shahidarAreas(): BelongsToMany
     {
         return $this->belongsToMany(Area::class, 'area_shahidar')->withTimestamps();
+    }
+
+    /** F49: one-off feed orders this person bought. */
+    public function boughtOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'buyer_id');
+    }
+
+    /** F49: cash this shahidar handed to Dawat. */
+    public function shahidarSettlements(): HasMany
+    {
+        return $this->hasMany(Settlement::class, 'shahidar_id')->where('kind', 'shahidar');
+    }
+
+    /** F49: pairings this shahidar delivers for, past and present. */
+    public function shahidarPairings(): HasMany
+    {
+        return $this->hasMany(Pairing::class, 'shahidar_id');
+    }
+
+    /** F49: what this person did for cooks (F46). */
+    public function kitchenActions(): HasMany
+    {
+        return $this->hasMany(KitchenAction::class);
+    }
+
+    /** F49: reviews this person gave. */
+    public function givenReviews(): HasMany
+    {
+        return $this->hasMany(BoxReview::class);
+    }
+
+    /** F49: reviews of boxes this shahidar delivered. */
+    public function deliveredReviews(): HasManyThrough
+    {
+        return $this->hasManyThrough(BoxReview::class, Order::class, 'shahidar_id', 'order_id');
     }
 
     /** Boxes this shahidar carries. */

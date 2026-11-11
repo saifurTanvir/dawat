@@ -4,21 +4,32 @@ namespace App\Filament\Resources\Shahidars;
 
 use App\Actions\EnsurePerson;
 use App\Filament\Actions\RemovalActions;
+use App\Filament\RelationManagers\KitchenActionsRelationManager;
+use App\Filament\RelationManagers\ShahidarOrdersRelationManager;
+use App\Filament\RelationManagers\ShahidarPairingsRelationManager;
+use App\Filament\RelationManagers\ShahidarReviewsRelationManager;
+use App\Filament\RelationManagers\ShahidarSettlementsRelationManager;
 use App\Filament\Resources\Shahidars\Pages\ManageShahidars;
+use App\Filament\Resources\Shahidars\Pages\ViewShahidar;
 use App\Filament\Support\PhoneField;
 use App\Models\Area;
 use App\Models\User;
+use App\Support\ContactHours;
 use App\Support\Roles;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 /** F24: trusted local runners and the areas (zones) they serve. */
@@ -82,10 +93,41 @@ class ShahidarResource extends Resource
         ]);
     }
 
+    /** F49: a shahidar's page. */
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema->components([
+            Section::make('সারাংশ')->columnSpanFull()->schema([ViewEntry::make('history_summary')->hiddenLabel()->view('filament.history.summary-shahidar')]),
+            Section::make('শাহিদার')->columns(3)->schema([
+                TextEntry::make('name')->label('নাম'),
+                TextEntry::make('phone')->label('ফোন')->copyable(),
+                TextEntry::make('status')->label('অবস্থা')->badge(),
+                TextEntry::make('shahidarAreas.name')->label('এলাকা')->badge()->color('success'),
+                TextEntry::make('call_now')->label('কল করা যাবে?')->state(fn (User $record) => ContactHours::adminLine($record))->columnSpan(2),
+            ]),
+        ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [ShahidarOrdersRelationManager::class, ShahidarSettlementsRelationManager::class, ShahidarPairingsRelationManager::class, KitchenActionsRelationManager::class, ShahidarReviewsRelationManager::class];
+    }
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'phone'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return 'শাহিদার: '.($record->name ?: $record->phone);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
             ->defaultSort('name')
+            ->recordUrl(fn (User $record) => self::getUrl('view', ['record' => $record]))
             ->columns([
                 TextColumn::make('name')->label('নাম')->searchable()->weight('semibold'),
                 TextColumn::make('phone')->label('ফোন')->searchable()->copyable(),
@@ -102,6 +144,7 @@ class ShahidarResource extends Resource
     {
         return [
             'index' => ManageShahidars::route('/'),
+            'view' => ViewShahidar::route('/{record}'),
         ];
     }
 }

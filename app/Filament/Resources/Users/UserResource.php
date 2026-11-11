@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Users;
 
+use App\Filament\RelationManagers\BuyerOrdersRelationManager;
+use App\Filament\RelationManagers\UserReviewsRelationManager;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Filament\Resources\Users\Pages\ViewUser;
 use App\Filament\Resources\Users\Schemas\UserInfolist;
@@ -12,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class UserResource extends Resource
@@ -42,6 +45,22 @@ class UserResource extends Resource
     {
         // People sign up themselves with their phone.
         return false;
+    }
+
+    public static function getRelations(): array
+    {
+        return [BuyerOrdersRelationManager::class, UserReviewsRelationManager::class];
+    }
+
+    /** F49: find anyone by phone or name. */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['phone', 'name'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return ($record->name ?: 'নাম নেই').' · '.$record->phone;
     }
 
     public static function getPages(): array

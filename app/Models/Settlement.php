@@ -20,6 +20,12 @@ class Settlement extends Model
         return $this->belongsTo(Kitchen::class);
     }
 
+    /** F49: the admin who recorded it. */
+    public function settler(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'settled_by');
+    }
+
     public function shahidar(): BelongsTo
     {
         return $this->belongsTo(User::class, 'shahidar_id');

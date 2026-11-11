@@ -1,0 +1,1 @@
+@include('filament.history.summary', ['stats' => app(\App\Services\Admin\History::class)->customer($getRecord() instanceof \App\Models\Customer ? $getRecord()->user : $getRecord(), $getRecord() instanceof \App\Models\Customer ? $getRecord() : null)])

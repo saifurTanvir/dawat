@@ -37,6 +37,8 @@ class BillResource extends Resource
 
     protected static ?string $modelLabel = 'বিল';
 
+    protected static ?string $recordTitleAttribute = 'number';
+
     protected static ?string $pluralModelLabel = 'বিল';
 
     protected static ?int $navigationSort = 45;

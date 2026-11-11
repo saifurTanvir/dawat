@@ -8,6 +8,8 @@ use App\Enums\CustomerStatus;
 use App\Enums\KitchenStatus;
 use App\Enums\MealSlot;
 use App\Filament\Actions\RemovalActions;
+use App\Filament\RelationManagers\CustomerOrdersRelationManager;
+use App\Filament\RelationManagers\CustomerReviewsRelationManager;
 use App\Filament\Resources\Bills\BillResource;
 use App\Filament\Resources\Customers\Pages\ListCustomers;
 use App\Filament\Resources\Customers\Pages\ViewCustomer;
@@ -34,6 +36,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -42,6 +45,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use UnitEnum;
@@ -278,6 +282,7 @@ class CustomerResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
+            Section::make('সারাংশ')->columnSpanFull()->schema([ViewEntry::make('history_summary')->hiddenLabel()->view('filament.history.summary-customer')]),
             Section::make('গ্রাহক')->columns(3)->schema([
                 TextEntry::make('user.name')->label('নাম'),
                 TextEntry::make('user.phone')->label('ফোন')->copyable(),
@@ -365,6 +370,22 @@ class CustomerResource extends Resource
                     RemovalActions::deleteCustomer(),
                 ]),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [CustomerOrdersRelationManager::class, CustomerReviewsRelationManager::class];
+    }
+
+    /** F49: find a regular customer by name or phone. */
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['user.name', 'user.phone', 'address'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return ($record->user?->name ?: 'গ্রাহক').' · '.$record->user?->phone;
     }
 
     public static function getPages(): array

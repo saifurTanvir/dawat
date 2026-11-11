@@ -17,6 +17,7 @@ class KitchenInfolist
     {
         return $schema
             ->components([
+                Section::make('সারাংশ')->columnSpanFull()->schema([ViewEntry::make('history_summary')->hiddenLabel()->view('filament.history.summary-kitchen')]),
                 Section::make('রান্নাঘর')
                     ->columns(2)
                     ->schema([

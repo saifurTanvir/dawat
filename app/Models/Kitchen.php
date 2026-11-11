@@ -105,6 +105,24 @@ class Kitchen extends Model
         return $this->hasMany(Pairing::class)->whereNull('ended_at');
     }
 
+    /** F49: every pairing, past and present. */
+    public function allPairings(): HasMany
+    {
+        return $this->hasMany(Pairing::class);
+    }
+
+    /** F49: every box from this kitchen. */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /** F49: what Dawat paid her. */
+    public function settlements(): HasMany
+    {
+        return $this->hasMany(Settlement::class)->where('kind', 'cook');
+    }
+
     /** How many more regular customers this cook can take. */
     public function freeRegularSlots(): int
     {
