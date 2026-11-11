@@ -6,9 +6,10 @@
             <RouterLink :to="{ name: 'new-post' }" class="btn-quiet -mr-4 min-h-10">নতুন পোস্ট</RouterLink>
         </div>
 
-        <p v-if="route.query.posted" class="mt-4 rounded-xl bg-leaf-soft p-4 font-semibold text-leaf-deep" role="status">
-            পোস্ট হয়ে গেছে। আশেপাশের মানুষ এখন দেখতে পাবেন।
-        </p>
+        <div v-if="route.query.posted" class="mt-4 rounded-xl bg-leaf-soft p-4" role="status">
+            <p class="font-semibold text-leaf-deep">✅ পোস্ট হয়ে গেছে।</p>
+            <p v-if="posts[0]?.split" class="mt-1 text-sm">{{ resultLine(posts[0].split) }}</p>
+        </div>
 
         <p v-if="loading" class="mt-6 text-muted">লোড হচ্ছে…</p>
         <p v-else-if="error" class="error-text mt-6" role="alert">{{ error }}</p>
@@ -40,6 +41,8 @@
                         </p>
                     </div>
                 </div>
+
+                <PlateSplitBar class="mt-3" :split="post.split" />
 
                 <div v-if="isOpen(post)" class="mt-4 flex items-center gap-3">
                     <div class="flex items-center rounded-xl border border-rule" role="group" :aria-label="`${post.title}: কয় প্লেট বাকি`">
@@ -79,6 +82,15 @@ import { useRoute } from 'vue-router';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
 import { agoText, clockText, taka } from '@/lib/format';
+import PlateSplitBar from '@/components/PlateSplitBar.vue';
+
+function resultLine(s) {
+    const parts = [];
+    if (s.regular) parts.push(`${bn(s.regular)} প্লেট নিয়মিত গ্রাহকদের বুক হয়েছে`);
+    if (s.asking_people) parts.push(`${bn(s.asking_people)} জনকে দাম জিজ্ঞেস করা হচ্ছে`);
+    parts.push(`${bn(s.left)} প্লেট ফিডে গেছে`);
+    return parts.join(' · ') + '।';
+}
 
 const route = useRoute();
 const posts = ref([]);

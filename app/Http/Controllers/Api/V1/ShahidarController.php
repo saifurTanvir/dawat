@@ -2,21 +2,27 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\PublishPost;
 use App\Enums\MealSlot;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Post\PostForCookRequest;
 use App\Models\Kitchen;
 use App\Models\Order;
 use App\Models\Pairing;
+use App\Models\Post;
+use App\Models\User;
 use App\Services\Images\UnreadablePhotoException;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Orders\Delivery;
 use App\Services\Orders\Settlements;
+use App\Services\Posts\PlateSplit;
 use App\Services\Posts\PostForCook;
 use App\Support\ContactHours;
 use App\Support\DhakaTime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 
 /**
  * F27: a shahidar's day. Only their own customers' boxes; they see the cook's
@@ -65,6 +71,8 @@ class ShahidarController extends Controller
             'date' => BookingPlanner::today(),
             'orders' => $orders->map(fn (Order $o) => $this->row($o))->values(),
             'waiting' => $waiting,
+            // F44: today's posts from my cooks, and where the plates went.
+            'posts' => $this->todayPosts($me, $pairings->pluck('kitchen_id')->merge($orders->pluck('kitchen_id'))->unique()->values()),
             // F28: cash collected and not yet handed to Dawat.
             'cash_held_paisa' => $this->money->cashHeldBy($me),
         ]]);
@@ -132,10 +140,7 @@ class ShahidarController extends Controller
     public function postFor(PostForCookRequest $request, Kitchen $kitchen, PostForCook $posts): JsonResponse
     {
         $me = $request->user();
-        $mine = $kitchen->shahidar_id === $me->id
-            || Pairing::open()->where('kitchen_id', $kitchen->id)->where('shahidar_id', $me->id)->exists()
-            || ($kitchen->area_id && $me->shahidarAreas()->whereKey($kitchen->area_id)->exists());
-        abort_unless($mine, 404);
+        abort_unless($this->worksWith($me, $kitchen), 404);
 
         try {
             $post = $posts->post($kitchen, $request->validated(), $request->file('images', []), 'shahidar', $me);
@@ -145,8 +150,64 @@ class ShahidarController extends Controller
 
         return response()->json([
             'data' => ['id' => $post->id, 'title' => $post->title, 'plates_left' => $post->plates_left],
-            'message' => 'পোস্ট হয়ে গেছে। নিয়মিত গ্রাহকদের বক্স বুক হয়েছে, গৃহিণীকে জানানো হয়েছে।',
+            'message' => 'পোস্ট হয়ে গেছে, গৃহিণীকে জানানো হয়েছে। '.PlateSplit::resultLine(app(PlateSplit::class)->forPost($post->load('orders'))),
         ], 201);
+    }
+
+    /** GET /api/v1/shahidar/kitchens/{kitchen}/preview — F44: where the plates will go before posting. */
+    public function preview(Request $request, Kitchen $kitchen, PlateSplit $split): JsonResponse
+    {
+        abort_unless($request->user()->isShahidar() && $this->worksWith($request->user(), $kitchen), 404);
+        $data = $request->validate([
+            'meal_slot' => ['required', Rule::enum(MealSlot::class)],
+            'plates' => ['required', 'integer', 'min:0', 'max:20'],
+            'price_taka' => ['nullable', 'integer', 'min:0', 'max:2000'],
+        ]);
+
+        return response()->json(['data' => $split->preview(
+            $kitchen, MealSlot::from($data['meal_slot']), (int) $data['plates'],
+            isset($data['price_taka']) ? (int) $data['price_taka'] * 100 : null,
+        )]);
+    }
+
+    /** Cooks a shahidar may post for: theirs, paired with their customers, or in their areas. */
+    private function worksWith(User $me, Kitchen $kitchen): bool
+    {
+        return $kitchen->shahidar_id === $me->id
+            || Pairing::open()->where('kitchen_id', $kitchen->id)->where('shahidar_id', $me->id)->exists()
+            || ($kitchen->area_id && $me->shahidarAreas()->whereKey($kitchen->area_id)->exists());
+    }
+
+    /**
+     * F44: today's posts from the cooks this shahidar works with, and where
+     * their plates went (with names: shahidars may know who).
+     */
+    private function todayPosts(User $me, Collection $kitchenIds): array
+    {
+        $split = app(PlateSplit::class);
+
+        return Post::whereIn('kitchen_id', $kitchenIds)
+            ->where('published_at', '>=', now(DhakaTime::TZ)->startOfDay())
+            ->with(['kitchen', 'orders', 'postedBy'])->latest('published_at')->get()
+            ->map(function (Post $p) use ($split, $me) {
+                $s = $split->forPost($p);
+                $people = $split->people($p);
+
+                return [
+                    'id' => $p->id,
+                    'kitchen' => $p->kitchen->display_name,
+                    'meal_slot' => $p->meal_slot->value,
+                    'meal_slot_label' => $p->meal_slot->label(),
+                    'title' => $p->title,
+                    'published_at' => $p->published_at?->toIso8601String(),
+                    'source_label' => PublishPost::SOURCES[$p->source ?? 'cook'] ?? '',
+                    'posted_by' => $p->source === 'cook' ? null : $p->postedBy?->name,
+                    'split' => $s,
+                    'split_line' => PlateSplit::line($s),
+                    'mine' => $people->where('shahidar_id', $me->id)->count(),
+                    'people' => $people->map(fn ($r) => collect($r)->except('shahidar_id')->all())->values(),
+                ];
+            })->values()->all();
     }
 
     private function mine(Request $request, Order $order): void

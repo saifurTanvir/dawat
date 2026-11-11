@@ -56,6 +56,7 @@
                             <span class="text-xs text-muted">{{ posting.images.length ? `${bn(posting.images.length)}টা ছবি বাছা হয়েছে` : 'ইচ্ছা হলে; না দিলে গৃহিণীর আগের ছবি' }}</span>
                             <input type="file" accept="image/*" multiple class="sr-only" @change="posting.images = [...$event.target.files].slice(0, 4)" />
                         </label>
+                        <p v-if="posting.preview" class="rounded-lg bg-leaf-soft px-3 py-2 text-xs" role="status">{{ posting.preview }}</p>
                         <p v-if="posting.error" class="error-text" role="alert">{{ posting.error }}</p>
                         <div class="flex gap-2">
                             <button type="submit" class="btn-primary w-auto px-5" :disabled="busy">{{ busy ? 'পোস্ট হচ্ছে…' : 'পোস্ট দিন' }}</button>
@@ -63,6 +64,25 @@
                         </div>
                     </form>
                     <button v-else type="button" class="mt-1 font-semibold text-leaf" @click="startPost(g)">+ গৃহিণীর হয়ে পোস্ট দিন</button>
+                </div>
+            </div>
+
+            <!-- F44: today's posts from my cooks and where the plates went -->
+            <div v-if="day.posts?.length" class="mt-4 rounded-[var(--radius-plate)] bg-plate p-4">
+                <p class="font-semibold">আজকের পোস্ট</p>
+                <div v-for="p in day.posts" :key="p.id" class="mt-3 border-t border-rule pt-3 text-sm first-of-type:border-0">
+                    <p><span class="font-semibold">{{ p.meal_slot_label }} · {{ p.kitchen }}</span> · {{ p.title }}</p>
+                    <p class="text-xs text-muted">
+                        {{ clockText(p.published_at) }}-এ পোস্ট · {{ p.source_label }}<template v-if="p.posted_by"> ({{ p.posted_by }})</template>
+                        <template v-if="p.mine"> · আপনার {{ bn(p.mine) }}টা বক্স</template>
+                    </p>
+                    <PlateSplitBar class="mt-2" :split="p.split" />
+                    <details v-if="p.people.length" class="mt-1">
+                        <summary class="cursor-pointer text-xs font-semibold text-leaf">কারা পেয়েছেন ({{ bn(p.people.length) }})</summary>
+                        <ul class="mt-1 space-y-0.5 text-xs">
+                            <li v-for="x in p.people" :key="x.code">বক্স {{ x.code }} · {{ x.name }} · {{ x.kind }} · {{ bn(x.plates) }} প্লেট · {{ x.status }}<template v-if="x.shahidar"> · {{ x.shahidar }}</template></li>
+                        </ul>
+                    </details>
                 </div>
             </div>
 
@@ -176,8 +196,9 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import CallButtons from '@/components/CallButtons.vue';
+import PlateSplitBar from '@/components/PlateSplitBar.vue';
 import PushToggle from '@/components/PushToggle.vue';
 import StickerScanner from '@/components/StickerScanner.vue';
 import { api, errorMessage } from '@/lib/api';
@@ -205,8 +226,24 @@ const waitingGroups = computed(() => {
 });
 
 function startPost(g) {
-    posting.value = { key: g.key, title: '', price_taka: 120, plates_total: g.plates, available_hours: 3, images: [], error: '' };
+    posting.value = { key: g.key, kitchen_id: g.kitchen_id, meal_slot: g.meal_slot, title: '', price_taka: 120, plates_total: g.plates, available_hours: 3, images: [], error: '', preview: '' };
 }
+
+// F44: as the numbers change, show where the plates will go.
+let previewTimer = null;
+watch(() => posting.value && [posting.value.plates_total, posting.value.price_taka], () => {
+    clearTimeout(previewTimer);
+    const p = posting.value;
+    if (!p) return;
+    previewTimer = setTimeout(async () => {
+        try {
+            const { data } = await api.get(`/shahidar/kitchens/${p.kitchen_id}/preview`, { params: { meal_slot: p.meal_slot, plates: p.plates_total || 0, price_taka: p.price_taka || undefined } });
+            if (posting.value === p) p.preview = data.data.line;
+        } catch {
+            /* the preview is a hint only */
+        }
+    }, 300);
+}, { immediate: false });
 
 async function postFor(g) {
     busy.value = true;

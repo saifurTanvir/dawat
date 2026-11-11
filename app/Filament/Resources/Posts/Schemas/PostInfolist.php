@@ -39,6 +39,10 @@ class PostInfolist
                             ->placeholder('এখনো তৈরি হয়নি')
                             ->columnSpanFull(),
                     ]),
+                Section::make('কারা পেয়েছে')
+                    ->description('নিয়মিত গ্রাহক (নিজে থেকে বুক), দাম জিজ্ঞেস চলছে, আর ফিড থেকে অর্ডার।')
+                    ->columnSpanFull()
+                    ->schema([ViewEntry::make('plates_split')->hiddenLabel()->view('filament.posts.plates')]),
                 Section::make('কোথায় দেখাচ্ছে')
                     ->description('কোন এলাকার ক্রেতারা এই পোস্ট পাচ্ছেন।')
                     ->columnSpanFull()

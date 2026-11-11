@@ -92,6 +92,9 @@
                     </div>
                 </fieldset>
 
+                <!-- F44: before posting, where the plates will go -->
+                <p class="rounded-xl bg-leaf-soft p-3 text-sm" role="status">{{ splitPreview }}</p>
+
                 <fieldset>
                     <legend class="mb-2 font-semibold">কতক্ষণ পাওয়া যাবে</legend>
                     <div class="flex flex-wrap gap-2">
@@ -247,6 +250,14 @@ const bookedPlates = computed(() => bookings.value[form.meal_slot] ?? 0);
 const priceLimit = computed(() => limits.value[form.meal_slot] ?? null);
 const overLimit = computed(() => priceLimit.value && form.price_taka * 100 > priceLimit.value.paisa);
 const slotLabel = computed(() => mealSlots.find((m) => m.value === form.meal_slot)?.label ?? '');
+const splitPreview = computed(() => {
+    const booked = bookedPlates.value;
+    const plates = form.plates_total || 0;
+    if (!booked) return `আজ ${slotLabel.value} নিয়মিত কোনো বুকিং নেই — সব ${bn(plates)} প্লেট ফিডে যাবে।`;
+    let line = `নিয়মিত গ্রাহকদের ${bn(booked)} প্লেট আগে যাবে, ফিডে যাবে ${bn(Math.max(0, plates - booked))} প্লেট।`;
+    if (overLimit.value) line += ' কয়েকজনের দামের সীমা কম, তাঁদের আগে জিজ্ঞেস করা হবে।';
+    return line;
+});
 watch(bookedPlates, (n) => {
     if (form.plates_total < n) form.plates_total = n;
 });

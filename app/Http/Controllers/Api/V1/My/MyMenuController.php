@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Kitchen;
 use App\Models\KitchenMenu;
 use App\Models\Order;
+use App\Services\Posts\PlateSplit;
 use App\Services\Posts\PostForCook;
 use App\Support\ContactHours;
 use Illuminate\Http\JsonResponse;
@@ -107,6 +108,9 @@ class MyMenuController extends Controller
             'note' => $m->note,
             'active' => $m->active,
             'today' => PostForCook::menuToday($m),
+            // F44: where today's plates would go if it posts now.
+            'preview' => str_contains(PostForCook::menuToday($m), 'নিজে পোস্ট হবে')
+                ? app(PlateSplit::class)->preview($kitchen, $m->meal_slot, $m->plates_total, $m->price_paisa)['line'] : null,
             'price_label' => '৳'.Order::banglaDigits((string) intdiv($m->price_paisa, 100)),
         ])->values()->all();
     }

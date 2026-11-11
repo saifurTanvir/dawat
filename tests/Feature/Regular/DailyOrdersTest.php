@@ -218,7 +218,7 @@ class DailyOrdersTest extends TestCase
         $this->assertSame(1, Order::count());
     }
 
-    public function test_cook_sees_first_names_and_cannot_sell_booked_plates(): void
+    public function test_cook_sees_counts_not_names_and_cannot_sell_booked_plates(): void
     {
         $this->regular(['plates' => 2]);
         $waiting = $this->regular(['meal_slots' => ['dinner']], 'রিনা আক্তার');
@@ -228,9 +228,12 @@ class DailyOrdersTest extends TestCase
         $json = $this->actingAs($this->kitchen->user, 'sanctum')->getJson('/api/v1/my/bookings')->assertOk()->json('data');
         $this->assertSame(2, $json['regular_customers']);
         $lunch = collect($json['slots'])->firstWhere('meal_slot', 'lunch');
-        $this->assertSame('নাসির', $lunch['orders'][0]['name']);
+        // F44: the cook never learns who her regular customers are.
+        $this->assertSame('নিয়মিত গ্রাহক', $lunch['orders'][0]['name']);
         $dinner = collect($json['slots'])->firstWhere('meal_slot', 'dinner');
-        $this->assertSame(['name' => 'রিনা', 'plates' => 1], $dinner['waiting'][0]);
+        $this->assertSame(1, $dinner['waiting_people']);
+        $this->assertSame(1, $dinner['waiting_plates']);
+        $this->assertStringNotContainsString('রিনা', json_encode($json, JSON_UNESCAPED_UNICODE));
         $this->assertStringNotContainsString($waiting->user->phone, json_encode($json));
         $this->assertStringNotContainsString($waiting->address, json_encode($json));
 

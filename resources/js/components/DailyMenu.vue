@@ -10,6 +10,7 @@
                     <p class="font-semibold">{{ m.meal_slot_label }} · {{ m.title }}</p>
                     <p class="text-sm text-muted">{{ m.price_label }} · {{ bn(m.plates_total) }} প্লেট · {{ m.post_at_label }}-এ · {{ m.weekdays_label }}</p>
                     <p class="mt-1 text-sm" :class="m.today.includes('নিজে পোস্ট হবে') ? 'text-leaf' : 'text-muted'">{{ m.today }}</p>
+                    <p v-if="m.preview" class="mt-1 rounded-lg bg-leaf-soft px-2 py-1 text-xs">{{ m.preview }}</p>
                 </div>
                 <button type="button" class="shrink-0 font-semibold text-leaf" @click="edit(m)">বদলান</button>
             </div>

@@ -45,8 +45,8 @@
                 <div v-for="slot in bookings.slots" :key="slot.meal_slot" class="mt-4 border-t border-rule pt-3">
                     <p class="font-semibold">আজ {{ slot.label }}</p>
                     <p v-if="slot.waiting_plates" class="mt-1">
-                        রান্না করতে হবে <strong>{{ bn(slot.waiting_plates) }} প্লেট</strong>:
-                        {{ slot.waiting.map((w) => `${w.name} (${bn(w.plates)})`).join(', ') }}
+                        নিয়মিত গ্রাহকদের জন্য রান্না করতে হবে <strong>{{ bn(slot.waiting_plates) }} প্লেট</strong> ({{ bn(slot.waiting_people) }} জন)।
+                        পোস্ট দিলে এই প্লেটগুলো আগে যাবে, বাকিটা ফিডে।
                     </p>
                     <ul v-if="slot.orders.length" class="mt-1 space-y-0.5 text-sm text-muted">
                         <li v-for="o in slot.orders" :key="o.code">
