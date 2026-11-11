@@ -6,6 +6,7 @@ use App\Actions\PublishPost;
 use App\Enums\KitchenStatus;
 use App\Enums\MealSlot;
 use App\Models\Kitchen;
+use App\Models\KitchenAction;
 use App\Models\KitchenDayOff;
 use App\Models\KitchenMenu;
 use App\Models\Post;
@@ -45,6 +46,11 @@ class PostForCook
         }
 
         $post = $this->publish->handle($kitchen, $data, $images, $source, $by);
+        if ($by && in_array($source, ['admin', 'shahidar'], true)) {
+            // F46: in the kitchen's log with everything else done for her.
+            KitchenAction::create(['kitchen_id' => $kitchen->id, 'user_id' => $by->id, 'role' => $source, 'action' => 'post',
+                'details' => "আজকের {$post->meal_slot->label()} পোস্ট: {$post->title}", 'post_id' => $post->id]);
+        }
 
         $who = match ($source) {
             'auto' => 'আপনার প্রতিদিনের মেনু থেকে',

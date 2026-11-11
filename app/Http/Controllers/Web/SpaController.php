@@ -49,7 +49,7 @@ class SpaController extends Controller
             )]);
         }
 
-        if (in_array($path, self::PRIVATE, true) || preg_match('#^(q|s)/[^/]+$#', $path)) {
+        if (in_array($path, self::PRIVATE, true) || preg_match('#^(q|s)/[^/]+$|^shahidar/kitchens/\d+$#', $path)) {
             return response()->view('spa', ['meta' => $this->defaults('noindex,nofollow')]);
         }
 

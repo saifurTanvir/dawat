@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Orders;
 
 use App\Enums\MealSlot;
 use App\Enums\OrderStatus;
+use App\Filament\Actions\ActForCookActions;
 use App\Filament\Actions\RemovalActions;
 use App\Filament\Resources\Orders\Pages\ManageOrders;
 use App\Models\Order;
@@ -106,6 +107,8 @@ class OrderResource extends Resource
                         app(BookingPlanner::class)->cancel($record, 'admin', $data['reason']);
                         Notification::make()->title('বাদ দেওয়া হয়েছে, প্লেট ফিডে ফিরেছে')->success()->send();
                     }),
+                ActForCookActions::decline(),
+                ActForCookActions::handed(),
                 RemovalActions::deleteOrder(),
             ]);
     }

@@ -21,7 +21,7 @@ class MyMenuController extends Controller
     /** GET /api/v1/my/menus */
     public function index(Request $request): JsonResponse
     {
-        return response()->json(['data' => $this->rows($this->kitchen($request))]);
+        return response()->json(['data' => self::rows($this->kitchen($request))]);
     }
 
     /** PUT /api/v1/my/menus/{slot} */
@@ -33,7 +33,7 @@ class MyMenuController extends Controller
 
         KitchenMenu::updateOrCreate(['kitchen_id' => $kitchen->id, 'meal_slot' => $slot->value], self::attributes($data));
 
-        return response()->json(['data' => $this->rows($kitchen), 'message' => 'মেনু রাখা হয়েছে।']);
+        return response()->json(['data' => self::rows($kitchen), 'message' => 'মেনু রাখা হয়েছে।']);
     }
 
     /** DELETE /api/v1/my/menus/{slot} */
@@ -42,7 +42,7 @@ class MyMenuController extends Controller
         $kitchen = $this->kitchen($request);
         KitchenMenu::where('kitchen_id', $kitchen->id)->where('meal_slot', $slot)->delete();
 
-        return response()->json(['data' => $this->rows($kitchen), 'message' => 'মেনু সরানো হয়েছে।']);
+        return response()->json(['data' => self::rows($kitchen), 'message' => 'মেনু সরানো হয়েছে।']);
     }
 
     /** @return array<string, mixed> */
@@ -91,7 +91,7 @@ class MyMenuController extends Controller
         return $kitchen;
     }
 
-    private function rows(Kitchen $kitchen): array
+    public static function rows(Kitchen $kitchen): array
     {
         return $kitchen->menus()->get()->map(fn (KitchenMenu $m) => [
             'meal_slot' => $m->meal_slot->value,

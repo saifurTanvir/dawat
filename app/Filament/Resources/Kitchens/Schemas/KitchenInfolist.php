@@ -7,6 +7,7 @@ use App\Services\Feed\PostReach;
 use App\Support\ContactHours;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -60,6 +61,10 @@ class KitchenInfolist
                             ->formatStateUsing(fn ($state, $record) => "{$record->pending_contact_name}: {$state}")
                             ->placeholder('—'),
                     ]),
+                Section::make('গৃহিণীর হয়ে যা করা হয়েছে')
+                    ->description('অ্যাডমিন বা শাহিদার যা যা করেছেন — প্রতিবার গৃহিণীকে জানানো হয়েছে।')
+                    ->collapsible()
+                    ->schema([ViewEntry::make('acted_log')->hiddenLabel()->view('filament.kitchens.log')]),
             ]);
     }
 }

@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1\My;
 
-use App\Enums\PostStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OwnPostResource;
-use App\Models\Order;
 use App\Models\Post;
+use App\Services\Kitchens\CookActions;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
@@ -31,32 +30,20 @@ class MyPostController extends Controller
     }
 
     /** PATCH /api/v1/my/posts/{post} — how many plates are left. */
-    public function update(Request $request, Post $post): OwnPostResource
+    public function update(Request $request, Post $post, CookActions $actions): OwnPostResource
     {
         Gate::authorize('manage', $post);
-
-        // F26: plates booked by regular customers are not for sale.
-        $booked = (int) $post->orders()->open()->sum('plates');
-        $data = $request->validate(
-            ['plates_left' => ['required', 'integer', 'min:0', 'max:'.($post->plates_total - $booked)]],
-            ['plates_left.max' => $booked
-                ? 'নিয়মিত গ্রাহকদের '.Order::banglaDigits($booked).' প্লেট বাদে সর্বোচ্চ :max প্লেট বাকি রাখা যাবে।'
-                : 'মোট :max প্লেটের বেশি হতে পারবে না।'],
-        );
-
-        $post->plates_left = $data['plates_left'];
-        $post->status = $post->plates_left === 0 ? PostStatus::SoldOut : PostStatus::Live;
-        $post->save();
+        $data = $request->validate(['plates_left' => ['required', 'integer']]);
+        $actions->setPlates($post, (int) $data['plates_left']);
 
         return OwnPostResource::make($post->load(['images', 'tags']));
     }
 
     /** POST /api/v1/my/posts/{post}/sold-out */
-    public function soldOut(Post $post): OwnPostResource
+    public function soldOut(Post $post, CookActions $actions): OwnPostResource
     {
         Gate::authorize('manage', $post);
-
-        $post->update(['plates_left' => 0, 'status' => PostStatus::SoldOut]);
+        $actions->soldOut($post);
 
         return OwnPostResource::make($post->load(['images', 'tags']));
     }

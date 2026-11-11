@@ -140,7 +140,7 @@ class ShahidarController extends Controller
     public function postFor(PostForCookRequest $request, Kitchen $kitchen, PostForCook $posts): JsonResponse
     {
         $me = $request->user();
-        abort_unless($this->worksWith($me, $kitchen), 404);
+        abort_unless(self::worksWith($me, $kitchen), 404);
 
         try {
             $post = $posts->post($kitchen, $request->validated(), $request->file('images', []), 'shahidar', $me);
@@ -157,7 +157,7 @@ class ShahidarController extends Controller
     /** GET /api/v1/shahidar/kitchens/{kitchen}/preview — F44: where the plates will go before posting. */
     public function preview(Request $request, Kitchen $kitchen, PlateSplit $split): JsonResponse
     {
-        abort_unless($request->user()->isShahidar() && $this->worksWith($request->user(), $kitchen), 404);
+        abort_unless($request->user()->isShahidar() && self::worksWith($request->user(), $kitchen), 404);
         $data = $request->validate([
             'meal_slot' => ['required', Rule::enum(MealSlot::class)],
             'plates' => ['required', 'integer', 'min:0', 'max:20'],
@@ -171,7 +171,7 @@ class ShahidarController extends Controller
     }
 
     /** Cooks a shahidar may post for: theirs, paired with their customers, or in their areas. */
-    private function worksWith(User $me, Kitchen $kitchen): bool
+    public static function worksWith(User $me, Kitchen $kitchen): bool
     {
         return $kitchen->shahidar_id === $me->id
             || Pairing::open()->where('kitchen_id', $kitchen->id)->where('shahidar_id', $me->id)->exists()
@@ -196,6 +196,7 @@ class ShahidarController extends Controller
                 return [
                     'id' => $p->id,
                     'kitchen' => $p->kitchen->display_name,
+                    'kitchen_id' => $p->kitchen_id,
                     'meal_slot' => $p->meal_slot->value,
                     'meal_slot_label' => $p->meal_slot->label(),
                     'title' => $p->title,

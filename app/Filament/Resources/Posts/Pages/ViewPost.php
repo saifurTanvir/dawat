@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Posts\Pages;
 
+use App\Filament\Actions\ActForCookActions;
 use App\Filament\Actions\PostModerationActions;
 use App\Filament\Actions\RemovalActions;
 use App\Filament\Resources\Posts\PostResource;
@@ -13,6 +14,12 @@ class ViewPost extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [...PostModerationActions::make(), RemovalActions::deletePost(PostResource::getUrl('index'))];
+        return [
+            ActForCookActions::plates(),
+            ActForCookActions::edit(),
+            ActForCookActions::soldOut(),
+            ...PostModerationActions::make(),
+            RemovalActions::deletePost(PostResource::getUrl('index')),
+        ];
     }
 }

@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\V1\QrController;
 use App\Http\Controllers\Api\V1\RegularController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\ShahidarController;
+use App\Http\Controllers\Api\V1\ShahidarKitchenController;
 use App\Http\Controllers\Api\V1\StickerController;
 use App\Http\Controllers\Api\V1\TagController;
 use Illuminate\Support\Facades\Route;
@@ -120,6 +121,16 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             // F43: post today's food for a cook after a phone call
             Route::post('/kitchens/{kitchen}/posts', [ShahidarController::class, 'postFor'])->middleware('throttle:comments')->name('kitchens.posts');
             Route::get('/kitchens/{kitchen}/preview', [ShahidarController::class, 'preview'])->name('kitchens.preview');
+            // F46: act for a cook
+            Route::get('/kitchens/{kitchen}', [ShahidarKitchenController::class, 'show'])->name('kitchens.show');
+            Route::post('/kitchens/{kitchen}/ready', [ShahidarKitchenController::class, 'ready'])->name('kitchens.ready');
+            Route::post('/kitchens/{kitchen}/off', [ShahidarKitchenController::class, 'off'])->name('kitchens.off');
+            Route::put('/kitchens/{kitchen}/menus/{slot}', [ShahidarKitchenController::class, 'saveMenu'])->name('kitchens.menus.save');
+            Route::delete('/kitchens/{kitchen}/menus/{slot}', [ShahidarKitchenController::class, 'deleteMenu'])->name('kitchens.menus.destroy');
+            Route::patch('/posts/{post}', [ShahidarKitchenController::class, 'updatePost'])->name('posts.update');
+            Route::post('/posts/{post}/sold-out', [ShahidarKitchenController::class, 'soldOut'])->name('posts.sold-out');
+            Route::post('/kitchen-orders/{order}/decline', [ShahidarKitchenController::class, 'decline'])->name('kitchen-orders.decline');
+            Route::post('/kitchen-orders/{order}/handed', [ShahidarKitchenController::class, 'handed'])->name('kitchen-orders.handed');
         });
         Route::post('/stickers/{code}/received', [StickerController::class, 'received'])->name('stickers.received');
 
