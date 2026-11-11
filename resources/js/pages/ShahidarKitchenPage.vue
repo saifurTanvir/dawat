@@ -14,6 +14,8 @@
                 <CallButtons :phone="data.kitchen.phone" :contact="data.kitchen.contact" />
             </div>
             <p class="mt-2 rounded-xl bg-turmeric-soft px-3 py-2 text-xs">এখানে যা করবেন, গৃহিণী সাথে সাথে নোটিফিকেশন পাবেন আর দাওয়াতের খাতায় আপনার নামে লেখা থাকবে।</p>
+            <!-- F51: see (and use) the app exactly as the cook does -->
+            <button type="button" class="btn-quiet mt-2 w-full border border-rule" :disabled="busy" @click="openCookApp">👁️ গৃহিণীর অ্যাপ খুলুন (তাঁর মতো করে দেখুন)</button>
             <p v-if="notice" class="mt-3 rounded-xl bg-leaf-soft p-3 text-sm" role="status">{{ notice }}</p>
             <p v-if="error" class="error-text mt-3" role="alert">{{ error }}</p>
 
@@ -200,6 +202,18 @@ async function run(request) {
         error.value = errorMessage(e);
         return false;
     } finally {
+        busy.value = false;
+    }
+}
+
+async function openCookApp() {
+    if (!window.confirm('গৃহিণীর অ্যাপ তাঁর মতো করে খুলবে, ৩০ মিনিটের জন্য। তিনি জানতে পারবেন, যা করবেন খাতায় থাকবে। খুলবেন?')) return;
+    busy.value = true;
+    try {
+        const { data: r } = await api.post(`/shahidar/kitchens/${id}/view-as`);
+        window.location.href = r.url;
+    } catch (e) {
+        error.value = errorMessage(e);
         busy.value = false;
     }
 }

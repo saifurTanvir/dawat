@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\User;
+use App\Services\Admin\Impersonate;
 use App\Support\ContactHours;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -23,6 +24,11 @@ class MeResource extends JsonResource
             'name' => $this->name,
             'phone' => $this->phone,
             'roles' => $this->getRoleNames()->values(),
+            // F51: someone else is using the app as this person.
+            'impersonation' => ($imp = Impersonate::current($request->user())) ? [
+                'by' => $imp->actorLabel(),
+                'ends_at' => $imp->ends_at->toIso8601String(),
+            ] : null,
             // F41: when they may be called.
             'contact' => ContactHours::forMe($this->resource),
             'kitchen' => $kitchen ? [

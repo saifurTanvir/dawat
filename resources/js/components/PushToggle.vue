@@ -22,6 +22,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { errorMessage } from '@/lib/api';
 import { install } from '@/lib/pwa';
+import { useAuthStore } from '@/stores/auth';
 import { disablePush, enablePush, pushActive, pushPermission, pushSupported } from '@/lib/push';
 
 defineProps({
@@ -35,7 +36,10 @@ const error = ref('');
 const permission = ref(pushPermission());
 const iosHint = computed(() => install.platform === 'ios' && !install.standalone);
 
+const auth = useAuthStore();
 const state = computed(() => {
+    // F51: someone else's notifications must not come to this phone.
+    if (auth.user?.impersonation) return 'hidden';
     if (active.value) return 'on';
     if (!pushSupported() && !iosHint.value) return 'hidden';
     if (permission.value === 'denied') return 'denied';

@@ -7,6 +7,7 @@ use App\Filament\Actions\KitchenModerationActions;
 use App\Filament\Actions\LoginHelpActions;
 use App\Filament\Actions\PostForCookActions;
 use App\Filament\Actions\RemovalActions;
+use App\Filament\Actions\ViewAsAction;
 use App\Filament\Resources\Kitchens\KitchenResource;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
@@ -21,6 +22,7 @@ class ViewKitchen extends ViewRecord
     {
         return [
             PostForCookActions::postFor(),
+            ViewAsAction::make(fn ($record) => $record->user, 'গৃহিণীর অ্যাপ দেখুন'),
             LoginHelpActions::group(fn ($record) => $record->user),
             ActionGroup::make([
                 ActForCookActions::ready(),

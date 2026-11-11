@@ -137,7 +137,7 @@ final class Seo
     public static function robotsTxt(): string
     {
         $lines = ['User-agent: *'];
-        foreach (['/admin', '/api/', '/livewire/', '/login', '/cook', '/regular', '/orders', '/history', '/shahidar', '/q/', '/s/', '/l/', '/bill/'] as $path) {
+        foreach (['/admin', '/api/', '/livewire/', '/login', '/cook', '/regular', '/orders', '/history', '/shahidar', '/q/', '/s/', '/l/', '/as/', '/bill/'] as $path) {
             $lines[] = "Disallow: {$path}";
         }
 

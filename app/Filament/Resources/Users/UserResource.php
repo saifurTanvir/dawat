@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users;
 
 use App\Filament\RelationManagers\BuyerOrdersRelationManager;
+use App\Filament\RelationManagers\ImpersonationsRelationManager;
 use App\Filament\RelationManagers\SmsLogsRelationManager;
 use App\Filament\RelationManagers\UserReviewsRelationManager;
 use App\Filament\Resources\Users\Pages\ListUsers;
@@ -50,7 +51,7 @@ class UserResource extends Resource
 
     public static function getRelations(): array
     {
-        return [BuyerOrdersRelationManager::class, UserReviewsRelationManager::class, SmsLogsRelationManager::class];
+        return [BuyerOrdersRelationManager::class, UserReviewsRelationManager::class, SmsLogsRelationManager::class, ImpersonationsRelationManager::class];
     }
 
     /** F49: find anyone by phone or name. */

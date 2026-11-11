@@ -92,6 +92,12 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        // F51: open the app as someone else
+        path: '/as/:code',
+        name: 'view-as',
+        component: () => import('./pages/ViewAsPage.vue'),
+    },
+    {
         // F50: one-time login link
         path: '/l/:token',
         name: 'link-login',
