@@ -4,11 +4,15 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\MealSlot;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Post\PostForCookRequest;
+use App\Models\Kitchen;
 use App\Models\Order;
 use App\Models\Pairing;
+use App\Services\Images\UnreadablePhotoException;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Orders\Delivery;
 use App\Services\Orders\Settlements;
+use App\Services\Posts\PostForCook;
 use App\Support\ContactHours;
 use App\Support\DhakaTime;
 use Illuminate\Http\JsonResponse;
@@ -45,6 +49,8 @@ class ShahidarController extends Controller
                 foreach ($this->planner->expected($kitchen, $slot)->where('shahidar_id', $me->id) as $p) {
                     $waiting[] = [
                         'kitchen' => $kitchen->display_name,
+                        'kitchen_id' => $kitchen->id,
+                        'meal_slot' => $slot->value,
                         'kitchen_phone' => $kitchen->user->phone,
                         'kitchen_contact' => ContactHours::card($kitchen->user, [$slot], 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। আজ '.$slot->label().'র রান্নার খবর জানতে চাই।'),
                         'customer' => $p->customer->user->name,
@@ -120,6 +126,27 @@ class ShahidarController extends Controller
         $this->mine($request, $order);
 
         return $this->done($this->planner->accept($order), 'গ্রাহক নেবেন, বুক হয়েছে।');
+    }
+
+    /** POST /api/v1/shahidar/kitchens/{kitchen}/posts — F43: today's food for a cook who phoned it in. */
+    public function postFor(PostForCookRequest $request, Kitchen $kitchen, PostForCook $posts): JsonResponse
+    {
+        $me = $request->user();
+        $mine = $kitchen->shahidar_id === $me->id
+            || Pairing::open()->where('kitchen_id', $kitchen->id)->where('shahidar_id', $me->id)->exists()
+            || ($kitchen->area_id && $me->shahidarAreas()->whereKey($kitchen->area_id)->exists());
+        abort_unless($mine, 404);
+
+        try {
+            $post = $posts->post($kitchen, $request->validated(), $request->file('images', []), 'shahidar', $me);
+        } catch (UnreadablePhotoException $e) {
+            return response()->json(['message' => $e->getMessage(), 'errors' => ['images' => [$e->getMessage()]]], 422);
+        }
+
+        return response()->json([
+            'data' => ['id' => $post->id, 'title' => $post->title, 'plates_left' => $post->plates_left],
+            'message' => 'পোস্ট হয়ে গেছে। নিয়মিত গ্রাহকদের বক্স বুক হয়েছে, গৃহিণীকে জানানো হয়েছে।',
+        ], 201);
     }
 
     private function mine(Request $request, Order $order): void

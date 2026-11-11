@@ -10,6 +10,7 @@ use App\Jobs\SendOrderSms;
 use App\Models\Customer;
 use App\Models\CustomerPause;
 use App\Models\Kitchen;
+use App\Models\KitchenDayOff;
 use App\Models\Order;
 use App\Models\Pairing;
 use App\Models\Post;
@@ -111,6 +112,9 @@ class BookingPlanner
      */
     public function cookOff(Kitchen $kitchen, MealSlot $slot): Collection
     {
+        // F43: also stops today's daily-menu post for this meal.
+        KitchenDayOff::firstOrCreate(['kitchen_id' => $kitchen->id, 'date' => self::today(), 'meal_slot' => $slot->value]);
+
         return DB::transaction(fn () => $this->expected($kitchen, $slot)->map(
             fn (Pairing $p) => $this->createOrder($p, $slot, OrderStatus::Cancelled, [
                 'cancelled_by' => 'cook',

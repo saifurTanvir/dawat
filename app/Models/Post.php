@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'kitchen_id', 'area_id', 'title', 'price_paisa', 'plates_total', 'plates_left',
-    'meal_slot', 'note', 'available_until', 'location', 'status', 'published_at', 'reach_m', 'boosted',
+    'meal_slot', 'note', 'available_until', 'location', 'status', 'published_at', 'reach_m', 'boosted', 'source', 'posted_by',
 ])]
 #[Hidden(['location'])]
 class Post extends Model
@@ -48,6 +48,12 @@ class Post extends Model
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    /** F43: who posted it, when not the cook herself. */
+    public function postedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'posted_by');
     }
 
     public function kitchen(): BelongsTo

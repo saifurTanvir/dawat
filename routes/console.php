@@ -20,3 +20,6 @@ Schedule::command('orders:expire-asks')->everyMinute()->withoutOverlapping();
 
 // F39: weekly bills on Saturday, monthly on the 1st, early morning in Dhaka.
 Schedule::command('bills:issue')->dailyAt('07:10')->timezone('Asia/Dhaka')->withoutOverlapping();
+
+// F43: cooks' daily menus post themselves at their time.
+Schedule::command('posts:daily-menus')->everyMinute()->withoutOverlapping();

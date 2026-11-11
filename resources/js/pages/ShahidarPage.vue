@@ -35,12 +35,35 @@
             <!-- Cooks who have not posted yet -->
             <div v-if="day.waiting.length" class="mt-4 rounded-[var(--radius-plate)] bg-turmeric-soft p-4">
                 <p class="font-semibold">এখনো পোস্ট আসেনি</p>
-                <ul class="mt-1 space-y-1 text-sm">
-                    <li v-for="(w, i) in day.waiting" :key="i">
-                        {{ w.meal_slot_label }} · {{ w.kitchen }} → {{ w.customer }} ({{ bn(w.plates) }})
-                        <CallButtons class="ml-1 inline-flex" :phone="w.kitchen_phone" :contact="w.kitchen_contact" />
-                    </li>
-                </ul>
+                <div v-for="g in waitingGroups" :key="g.key" class="mt-2 border-t border-turmeric/40 pt-2 text-sm first-of-type:border-0">
+                    <div class="flex items-start justify-between gap-3">
+                        <p>
+                            <span class="font-semibold">{{ g.meal_slot_label }} · {{ g.kitchen }}</span>
+                            <span class="block text-muted">{{ g.customers.join(', ') }} · {{ bn(g.plates) }} প্লেট লাগবে</span>
+                        </p>
+                        <CallButtons :phone="g.kitchen_phone" :contact="g.kitchen_contact" />
+                    </div>
+                    <!-- F43: the cook told you on the phone: post it for her -->
+                    <form v-if="posting?.key === g.key" class="mt-2 space-y-2 rounded-xl bg-plate p-3" @submit.prevent="postFor(g)">
+                        <input v-model="posting.title" class="field text-base" maxlength="100" placeholder="কী রান্না, যেমন: ভাত, মাছের ঝোল, ডাল" />
+                        <div class="grid grid-cols-3 gap-2">
+                            <label class="text-xs text-muted">দাম (৳)<input v-model.number="posting.price_taka" class="field text-base" type="number" inputmode="numeric" min="20" max="2000" /></label>
+                            <label class="text-xs text-muted">প্লেট<input v-model.number="posting.plates_total" class="field text-base" type="number" inputmode="numeric" min="1" max="20" /></label>
+                            <label class="text-xs text-muted">কতক্ষণ<select v-model.number="posting.available_hours" class="field text-base"><option v-for="h in 6" :key="h" :value="h">{{ bn(h) }} ঘণ্টা</option></select></label>
+                        </div>
+                        <label class="flex items-center gap-2 text-sm">
+                            <span class="rounded-lg border border-rule px-3 py-1.5 font-semibold text-leaf">📷 ছবি দিন</span>
+                            <span class="text-xs text-muted">{{ posting.images.length ? `${bn(posting.images.length)}টা ছবি বাছা হয়েছে` : 'ইচ্ছা হলে; না দিলে গৃহিণীর আগের ছবি' }}</span>
+                            <input type="file" accept="image/*" multiple class="sr-only" @change="posting.images = [...$event.target.files].slice(0, 4)" />
+                        </label>
+                        <p v-if="posting.error" class="error-text" role="alert">{{ posting.error }}</p>
+                        <div class="flex gap-2">
+                            <button type="submit" class="btn-primary w-auto px-5" :disabled="busy">{{ busy ? 'পোস্ট হচ্ছে…' : 'পোস্ট দিন' }}</button>
+                            <button type="button" class="btn-quiet w-auto" @click="posting = null">থাক</button>
+                        </div>
+                    </form>
+                    <button v-else type="button" class="mt-1 font-semibold text-leaf" @click="startPost(g)">+ গৃহিণীর হয়ে পোস্ট দিন</button>
+                </div>
             </div>
 
             <!-- F30: price above the customer's limit: call and ask -->
@@ -166,6 +189,43 @@ const busy = ref(false);
 const error = ref('');
 const notice = ref('');
 const day = ref({ orders: [], waiting: [], date: '' });
+const posting = ref(null); // F43: a post being made for a cook
+
+// One row per cook and meal, with the customers waiting on it.
+const waitingGroups = computed(() => {
+    const groups = new Map();
+    for (const w of day.value.waiting) {
+        const key = `${w.kitchen_id}-${w.meal_slot}`;
+        if (!groups.has(key)) groups.set(key, { ...w, key, customers: [], plates: 0 });
+        const g = groups.get(key);
+        g.customers.push(w.customer);
+        g.plates += w.plates;
+    }
+    return [...groups.values()];
+});
+
+function startPost(g) {
+    posting.value = { key: g.key, title: '', price_taka: 120, plates_total: g.plates, available_hours: 3, images: [], error: '' };
+}
+
+async function postFor(g) {
+    busy.value = true;
+    posting.value.error = '';
+    const form = new FormData();
+    for (const k of ['title', 'price_taka', 'plates_total', 'available_hours']) form.append(k, posting.value[k] ?? '');
+    form.append('meal_slot', g.meal_slot);
+    for (const f of posting.value.images) form.append('images[]', f);
+    try {
+        const { data } = await api.post(`/shahidar/kitchens/${g.kitchen_id}/posts`, form);
+        notice.value = data.message;
+        posting.value = null;
+        await load();
+    } catch (e) {
+        posting.value.error = errorMessage(e);
+    } finally {
+        busy.value = false;
+    }
+}
 const scanning = ref(null); // order being picked up
 const handing = ref(null); // order id being handed over
 const code = ref('');

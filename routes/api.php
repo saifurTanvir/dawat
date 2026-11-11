@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\KitchenContactController;
 use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\My\MyBookingController;
+use App\Http\Controllers\Api\V1\My\MyMenuController;
 use App\Http\Controllers\Api\V1\My\MyPostController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PostController;
@@ -97,6 +98,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/my/bookings', [MyBookingController::class, 'index'])->name('my.bookings.index');
         Route::post('/my/bookings/ready', [MyBookingController::class, 'ready'])->middleware('can:publish-posts')->name('my.bookings.ready');
         Route::post('/my/bookings/off', [MyBookingController::class, 'off'])->middleware('can:publish-posts')->name('my.bookings.off');
+        // F43: daily menus that post themselves
+        Route::get('/my/menus', [MyMenuController::class, 'index'])->name('my.menus.index');
+        Route::put('/my/menus/{slot}', [MyMenuController::class, 'save'])->middleware('can:publish-posts')->name('my.menus.save');
+        Route::delete('/my/menus/{slot}', [MyMenuController::class, 'destroy'])->name('my.menus.destroy');
         // F29: the cook's one-off orders
         Route::post('/my/orders/{order}/decline', [MyBookingController::class, 'decline'])->name('my.orders.decline');
         Route::post('/my/orders/{order}/handed', [MyBookingController::class, 'handed'])->name('my.orders.handed');
@@ -110,6 +115,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/orders/{order}/paid', [ShahidarController::class, 'paid'])->name('orders.paid');
             Route::post('/orders/{order}/skip', [ShahidarController::class, 'skip'])->name('orders.skip');
             Route::post('/orders/{order}/accept', [ShahidarController::class, 'accept'])->name('orders.accept');
+            // F43: post today's food for a cook after a phone call
+            Route::post('/kitchens/{kitchen}/posts', [ShahidarController::class, 'postFor'])->middleware('throttle:comments')->name('kitchens.posts');
         });
         Route::post('/stickers/{code}/received', [StickerController::class, 'received'])->name('stickers.received');
 
