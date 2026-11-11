@@ -52,7 +52,7 @@ class PostForCook
             default => 'দাওয়াত টিম আপনার হয়ে',
         };
         Push::toUser($kitchen->user_id, 'আজকের '.$post->meal_slot->label().' পোস্ট হয়েছে',
-            "{$who} পোস্ট দিয়েছে: {$post->title}। কিছু বদলাতে চাইলে অ্যাপে দেখুন।", '/cook/posts', 'post-'.$post->id);
+            "{$who} পোস্ট দিয়েছে: {$post->title}। ".PlateSplit::resultLine(app(PlateSplit::class)->forPost($post->load('orders'))), '/cook/posts', 'post-'.$post->id);
 
         return $post;
     }

@@ -100,6 +100,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/my/bookings/off', [MyBookingController::class, 'off'])->middleware('can:publish-posts')->name('my.bookings.off');
         // F43: daily menus that post themselves
         Route::get('/my/menus', [MyMenuController::class, 'index'])->name('my.menus.index');
+        // F44: before posting, where the plates will go
+        Route::get('/my/posts/preview', [PostController::class, 'preview'])->name('my.posts.preview');
         Route::put('/my/menus/{slot}', [MyMenuController::class, 'save'])->middleware('can:publish-posts')->name('my.menus.save');
         Route::delete('/my/menus/{slot}', [MyMenuController::class, 'destroy'])->name('my.menus.destroy');
         // F29: the cook's one-off orders
@@ -117,6 +119,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/orders/{order}/accept', [ShahidarController::class, 'accept'])->name('orders.accept');
             // F43: post today's food for a cook after a phone call
             Route::post('/kitchens/{kitchen}/posts', [ShahidarController::class, 'postFor'])->middleware('throttle:comments')->name('kitchens.posts');
+            Route::get('/kitchens/{kitchen}/preview', [ShahidarController::class, 'preview'])->name('kitchens.preview');
         });
         Route::post('/stickers/{code}/received', [StickerController::class, 'received'])->name('stickers.received');
 

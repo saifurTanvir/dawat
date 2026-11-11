@@ -8,6 +8,7 @@ use App\Enums\PostStatus;
 use App\Filament\Actions\PostModerationActions;
 use App\Filament\Actions\RemovalActions;
 use App\Services\Feed\PostReach;
+use App\Services\Posts\PlateSplit;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
@@ -20,14 +21,15 @@ class PostsTable
     {
         return $table
             ->defaultSort('created_at', 'desc')
-            ->modifyQueryUsing(fn ($query) => $query->withCount('reachAreas'))
+            ->modifyQueryUsing(fn ($query) => $query->withCount('reachAreas')->with(['orders', 'postedBy']))
             ->columns([
                 TextColumn::make('title')->label('খাবার')->searchable()->weight('semibold')->wrap(),
                 TextColumn::make('kitchen.display_name')->label('রান্নাঘর')->searchable(),
                 TextColumn::make('area.name')->label('এলাকা'),
                 TextColumn::make('price_paisa')->label('দাম')->formatStateUsing(fn (int $state) => '৳'.number_format($state / 100)),
-                TextColumn::make('plates_left')->label('প্লেট বাকি')
-                    ->formatStateUsing(fn ($record) => "{$record->plates_left}/{$record->plates_total}"),
+                TextColumn::make('plates_left')->label('প্লেটের ভাগ')
+                    ->formatStateUsing(fn ($record) => PlateSplit::line(app(PlateSplit::class)->forPost($record)).' / মোট '.$record->plates_total)
+                    ->wrap(),
                 TextColumn::make('meal_slot')->label('বেলা')->badge()->color('gray'),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
                 TextColumn::make('source')->label('পোস্ট দিয়েছেন')->badge()

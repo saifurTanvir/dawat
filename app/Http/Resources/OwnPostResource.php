@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Actions\PublishPost;
 use App\Models\Post;
+use App\Services\Posts\PlateSplit;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -27,6 +28,9 @@ class OwnPostResource extends JsonResource
             'note' => $this->note,
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
+            // F44: where the plates went, numbers only.
+            'split' => $split = app(PlateSplit::class)->forPost($this->resource),
+            'split_line' => PlateSplit::line($split),
             // F43: posted for her by the team, her shahidar or her daily menu.
             'source' => $this->source ?? 'cook',
             'source_label' => ($this->source ?? 'cook') === 'cook' ? null : PublishPost::SOURCES[$this->source],

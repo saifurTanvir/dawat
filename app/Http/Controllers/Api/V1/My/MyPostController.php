@@ -21,7 +21,7 @@ class MyPostController extends Controller
         abort_unless($kitchen, 404, 'আপনি এখনো রাঁধুনি হিসেবে নিবন্ধন করেননি।');
 
         $posts = $kitchen->posts()
-            ->with(['images', 'tags'])
+            ->with(['images', 'tags', 'orders'])
             ->withCount('contactEvents')
             ->where('created_at', '>=', now()->subDays(7))
             ->latest('id')

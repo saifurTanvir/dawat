@@ -60,11 +60,12 @@ class MyBookingController extends Controller
                 // F30: the lowest price limit among them; above it they are asked first.
                 'price_limit_paisa' => $waiting->map(fn (Pairing $p) => $p->customer->max_price_paisa)->filter()->min(),
                 'limited_customers' => $waiting->filter(fn (Pairing $p) => $p->customer->max_price_paisa !== null)->count(),
-                'waiting' => $waiting->map(fn (Pairing $p) => ['name' => self::firstName($p->customer->user->name), 'plates' => $p->customer->plates])->values(),
+                // F44: the cook sees how many people, never who.
+                'waiting_people' => $waiting->count(),
                 'orders' => $done->map(fn (Order $o) => [
                     'id' => $o->id,
                     'code' => $o->code(),
-                    'name' => self::firstName($o->recipient()->name),
+                    'name' => $o->isOneOff() ? self::firstName($o->recipient()->name) : 'নিয়মিত গ্রাহক',
                     // F29: one-off feed orders; for self pickup the cook calls the buyer.
                     'kind' => $o->kind,
                     'receive' => $o->receive,
