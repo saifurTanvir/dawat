@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Actions\PublishPost;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -26,6 +27,9 @@ class OwnPostResource extends JsonResource
             'note' => $this->note,
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
+            // F43: posted for her by the team, her shahidar or her daily menu.
+            'source' => $this->source ?? 'cook',
+            'source_label' => ($this->source ?? 'cook') === 'cook' ? null : PublishPost::SOURCES[$this->source],
             'available_until' => $this->available_until->toIso8601String(),
             'published_at' => $this->published_at?->toIso8601String(),
             'images' => $this->whenLoaded('images', fn () => $this->images->map(fn ($img) => [

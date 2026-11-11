@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Posts\Tables;
 
+use App\Actions\PublishPost;
 use App\Enums\MealSlot;
 use App\Enums\PostStatus;
 use App\Filament\Actions\PostModerationActions;
@@ -29,6 +30,9 @@ class PostsTable
                     ->formatStateUsing(fn ($record) => "{$record->plates_left}/{$record->plates_total}"),
                 TextColumn::make('meal_slot')->label('বেলা')->badge()->color('gray'),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
+                TextColumn::make('source')->label('পোস্ট দিয়েছেন')->badge()
+                    ->formatStateUsing(fn (?string $state, $record) => (PublishPost::SOURCES[$state] ?? 'গৃহিণী নিজে').($record->postedBy?->name && $state !== 'cook' ? ' · '.$record->postedBy->name : ''))
+                    ->color(fn (?string $state) => ($state ?? 'cook') === 'cook' ? 'gray' : 'info'),
                 TextColumn::make('reach_m')->label('পরিধি')
                     ->state(fn ($record) => PostReach::summary($record->reach_m, $record->reach_areas_count ?? 0))
                     ->badge()->color(fn ($record) => $record->boosted ? 'success' : 'gray'),

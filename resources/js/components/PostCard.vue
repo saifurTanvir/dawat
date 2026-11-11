@@ -17,6 +17,10 @@
                     :loading="i === 0 ? 'eager' : 'lazy'"
                     decoding="async"
                 />
+                <!-- F43: a post made for the cook may have no photo yet -->
+                <div v-if="!post.images.length" class="flex h-full w-full items-center justify-center">
+                    <img src="/brand/mark.png" alt="" class="w-1/2 opacity-80" />
+                </div>
             </div>
             <span class="absolute top-3 left-3 rounded-full bg-ink/75 px-3 py-0.5 text-sm text-white">
                 {{ post.meal_slot_label }}

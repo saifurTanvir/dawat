@@ -35,6 +35,7 @@
             <template v-if="kitchen.can_post">
                 <RouterLink :to="{ name: 'new-post' }" class="btn-primary">আজকের রান্না পোস্ট করুন</RouterLink>
                 <RouterLink :to="{ name: 'my-posts' }" class="btn-quiet mt-2 mb-6 w-full border border-rule">আমার পোস্ট ও প্লেট বাকি</RouterLink>
+                <DailyMenu />
             </template>
             <!-- F26: regular customers today -->
             <section v-if="bookings && (bookings.regular_customers || bookings.slots.length)" class="mb-6 rounded-[var(--radius-plate)] bg-plate p-5" aria-labelledby="regular-title">
@@ -116,6 +117,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import ContactHours from '@/components/ContactHours.vue';
+import DailyMenu from '@/components/DailyMenu.vue';
 import PushToggle from '@/components/PushToggle.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn, placeOf } from '@/lib/bn';

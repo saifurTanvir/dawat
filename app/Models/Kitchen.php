@@ -82,6 +82,12 @@ class Kitchen extends Model
 
     /** F25: regular customers paired with this cook (open pairings). */
     /** F35: areas where this kitchen's new posts also show. */
+    /** F43: standing daily menus, one per meal. */
+    public function menus(): HasMany
+    {
+        return $this->hasMany(KitchenMenu::class)->orderByRaw("FIELD(meal_slot, 'breakfast', 'lunch', 'snack', 'dinner')");
+    }
+
     public function reachAreas(): BelongsToMany
     {
         return $this->belongsToMany(Area::class, 'kitchen_reach_areas');

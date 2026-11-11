@@ -35,6 +35,7 @@
                         </p>
                         <p class="mt-1 text-sm">
                             <span class="rounded-full px-2 py-0.5" :class="statusClass(post)">{{ statusText(post) }}</span>
+                            <span v-if="post.source_label" class="rounded-full bg-turmeric-soft px-2 py-0.5">{{ post.source_label }}</span>
                             <span v-if="post.contact_counts" class="ml-2 text-muted">{{ bn(post.contact_counts) }} বার যোগাযোগ</span>
                         </p>
                     </div>
