@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\OtpCode;
 use App\Services\Otp\BulkSmsBdSender;
+use App\Services\Otp\LoggingOtpSender;
 use App\Services\Otp\OtpDeliveryFailedException;
 use App\Services\Otp\OtpPurpose;
 use App\Services\Otp\OtpSender;
@@ -28,7 +29,10 @@ class BulkSmsBdSenderTest extends TestCase
 
     public function test_driver_is_bound(): void
     {
-        $this->assertInstanceOf(BulkSmsBdSender::class, app(OtpSender::class));
+        // F50: wrapped so every send is logged.
+        $sender = app(OtpSender::class);
+        $this->assertInstanceOf(LoggingOtpSender::class, $sender);
+        $this->assertInstanceOf(BulkSmsBdSender::class, $sender->inner());
     }
 
     public function test_sends_bangla_otp_to_880_number(): void

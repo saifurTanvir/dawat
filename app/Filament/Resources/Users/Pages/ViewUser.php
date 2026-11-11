@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Pages;
 
+use App\Filament\Actions\LoginHelpActions;
 use App\Filament\Actions\RemovalActions;
 use App\Filament\Actions\UserBlockActions;
 use App\Filament\Resources\Users\UserResource;
@@ -13,6 +14,6 @@ class ViewUser extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [...UserBlockActions::make(), RemovalActions::deleteUser()];
+        return [LoginHelpActions::group(fn ($record) => $record), ...UserBlockActions::make(), RemovalActions::deleteUser()];
     }
 }

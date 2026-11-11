@@ -92,6 +92,12 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        // F50: one-time login link
+        path: '/l/:token',
+        name: 'link-login',
+        component: () => import('./pages/LinkLoginPage.vue'),
+    },
+    {
         path: '/s/:code',
         name: 'sticker',
         component: () => import('./pages/StickerPage.vue'),

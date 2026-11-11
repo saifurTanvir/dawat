@@ -45,6 +45,16 @@ export const useAuthStore = defineStore('auth', {
             return data.user;
         },
 
+        /** F50: a one-time login link from the Dawat team. */
+        async loginWithLink(linkToken) {
+            const { data } = await api.post('/auth/link', { token: linkToken });
+            this.token = data.token;
+            this.user = data.user;
+            this.loaded = true;
+            setToken(data.token);
+            return data.user;
+        },
+
         async logout() {
             try {
                 await api.post('/auth/logout');

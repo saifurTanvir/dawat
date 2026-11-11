@@ -28,7 +28,9 @@ enum OtpPurpose: string
     public function message(string $code, array $context = []): string
     {
         return match ($this) {
-            self::Login => "দাওয়াত লগইন কোড: {$code}। কাউকে এই কোড দেবেন না।",
+            self::Login => ($context['retry'] ?? false)
+                ? "আপনার Dawat কোড {$code} — dawat.cloud। কাউকে বলবেন না।"
+                : "দাওয়াত লগইন কোড: {$code}। কাউকে এই কোড দেবেন না।",
             self::ContactNumber => sprintf(
                 'দাওয়াত: "%s" আপনার নম্বরটি ক্রেতাদের যোগাযোগের নম্বর হিসেবে দিতে চান। রাজি থাকলে তাঁকে এই কোড দিন: %s',
                 $context['kitchen'] ?? 'একজন রাঁধুনি',

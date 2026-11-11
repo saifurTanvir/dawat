@@ -58,6 +58,13 @@
                 </button>
             </div>
         </form>
+        <!-- F50: the code did not come -->
+        <div v-if="showHelp" class="mt-6 rounded-[var(--radius-plate)] bg-turmeric-soft p-4 text-sm">
+            <p class="font-semibold">কোড আসেনি?</p>
+            <p class="mt-1">কখনো কখনো মোবাইল কোম্পানি SMS আটকে দেয়। দাওয়াত টিমকে জানালে তাঁরা হোয়াটসঅ্যাপে কোড বা একটা লগইন লিংক পাঠাবেন।</p>
+            <button type="button" class="btn-primary mt-3" :disabled="helpBusy" @click="askForHelp">{{ helpBusy ? 'জানানো হচ্ছে…' : 'দাওয়াতকে হোয়াটসঅ্যাপে জানান' }}</button>
+            <p v-if="helpNotice" class="mt-2" role="status">{{ helpNotice }}</p>
+        </div>
     </section>
 </template>
 
@@ -65,7 +72,7 @@
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { errorMessage } from '@/lib/api';
+import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
 
 const auth = useAuthStore();
@@ -82,6 +89,25 @@ const cooldown = ref(0);
 const devAnyCode = ref(false);
 const codeInput = ref(null);
 let timer = null;
+
+// F50: help when the SMS does not arrive (or could not be sent).
+const sendFailed = ref(false);
+const helpBusy = ref(false);
+const helpNotice = ref('');
+const showHelp = computed(() => sendFailed.value || (step.value === 'code' && cooldown.value <= 0));
+
+async function askForHelp() {
+    helpBusy.value = true;
+    try {
+        const { data } = await api.post('/auth/no-code', { phone: phone.value });
+        helpNotice.value = data.message;
+        window.open(data.whatsapp_url, '_blank', 'noopener');
+    } catch (e) {
+        helpNotice.value = errorMessage(e);
+    } finally {
+        helpBusy.value = false;
+    }
+}
 
 const phoneShown = computed(() => phone.value.trim());
 
@@ -108,6 +134,7 @@ async function sendCode() {
         codeInput.value?.focus();
     } catch (e) {
         error.value = errorMessage(e);
+        if (e.response?.status === 503) sendFailed.value = true;
         if (e.response?.data?.retry_after && step.value === 'code') {
             startCooldown(e.response.data.retry_after);
         }

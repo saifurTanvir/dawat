@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Shahidars\Pages;
 
+use App\Filament\Actions\LoginHelpActions;
 use App\Filament\Actions\RemovalActions;
 use App\Filament\Resources\Shahidars\ShahidarResource;
 use Filament\Actions\EditAction;
@@ -19,6 +20,6 @@ class ViewShahidar extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [EditAction::make(), RemovalActions::removeShahidar()];
+        return [LoginHelpActions::group(fn ($record) => $record), EditAction::make(), RemovalActions::removeShahidar()];
     }
 }
