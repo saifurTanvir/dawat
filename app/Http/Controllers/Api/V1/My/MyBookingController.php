@@ -5,18 +5,15 @@ namespace App\Http\Controllers\Api\V1\My;
 use App\Enums\MealSlot;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
-use App\Jobs\SendOrderSms;
 use App\Models\Order;
 use App\Models\Pairing;
+use App\Services\Kitchens\ActForCook;
+use App\Services\Kitchens\CookActions;
 use App\Services\Orders\BookingPlanner;
-use App\Services\Otp\OtpPurpose;
-use App\Services\Push\Push;
-use App\Support\Seo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 /**
  * F26: the cook's regular customers today, per meal. Customers appear by first
@@ -85,14 +82,16 @@ class MyBookingController extends Controller
                 'regular_customers' => $kitchen->pairings()->count(),
                 'max_regular_customers' => $kitchen->max_regular_customers,
                 'slots' => $slots,
+                // F46: what the team or a shahidar did for her today.
+                'acted_for' => ActForCook::today($kitchen),
             ],
         ]);
     }
 
-    public const DECLINE_MINUTES = 10;
+    public const DECLINE_MINUTES = CookActions::DECLINE_MINUTES;
 
     /** POST /api/v1/my/bookings/ready — F38: "food is ready", with where/when to collect it. */
-    public function ready(Request $request): JsonResponse
+    public function ready(Request $request, CookActions $actions): JsonResponse
     {
         $kitchen = $request->user()->kitchen;
         abort_unless($kitchen, 404);
@@ -100,65 +99,25 @@ class MyBookingController extends Controller
             'meal_slot' => ['required', Rule::enum(MealSlot::class)],
             'note' => ['nullable', 'string', 'max:200'],
         ]);
-        $slot = MealSlot::from($data['meal_slot']);
-        $note = filled($data['note'] ?? null) ? trim($data['note']) : null;
+        $n = $actions->ready($kitchen, MealSlot::from($data['meal_slot']), $data['note'] ?? null);
 
-        $orders = Order::where('kitchen_id', $kitchen->id)
-            ->whereDate('service_date', BookingPlanner::today())
-            ->where('meal_slot', $slot)
-            ->where('status', OrderStatus::Booked)
-            ->where(fn ($q) => $q->whereNull('receive')->orWhere('receive', '!=', 'self'))
-            ->whereNotNull('shahidar_id')
-            ->get();
-
-        if ($orders->isEmpty()) {
-            throw ValidationException::withMessages(['meal_slot' => 'এই বেলায় শাহিদারের তোলার মতো কোনো বক্স নেই।']);
-        }
-
-        Order::whereKey($orders->modelKeys())->update(['ready_at' => now(), 'ready_note' => $note]);
-
-        foreach ($orders->groupBy('shahidar_id') as $shahidarId => $boxes) {
-            Push::toUser((int) $shahidarId,
-                "{$kitchen->display_name}: ".Seo::of($slot->label()).' খাবার রেডি',
-                Order::banglaDigits($boxes->count()).'টা বক্স তুলতে হবে।'.($note ? " {$note}" : ''),
-                '/shahidar',
-                "ready-{$kitchen->id}-{$slot->value}",
-            );
-        }
-
-        return response()->json(['message' => 'শাহিদারকে জানানো হয়েছে ('.Order::banglaDigits($orders->count()).'টা বক্স)।']);
+        return response()->json(['message' => 'শাহিদারকে জানানো হয়েছে ('.Order::banglaDigits($n).'টা বক্স)।']);
     }
 
     /** POST /api/v1/my/orders/{order}/decline — F29: can't give this one-off order. */
-    public function decline(Request $request, Order $order): JsonResponse
+    public function decline(Request $request, Order $order, CookActions $actions): JsonResponse
     {
         $this->own($request, $order);
-        abort_unless($order->isOneOff(), 404);
-        if ($order->created_at->lte(now()->subMinutes(self::DECLINE_MINUTES))) {
-            throw ValidationException::withMessages(['order' => '১০ মিনিট পেরিয়ে গেছে। দিতে না পারলে দাওয়াত টিম বা শাহিদারকে জানান।']);
-        }
-
-        $this->planner->cancel($order, 'cook', 'গৃহিণী দিতে পারছেন না');
-        // F37: always queued: a free push goes out; the SMS only when ORDER_SMS_ENABLED.
-        SendOrderSms::dispatch($order->id, OtpPurpose::OrderDeclined);
+        $actions->decline($order);
 
         return response()->json(['message' => 'বাতিল হয়েছে, ক্রেতাকে জানানো হচ্ছে।']);
     }
 
     /** POST /api/v1/my/orders/{order}/handed — F29: the buyer collected it and paid the cook. */
-    public function handed(Request $request, Order $order): JsonResponse
+    public function handed(Request $request, Order $order, CookActions $actions): JsonResponse
     {
         $this->own($request, $order);
-        abort_unless($order->isSelfPickup(), 404);
-        if ($order->status !== OrderStatus::Booked) {
-            throw ValidationException::withMessages(['order' => 'এই অর্ডার আগেই শেষ বা বাতিল হয়েছে।']);
-        }
-
-        $order->forceFill([
-            'status' => OrderStatus::Delivered, 'picked_at' => now(), 'delivered_at' => now(),
-            'confirm_method' => 'cook_tap', 'confirmed_by' => $request->user()->id,
-            'paid_at' => now(), 'collected_by' => $request->user()->id,
-        ])->save();
+        $actions->handed($order, $request->user());
 
         return response()->json(['message' => 'দেওয়া হয়েছে, লিখে রাখা হলো।']);
     }

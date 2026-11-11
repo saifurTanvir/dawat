@@ -92,6 +92,11 @@
                 </div>
                 <p v-if="bookingNotice" class="mt-3 rounded-lg bg-leaf-soft p-3 text-sm" role="status">{{ bookingNotice }}</p>
             </section>
+            <!-- F46: what the team or a shahidar did for her today -->
+            <section v-if="bookings?.acted_for?.length" class="mb-6 rounded-[var(--radius-plate)] bg-turmeric-soft p-5">
+                <h2 class="font-semibold">আজ আপনার হয়ে যা করা হয়েছে</h2>
+                <p v-for="(a, i) in bookings.acted_for" :key="i" class="mt-1 text-sm"><span class="text-muted">{{ clockText(a.at) }}</span> · {{ a.who }} · {{ a.details }}</p>
+            </section>
 
             <div class="rounded-[var(--radius-plate)] bg-plate p-5" :class="statusTone.border">
                 <p class="text-sm text-muted">{{ kitchen.display_name }}</p>

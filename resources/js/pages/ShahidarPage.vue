@@ -38,7 +38,7 @@
                 <div v-for="g in waitingGroups" :key="g.key" class="mt-2 border-t border-turmeric/40 pt-2 text-sm first-of-type:border-0">
                     <div class="flex items-start justify-between gap-3">
                         <p>
-                            <span class="font-semibold">{{ g.meal_slot_label }} · {{ g.kitchen }}</span>
+                            <span class="font-semibold">{{ g.meal_slot_label }} · <RouterLink :to="{ name: 'shahidar-kitchen', params: { id: g.kitchen_id } }" class="underline decoration-rule underline-offset-4">{{ g.kitchen }}</RouterLink></span>
                             <span class="block text-muted">{{ g.customers.join(', ') }} · {{ bn(g.plates) }} প্লেট লাগবে</span>
                         </p>
                         <CallButtons :phone="g.kitchen_phone" :contact="g.kitchen_contact" />
@@ -71,7 +71,7 @@
             <div v-if="day.posts?.length" class="mt-4 rounded-[var(--radius-plate)] bg-plate p-4">
                 <p class="font-semibold">আজকের পোস্ট</p>
                 <div v-for="p in day.posts" :key="p.id" class="mt-3 border-t border-rule pt-3 text-sm first-of-type:border-0">
-                    <p><span class="font-semibold">{{ p.meal_slot_label }} · {{ p.kitchen }}</span> · {{ p.title }}</p>
+                    <p><span class="font-semibold">{{ p.meal_slot_label }} · <RouterLink :to="{ name: 'shahidar-kitchen', params: { id: p.kitchen_id } }" class="underline decoration-rule underline-offset-4">{{ p.kitchen }}</RouterLink></span> · {{ p.title }}</p>
                     <p class="text-xs text-muted">
                         {{ clockText(p.published_at) }}-এ পোস্ট · {{ p.source_label }}<template v-if="p.posted_by"> ({{ p.posted_by }})</template>
                         <template v-if="p.mine"> · আপনার {{ bn(p.mine) }}টা বক্স</template>
@@ -110,7 +110,7 @@
             <div v-for="g in pickups" :key="g.key" class="mt-3 rounded-[var(--radius-plate)] bg-plate p-4">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="font-semibold"><span class="text-leaf">{{ g.orders[0].meal_slot_label }}</span> · {{ g.kitchen.name }}</p>
+                        <p class="font-semibold"><span class="text-leaf">{{ g.orders[0].meal_slot_label }}</span> · <RouterLink :to="{ name: 'shahidar-kitchen', params: { id: g.kitchen.id } }" class="underline decoration-rule underline-offset-4">{{ g.kitchen.name }}</RouterLink></p>
                         <p class="text-sm text-muted">{{ g.kitchen.address }}</p>
                     </div>
                     <CallButtons :phone="g.kitchen.phone" :contact="g.kitchen.contact" />

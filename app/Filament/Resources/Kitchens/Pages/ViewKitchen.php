@@ -2,12 +2,15 @@
 
 namespace App\Filament\Resources\Kitchens\Pages;
 
+use App\Filament\Actions\ActForCookActions;
 use App\Filament\Actions\KitchenModerationActions;
 use App\Filament\Actions\PostForCookActions;
 use App\Filament\Actions\RemovalActions;
 use App\Filament\Resources\Kitchens\KitchenResource;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Support\Icons\Heroicon;
 
 class ViewKitchen extends ViewRecord
 {
@@ -17,7 +20,12 @@ class ViewKitchen extends ViewRecord
     {
         return [
             PostForCookActions::postFor(),
-            PostForCookActions::menus(),
+            ActionGroup::make([
+                ActForCookActions::ready(),
+                ActForCookActions::off(),
+                PostForCookActions::menus(),
+                ActForCookActions::contactHours(),
+            ])->label('গৃহিণীর হয়ে')->icon(Heroicon::OutlinedUserCircle)->button()->color('gray'),
             ...KitchenModerationActions::make(),
             EditAction::make(),
             RemovalActions::deleteKitchen(),

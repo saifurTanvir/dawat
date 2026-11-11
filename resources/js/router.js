@@ -72,6 +72,13 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        // F46: a shahidar acts for one cook
+        path: '/shahidar/kitchens/:id',
+        name: 'shahidar-kitchen',
+        component: () => import('./pages/ShahidarKitchenPage.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
         path: '/s/:code',
         name: 'sticker',
         component: () => import('./pages/StickerPage.vue'),
