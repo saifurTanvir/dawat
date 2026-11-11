@@ -2,9 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\CustomerStatus;
 use App\Enums\OrderStatus;
 use App\Models\Customer;
 use App\Models\Order;
+use App\Services\Orders\BookingPlanner;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -47,7 +49,15 @@ class RegularResource extends JsonResource
                 // F30: today's price is above the limit; "নেব" until ask_until.
                 'can_accept' => $o->status === OrderStatus::Asking,
                 'ask_until' => $o->ask_until?->toIso8601String(),
+                // F45: steps — booked, cook ready, on the way, delivered.
+                'ready_at' => $o->ready_at?->toIso8601String(),
+                'picked_at' => $o->picked_at?->toIso8601String(),
+                'delivered_at' => $o->delivered_at?->toIso8601String(),
             ])->values()),
+            // F45: meals of the booking with no box today, and why.
+            'today_missing' => $this->whenLoaded('todayOrders', fn () => $this->status !== CustomerStatus::Active ? [] : collect(app(BookingPlanner::class)->todayReasons($this->resource))
+                ->reject(fn ($r) => $this->todayOrders->contains(fn (Order $o) => $o->meal_slot->value === $r['slot']))
+                ->map(fn ($r) => ['label' => $r['label'], 'line' => $r['line']])->values()),
             'pauses' => $this->whenLoaded('upcomingPauses', fn () => $this->upcomingPauses->map(fn ($p) => [
                 'id' => $p->id,
                 'starts_on' => $p->starts_on->toDateString(),

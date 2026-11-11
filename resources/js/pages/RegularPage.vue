@@ -27,12 +27,19 @@
                 </dl>
             </div>
 
+            <!-- F45: meals of the booking with no box yet today, and why -->
+            <div v-if="booking.today_missing?.length" class="rounded-[var(--radius-plate)] bg-plate p-5">
+                <h2 class="font-semibold">আজ যে বেলায় বক্স নেই</h2>
+                <p v-for="m in booking.today_missing" :key="m.label" class="mt-2 text-sm"><span class="font-semibold">{{ m.label }}:</span> {{ m.line }}</p>
+            </div>
+
             <!-- F26: today's boxes -->
             <div v-if="booking.today?.length" class="rounded-[var(--radius-plate)] bg-plate p-5">
                 <h2 class="font-semibold">আজকের খাবার</h2>
                 <div v-for="o in booking.today" :key="o.id" class="mt-3 border-t border-rule pt-3 first:border-0 first:pt-0">
                     <p class="font-semibold">{{ o.meal_slot_label }}<template v-if="o.title"> · {{ o.title }}</template></p>
                     <p class="text-sm text-muted">বক্স {{ o.code }} · {{ bn(o.plates) }} প্লেট · {{ taka(o.total_paisa) }} · {{ o.status_label }}</p>
+                    <BoxSteps :order="o" />
                     <div v-if="o.can_accept" class="mt-2 rounded-lg bg-turmeric-soft p-3 text-sm">
                         <p>আজকের দাম আপনার সীমার বেশি। {{ clockText(o.ask_until) }}-এর মধ্যে না জানালে আজ আসবে না।</p>
                         <button type="button" class="btn-primary mt-2" :disabled="busy" @click="accept(o)">নেব ({{ taka(o.total_paisa) }})</button>
@@ -192,7 +199,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import BoxSteps from '@/components/BoxSteps.vue';
 import ContactHours from '@/components/ContactHours.vue';
 import PushToggle from '@/components/PushToggle.vue';
 import ChoiceChip from '@/components/ChoiceChip.vue';
@@ -301,7 +309,25 @@ function startEdit() {
     editing.value = true;
 }
 
+// F45: today's boxes move along while the page is open.
+let refreshTimer = null;
+async function refreshToday() {
+    if (document.visibilityState !== 'visible' || editing.value || busy.value || !booking.value) return;
+    try {
+        const { data } = await api.get('/regular');
+        if (data.data && !editing.value) booking.value = data.data;
+    } catch {
+        /* try again next minute */
+    }
+}
+onBeforeUnmount(() => {
+    clearInterval(refreshTimer);
+    document.removeEventListener('visibilitychange', refreshToday);
+});
+
 onMounted(async () => {
+    refreshTimer = setInterval(refreshToday, 60000);
+    document.addEventListener('visibilitychange', refreshToday);
     try {
         const [{ data: a }, { data: r }] = await Promise.all([api.get('/areas'), api.get('/regular')]);
         areas.value = a.data;

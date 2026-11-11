@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Kitchen;
 use App\Models\Pairing;
 use App\Models\User;
+use App\Services\Orders\BookingPlanner;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -17,6 +18,16 @@ use Illuminate\Validation\ValidationException;
 class PairCustomer
 {
     public function __invoke(Customer $customer, Kitchen $kitchen, User $shahidar, User $by, ?string $reason = null): Pairing
+    {
+        $pairing = $this->pair($customer, $kitchen, $shahidar, $by, $reason);
+
+        // F45: if the cook has already posted today, the customer gets a box from it now.
+        app(BookingPlanner::class)->bookLate($customer);
+
+        return $pairing;
+    }
+
+    private function pair(Customer $customer, Kitchen $kitchen, User $shahidar, User $by, ?string $reason): Pairing
     {
         return DB::transaction(function () use ($customer, $kitchen, $shahidar, $by, $reason) {
             // Lock the cook so two admins cannot fill the last slot at once.
