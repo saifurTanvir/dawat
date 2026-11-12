@@ -9,7 +9,8 @@ export const CONTACT = {
 };
 
 /**
- * While Dawat is just starting, every new visitor sees the "join us" popup.
- * Set to false once there are enough cooks and customers.
+ * F33 popup. F52 turned it off: the first screen now explains Dawat itself,
+ * and the footer keeps the same phone and WhatsApp.
+ * Set to true to bring the popup back.
  */
-export const JOIN_BANNER_ENABLED = true;
+export const JOIN_BANNER_ENABLED = false;

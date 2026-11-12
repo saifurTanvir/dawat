@@ -1,7 +1,11 @@
 <template>
     <section aria-labelledby="feed-title" class="pt-2">
-        <!-- F34: the full Dawat logo greets everyone on the home page. -->
+        <!-- F52: a new visitor first sees what Dawat is, and three ways in. -->
+        <HomeIntro v-if="showIntro" :areas="areas" class="mb-10" @find-food="goToFood" />
+
+        <!-- F34: the full Dawat logo greets everyone else on the home page. -->
         <img
+            v-else
             src="/brand/lockup.png"
             alt="দাওয়াত — পাড়ার ঘরের খাবার। ঘর থেকে দূরে, তবু খাবারটা ঘরের"
             width="800"
@@ -12,7 +16,7 @@
         <!-- Where we are looking from -->
         <div class="flex items-end justify-between gap-3">
             <div>
-                <h1 id="feed-title" class="font-serif text-2xl font-bold">আজকের দাওয়াত</h1>
+                <component :is="showIntro ? 'h2' : 'h1'" id="feed-title" tabindex="-1" class="scroll-mt-4 font-serif text-2xl font-bold outline-none">আজকের দাওয়াত</component>
                 <p class="mt-0.5 text-muted">{{ placeLabel }}</p>
             </div>
             <button v-if="feed.mode" type="button" class="btn-quiet -mr-4 min-h-10 shrink-0" @click="changePlace">
@@ -31,7 +35,7 @@
         <!-- First visit: choose how to find food -->
         <div v-if="!feed.mode || choosing" class="mt-6 rounded-[var(--radius-plate)] bg-plate p-5">
             <p class="font-semibold">কোথাকার খাবার দেখবেন?</p>
-            <button type="button" class="btn-primary mt-4" :disabled="locating" @click="useMyLocation">
+            <button ref="locateButton" type="button" class="btn-primary mt-4" :disabled="locating" @click="useMyLocation">
                 {{ locating ? 'লোকেশন খোঁজা হচ্ছে…' : 'আমার কাছের খাবার দেখুন' }}
             </button>
             <p class="mt-2 text-sm text-muted">আপনার লোকেশন শুধু দূরত্ব হিসাব করতে লাগে, কোথাও সংরক্ষণ হয় না।</p>
@@ -121,6 +125,7 @@
             <button type="button" class="-mr-2 grid size-10 place-items-center text-muted" aria-label="আর দেখাবেন না" @click="hideInstallCard">✕</button>
         </div>
 
+        <template v-if="!showIntro">
         <aside class="mt-12 border-t border-rule pt-6">
             <p class="font-semibold">প্রতিদিন ঘরের খাবার চান?</p>
             <p class="mt-1 text-muted">পাড়ার একজন গৃহিণী রোজ রান্না করবেন, শাহিদার বাসায় পৌঁছে দেবেন।</p>
@@ -131,6 +136,7 @@
             <p class="mt-1 text-muted">পরিবারের রান্না থেকে এক-দুই প্লেট পাড়ার মানুষের কাছে বিক্রি করুন।</p>
             <RouterLink to="/cook" class="btn-quiet -ml-4 mt-1">দাওয়াতে রাঁধুনি হিসেবে যোগ দিন</RouterLink>
         </aside>
+        </template>
 
         <!-- F31: plain links (full page loads) to the public pages search engines index. -->
         <footer class="mt-10 border-t border-rule pt-6 text-sm text-muted">
@@ -163,6 +169,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ChoiceChip from '@/components/ChoiceChip.vue';
 import ContactButtons from '@/components/ContactButtons.vue';
+import HomeIntro from '@/components/HomeIntro.vue';
 import PostCard from '@/components/PostCard.vue';
 import WhereAmI from '@/components/WhereAmI.vue';
 import { api, errorMessage } from '@/lib/api';
@@ -171,8 +178,22 @@ import { CONTACT } from '@/lib/contact';
 import { install, promptInstall } from '@/lib/pwa';
 import { agoText, clockText, distanceText } from '@/lib/format';
 import { currentPosition, useFeedStore } from '@/stores/feed';
+import { useAuthStore } from '@/stores/auth';
 
 const feed = useFeedStore();
+const auth = useAuthStore();
+const locateButton = ref(null);
+
+// F52: until a visitor signs in or picks a place, the page starts by explaining itself.
+const introFor = ref(!auth.isSignedIn && !feed.mode);
+const showIntro = computed(() => introFor.value && !auth.isSignedIn);
+
+/** Door 1: jump to "where should we look" and put the finger on the location button. */
+function goToFood() {
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    document.getElementById('feed-title')?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    (locateButton.value ?? document.getElementById('feed-title'))?.focus({ preventScroll: true });
+}
 const route = useRoute();
 const router = useRouter();
 
