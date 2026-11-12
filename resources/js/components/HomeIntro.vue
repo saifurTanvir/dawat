@@ -4,7 +4,7 @@
         <h1 id="home-title" class="font-serif text-xl leading-snug font-bold text-leaf-deep">
             পাড়ার গৃহিণীদের ঘরের রান্না — খান, রোজ নিন, বা রেঁধে আয় করুন
         </h1>
-        <nav aria-label="শুরু করুন" class="mt-3 grid grid-cols-3 gap-2">
+        <nav aria-label="শুরু করুন" class="mt-3 grid grid-cols-2 gap-2">
             <a href="#feed-title" :class="TILE" @click.prevent="$emit('find-food')">
                 <span :class="[ICON, 'bg-leaf-soft text-leaf']"><svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /></svg></span>
                 আজকের খাবার কিনুন
@@ -16,6 +16,10 @@
             <RouterLink to="/cook" :class="TILE">
                 <span :class="[ICON, 'bg-turmeric-soft text-leaf-deep']"><svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h16a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6Z" /><path d="M12 9V6M8 9V7M16 9V7M2 13h20" /></svg></span>
                 রান্না করে আয় করুন
+            </RouterLink>
+            <RouterLink to="/join/shahidar" :class="[TILE, 'ring-2 ring-turmeric']">
+                <span :class="[ICON, 'bg-turmeric text-leaf-deep']"><svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="16.5" r="3.5" /><circle cx="18.5" cy="16.5" r="3.5" /><path d="M5.5 16.5L9 9h6l3.5 7.5M9 9l3 7.5h-6.5M14 5h2.5L15 9" /></svg></span>
+                <span>শাহিদার হয়ে আয় করুন<span class="block text-xs font-normal text-muted">মাসে {{ incomeShort }}</span></span>
             </RouterLink>
         </nav>
         <details class="mt-2 text-[0.9375rem]">
@@ -73,6 +77,19 @@
                 </span>
                 <Chevron />
             </RouterLink>
+
+            <!-- F53: the offer that brings in runners -->
+            <RouterLink to="/join/shahidar" :class="[DOOR, 'ring-2 ring-turmeric']">
+                <span :class="[ART, 'bg-turmeric text-leaf-deep']">
+                    <svg viewBox="0 0 24 24" class="size-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="16.5" r="3.5" /><circle cx="18.5" cy="16.5" r="3.5" /><path d="M5.5 16.5L9 9h6l3.5 7.5M9 9l3 7.5h-6.5M14 5h2.5L15 9" /></svg>
+                </span>
+                <span class="flex-1">
+                    <strong class="block text-[1.0625rem]">শাহিদার হয়ে আয় করুন</strong>
+                    <span class="block font-semibold text-leaf">মাসে {{ incomeText }} পর্যন্ত আয়ের সুযোগ</span>
+                    <span class="block text-sm text-muted">নিজের পাড়ায় খাবার পৌঁছে দিন · পুরুষ-মহিলা সবাই</span>
+                </span>
+                <Chevron />
+            </RouterLink>
         </nav>
 
         <ul v-if="trust.length" class="mt-4 flex flex-wrap gap-2 text-sm" aria-label="দাওয়াত সম্পর্কে">
@@ -116,7 +133,7 @@ import { api } from '@/lib/api';
 import { bn } from '@/lib/bn';
 import { taka } from '@/lib/format';
 
-const props = defineProps({
+defineProps({
     areas: { type: Array, default: () => [] },
     // A returning visitor who already picked a place: headline and doors only.
     compact: { type: Boolean, default: false },
@@ -127,8 +144,8 @@ const Chevron = () => h('svg', { viewBox: '0 0 24 24', class: 'size-5 shrink-0 t
 
 const DOOR = 'flex items-center gap-3.5 rounded-[var(--radius-plate)] bg-plate p-3.5 text-ink shadow-[0_1px_0_var(--color-rule)] transition-colors hover:bg-leaf-soft/40';
 const ART = 'grid size-[4.5rem] shrink-0 place-items-center rounded-[0.875rem]';
-const TILE = 'flex flex-col items-center gap-1.5 rounded-2xl bg-plate px-2 py-3 text-center text-sm leading-snug font-semibold text-ink shadow-[0_1px_0_var(--color-rule)] hover:bg-leaf-soft/40';
-const ICON = 'grid size-10 place-items-center rounded-xl';
+const TILE = 'flex items-center gap-2.5 rounded-2xl bg-plate p-2.5 text-sm leading-snug font-semibold text-ink shadow-[0_1px_0_var(--color-rule)] hover:bg-leaf-soft/40';
+const ICON = 'grid size-10 shrink-0 place-items-center rounded-xl';
 
 const summary = ref(null);
 
@@ -143,6 +160,12 @@ const todayLine = computed(() => {
     if (t?.count) return `আশেপাশে আজ ${bn(t.count)}টা রান্না, ${taka(t.min_price_paisa)} থেকে`;
     return 'আশেপাশের গৃহিণীদের আজকের রান্না দেখুন';
 });
+
+// F53: the shahidar offer, in taka a month (config dawat.shahidar.income).
+const income = computed(() => summary.value?.shahidar_income ?? { min: 20000, max: 30000 });
+const fmt = (n) => bn(Number(n).toLocaleString('en-US'));
+const incomeText = computed(() => `৳${fmt(income.value.min)}–৳${fmt(income.value.max)}`);
+const incomeShort = computed(() => `${bn(Math.round(income.value.min / 1000))}–${bn(Math.round(income.value.max / 1000))} হাজার টাকা`);
 
 const trust = computed(() => {
     const s = summary.value;
@@ -161,7 +184,6 @@ const steps = [
 ];
 
 onMounted(async () => {
-    if (props.compact) return; // no numbers or photos needed: the feed follows
     try {
         const { data } = await api.get('/home');
         summary.value = data.data;

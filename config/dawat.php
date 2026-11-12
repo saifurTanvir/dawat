@@ -57,6 +57,16 @@ return [
     | F31: public contact and search settings. The phone shows on the public
     | pages, in Google's structured data and on the Business Profile.
     */
+    /*
+    | F53: what the shahidar door promises, in taka a month.
+    */
+    'shahidar' => [
+        'income' => [
+            'min' => (int) env('DAWAT_SHAHIDAR_INCOME_MIN', 20000),
+            'max' => (int) env('DAWAT_SHAHIDAR_INCOME_MAX', 30000),
+        ],
+    ],
+
     'contact' => [
         'phone' => env('DAWAT_PHONE', '01685284290'),
         'facebook_url' => env('DAWAT_FACEBOOK_URL', 'https://www.facebook.com/groups/dawat.cloud/'),
