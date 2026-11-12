@@ -152,6 +152,7 @@
                 <li v-if="!install.standalone"><RouterLink to="/app" class="text-leaf underline-offset-2 hover:underline">📲 অ্যাপ ইনস্টল করুন</RouterLink></li>
                 <li><a href="/lunch" class="text-leaf underline-offset-2 hover:underline">প্রতিদিনের লাঞ্চ</a></li>
                 <li><a href="/rannaghor" class="text-leaf underline-offset-2 hover:underline">গৃহিণীদের জন্য</a></li>
+                <li><RouterLink to="/join/shahidar" class="text-leaf underline-offset-2 hover:underline">শাহিদার হতে চাই</RouterLink></li>
                 <li><a href="/about" class="text-leaf underline-offset-2 hover:underline">দাওয়াত সম্পর্কে</a></li>
                 <li><a :href="CONTACT.facebook" class="text-leaf underline-offset-2 hover:underline" rel="noopener">ফেসবুক গ্রুপ</a></li>
             </ul>

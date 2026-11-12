@@ -67,6 +67,8 @@ class AppServiceProvider extends ServiceProvider
             ->response(fn () => response()->json([
                 'message' => 'এখন অনেকে একসাথে কোড চাইছেন। কয়েক মিনিট পরে আবার চেষ্টা করুন।',
             ], 429)));
+        // F53: the public shahidar form.
+        RateLimiter::for('apply', fn (Request $request) => [Limit::perMinute(3)->by($request->ip()), Limit::perDay(10)->by('day:'.$request->ip())]);
         RateLimiter::for('feed', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
         // AI calls cost money: per cook per day.
         RateLimiter::for('ai', fn (Request $request) => Limit::perDay(40)->by('ai:'.$request->user()?->id));

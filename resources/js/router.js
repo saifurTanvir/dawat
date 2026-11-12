@@ -24,6 +24,12 @@ const routes = [
         component: () => import('./pages/PostPage.vue'),
     },
     {
+        // F53: apply to work as a shahidar (public)
+        path: '/join/shahidar',
+        name: 'shahidar-apply',
+        component: () => import('./pages/ShahidarApplyPage.vue'),
+    },
+    {
         path: '/login',
         name: 'login',
         component: () => import('./pages/LoginPage.vue'),

@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\V1\PushController;
 use App\Http\Controllers\Api\V1\QrController;
 use App\Http\Controllers\Api\V1\RegularController;
 use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\ShahidarApplicationController;
 use App\Http\Controllers\Api\V1\ShahidarController;
 use App\Http\Controllers\Api\V1\ShahidarKitchenController;
 use App\Http\Controllers\Api\V1\StickerController;
@@ -44,6 +45,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('/push/key', [PushController::class, 'key'])->name('push.key');
 
     // F12–F14: what buyers see. Public, so a QR scan works without signing in.
+    // F53: apply to work as a shahidar (public)
+    Route::get('/shahidar-applications/options', [ShahidarApplicationController::class, 'options'])->middleware('throttle:feed')->name('shahidar-applications.options');
+    Route::post('/shahidar-applications', [ShahidarApplicationController::class, 'store'])->middleware('throttle:apply')->name('shahidar-applications.store');
+
     // F52: the first screen for new visitors
     Route::get('/home', HomeController::class)->middleware('throttle:feed')->name('home');
     Route::get('/feed', [FeedController::class, 'index'])->middleware('throttle:feed')->name('feed');

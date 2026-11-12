@@ -43,6 +43,8 @@ class HomeSummary
             'kitchens' => (clone $kitchens)->count(),
             'rating' => ['avg' => $ratingAvg, 'count' => $ratingCount],
             'samples' => $this->samples($today),
+            // F53: the shahidar door's promise
+            'shahidar_income' => config('dawat.shahidar.income'),
         ];
     }
 
