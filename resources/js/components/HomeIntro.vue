@@ -1,6 +1,36 @@
 <template>
+    <!-- F52, compact: a visitor who already picked a place gets the same three ways in, then their food. -->
+    <section v-if="compact" aria-labelledby="home-title" class="pt-1">
+        <h1 id="home-title" class="font-serif text-xl leading-snug font-bold text-leaf-deep">
+            পাড়ার গৃহিণীদের ঘরের রান্না — খান, রোজ নিন, বা রেঁধে আয় করুন
+        </h1>
+        <nav aria-label="শুরু করুন" class="mt-3 grid grid-cols-3 gap-2">
+            <a href="#feed-title" :class="TILE" @click.prevent="$emit('find-food')">
+                <span :class="[ICON, 'bg-leaf-soft text-leaf']"><svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /></svg></span>
+                আজকের খাবার কিনুন
+            </a>
+            <RouterLink to="/regular" :class="TILE">
+                <span :class="[ICON, 'bg-leaf-soft text-leaf']"><svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2" /></svg></span>
+                রোজ দুপুরের লাঞ্চ নিন
+            </RouterLink>
+            <RouterLink to="/cook" :class="TILE">
+                <span :class="[ICON, 'bg-turmeric-soft text-leaf-deep']"><svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h16a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6Z" /><path d="M12 9V6M8 9V7M16 9V7M2 13h20" /></svg></span>
+                রান্না করে আয় করুন
+            </RouterLink>
+        </nav>
+        <details class="mt-2 text-[0.9375rem]">
+            <summary class="cursor-pointer py-2 font-semibold text-leaf">কীভাবে চলে?</summary>
+            <ol class="mt-1 space-y-2 leading-relaxed">
+                <li v-for="(step, i) in steps" :key="i" class="flex gap-2.5">
+                    <span class="grid size-7 shrink-0 place-items-center rounded-full bg-leaf-soft font-bold">{{ bn(i + 1) }}</span>
+                    <span>{{ step }}</span>
+                </li>
+            </ol>
+        </details>
+    </section>
+
     <!-- F52: the first screen for a new visitor: what Dawat is, and three ways in. -->
-    <section aria-labelledby="home-title" class="pt-1">
+    <section v-else aria-labelledby="home-title" class="pt-1">
         <h1 id="home-title" class="font-serif text-[1.625rem] leading-snug font-bold text-leaf-deep">
             পাড়ার গৃহিণীদের ঘরের রান্না — খান, রোজ নিন, বা রেঁধে আয় করুন
         </h1>
@@ -86,8 +116,10 @@ import { api } from '@/lib/api';
 import { bn } from '@/lib/bn';
 import { taka } from '@/lib/format';
 
-defineProps({
+const props = defineProps({
     areas: { type: Array, default: () => [] },
+    // A returning visitor who already picked a place: headline and doors only.
+    compact: { type: Boolean, default: false },
 });
 defineEmits(['find-food']);
 
@@ -95,6 +127,8 @@ const Chevron = () => h('svg', { viewBox: '0 0 24 24', class: 'size-5 shrink-0 t
 
 const DOOR = 'flex items-center gap-3.5 rounded-[var(--radius-plate)] bg-plate p-3.5 text-ink shadow-[0_1px_0_var(--color-rule)] transition-colors hover:bg-leaf-soft/40';
 const ART = 'grid size-[4.5rem] shrink-0 place-items-center rounded-[0.875rem]';
+const TILE = 'flex flex-col items-center gap-1.5 rounded-2xl bg-plate px-2 py-3 text-center text-sm leading-snug font-semibold text-ink shadow-[0_1px_0_var(--color-rule)] hover:bg-leaf-soft/40';
+const ICON = 'grid size-10 place-items-center rounded-xl';
 
 const summary = ref(null);
 
@@ -127,6 +161,7 @@ const steps = [
 ];
 
 onMounted(async () => {
+    if (props.compact) return; // no numbers or photos needed: the feed follows
     try {
         const { data } = await api.get('/home');
         summary.value = data.data;

@@ -1,7 +1,7 @@
 <template>
     <section aria-labelledby="feed-title" class="pt-2">
-        <!-- F52: a new visitor first sees what Dawat is, and three ways in. -->
-        <HomeIntro v-if="showIntro" :areas="areas" class="mb-10" @find-food="goToFood" />
+        <!-- F52: a visitor who is not signed in first sees what Dawat is, and three ways in. -->
+        <HomeIntro v-if="showIntro" :areas="areas" :compact="introCompact" :class="introCompact ? 'mb-6' : 'mb-10'" @find-food="goToFood" />
 
         <!-- F34: the full Dawat logo greets everyone else on the home page. -->
         <img
@@ -184,9 +184,10 @@ const feed = useFeedStore();
 const auth = useAuthStore();
 const locateButton = ref(null);
 
-// F52: until a visitor signs in or picks a place, the page starts by explaining itself.
-const introFor = ref(!auth.isSignedIn && !feed.mode);
-const showIntro = computed(() => introFor.value && !auth.isSignedIn);
+// F52: anyone not signed in starts with what Dawat is. Someone who already picked a
+// place gets the short version, so their food is still near the top.
+const introCompact = ref(!!feed.mode);
+const showIntro = computed(() => !auth.isSignedIn);
 
 /** Door 1: jump to "where should we look" and put the finger on the location button. */
 function goToFood() {
