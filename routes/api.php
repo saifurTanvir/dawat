@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\FeedController;
 use App\Http\Controllers\Api\V1\HistoryController;
+use App\Http\Controllers\Api\V1\HomeController;
 use App\Http\Controllers\Api\V1\ImpersonationController;
 use App\Http\Controllers\Api\V1\KitchenContactController;
 use App\Http\Controllers\Api\V1\KitchenController;
@@ -43,6 +44,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('/push/key', [PushController::class, 'key'])->name('push.key');
 
     // F12–F14: what buyers see. Public, so a QR scan works without signing in.
+    // F52: the first screen for new visitors
+    Route::get('/home', HomeController::class)->middleware('throttle:feed')->name('home');
     Route::get('/feed', [FeedController::class, 'index'])->middleware('throttle:feed')->name('feed');
     // F15: printed QR codes
     Route::get('/qr/{code}', [QrController::class, 'show'])->middleware('throttle:feed')->name('qr.show');
