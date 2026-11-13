@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from './stores/auth';
+import { pageView } from './lib/pixel';
 
 const routes = [
     {
@@ -126,6 +127,9 @@ export const router = createRouter({
     routes,
     scrollBehavior: () => ({ top: 0 }),
 });
+
+// F54: one PageView per screen, for the Facebook pixel.
+router.afterEach(() => pageView());
 
 router.beforeEach(async (to) => {
     const auth = useAuthStore();

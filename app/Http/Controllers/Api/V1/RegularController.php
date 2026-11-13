@@ -10,6 +10,7 @@ use App\Models\Bill;
 use App\Models\Customer;
 use App\Models\CustomerPause;
 use App\Models\Order;
+use App\Services\Meta\MetaEvents;
 use App\Services\Orders\Billing;
 use App\Services\Orders\BookingPlanner;
 use Illuminate\Http\JsonResponse;
@@ -110,7 +111,7 @@ class RegularController extends Controller
     }
 
     /** PUT /api/v1/regular — ask, ask again after stopping, or change the booking. */
-    public function save(SaveRegularRequest $request, BookingPlanner $planner): RegularResource
+    public function save(SaveRegularRequest $request, BookingPlanner $planner, MetaEvents $meta): RegularResource
     {
         $data = $request->validated();
         $user = $request->user();
@@ -147,8 +148,14 @@ class RegularController extends Controller
         $planner->bookLate($customer);
 
         return RegularResource::make($customer->fresh(self::WITH))
-            ->additional(['message' => $customer->wasRecentlyCreated || $customer->status === CustomerStatus::Waiting
-                ? 'দাওয়াত টিম আপনার এলাকার একজন গৃহিণী আর শাহিদার ঠিক করে ফোন দেবে।'
-                : 'বুকিং বদলানো হয়েছে।']);
+            ->additional([
+                'message' => $customer->wasRecentlyCreated || $customer->status === CustomerStatus::Waiting
+                    ? 'দাওয়াত টিম আপনার এলাকার একজন গৃহিণী আর শাহিদার ঠিক করে ফোন দেবে।'
+                    : 'বুকিং বদলানো হয়েছে।',
+                // F54: a new regular customer is what the customer ads are paid for.
+                'meta_event' => $customer->wasRecentlyCreated
+                    ? $meta->record('Subscribe', 'regular-'.$customer->id, $request, $user, custom: ['content_name' => 'regular'])
+                    : null,
+            ]);
     }
 }
