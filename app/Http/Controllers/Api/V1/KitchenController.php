@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Kitchen\UpdateKitchenRequest;
 use App\Http\Resources\OwnKitchenResource;
 use App\Models\Kitchen;
+use App\Services\Meta\MetaEvents;
 use App\Support\Geo\GeoPoint;
 use App\Support\Roles;
 use Illuminate\Http\JsonResponse;
@@ -31,7 +32,7 @@ class KitchenController extends Controller
      * POST /api/v1/kitchen — "I want to cook for Dawat".
      * Creates a pending kitchen; an admin must approve it before any post goes live (F3).
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, MetaEvents $meta): JsonResponse
     {
         $user = $request->user();
 
@@ -61,7 +62,11 @@ class KitchenController extends Controller
         });
 
         return OwnKitchenResource::make($kitchen->load('area'))
-            ->additional(['message' => 'নিবন্ধন হয়েছে। দাওয়াত টিম যাচাই করে অনুমোদন দিলে পোস্ট করতে পারবেন।'])
+            ->additional([
+                'message' => 'নিবন্ধন হয়েছে। দাওয়াত টিম যাচাই করে অনুমোদন দিলে পোস্ট করতে পারবেন।',
+                // F54: a new cook is the result the cook ads are paid for.
+                'meta_event' => $meta->record('CompleteRegistration', 'cook-'.$kitchen->id, $request, $user, custom: ['content_name' => 'cook']),
+            ])
             ->response()
             ->setStatusCode(201);
     }

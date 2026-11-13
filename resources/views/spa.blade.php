@@ -13,6 +13,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="icon" type="image/png" href="/icons/favicon-48.png">
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    @include('partials.meta-pixel')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
