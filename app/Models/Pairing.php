@@ -34,6 +34,23 @@ class Pairing extends Model
         return $this->belongsTo(User::class, 'shahidar_id');
     }
 
+    /** F55: the cook the platform suggested when this pairing was made. */
+    public function suggestedKitchen(): BelongsTo
+    {
+        return $this->belongsTo(Kitchen::class, 'suggested_kitchen_id');
+    }
+
+    public function suggestedShahidar(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'suggested_shahidar_id');
+    }
+
+    /** F55: null when nothing was suggested; true when the admin took the suggested cook. */
+    public function followedSuggestion(): ?bool
+    {
+        return $this->suggested_kitchen_id ? $this->suggested_kitchen_id === $this->kitchen_id : null;
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

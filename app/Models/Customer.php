@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Casts\AsGeoPoint;
 use App\Enums\CustomerStatus;
 use App\Enums\MealSlot;
 use App\Services\Orders\BookingPlanner;
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /** A regular customer (F25) with a standing booking (F26). */
+/** F55: `location` is the home pin, for admins only; set it directly, never mass-assign. */
+#[Hidden(['location'])]
 #[Fillable(['user_id', 'area_id', 'address', 'note', 'status', 'meal_slots', 'plates', 'max_price_paisa', 'weekdays', 'source', 'billing'])]
 class Customer extends Model
 {
@@ -33,6 +37,7 @@ class Customer extends Model
             'weekdays' => 'array',
             'plates' => 'integer',
             'max_price_paisa' => 'integer',
+            'location' => AsGeoPoint::class,
         ];
     }
 

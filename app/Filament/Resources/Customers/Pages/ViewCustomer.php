@@ -18,6 +18,7 @@ class ViewCustomer extends ViewRecord
             ViewAsAction::make(fn ($record) => $record->user, 'গ্রাহকের অ্যাপ দেখুন'),
             LoginHelpActions::group(fn ($record) => $record->user),
             CustomerResource::pairAction(),
+            CustomerResource::pinAction(),
             CustomerResource::bookNowAction(),
             CustomerResource::issueBillAction(),
             CustomerResource::pauseAction(),

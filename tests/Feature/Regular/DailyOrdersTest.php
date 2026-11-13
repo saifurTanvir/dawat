@@ -25,10 +25,12 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\JpegWithExif;
+use Tests\Support\PairsLikeBeforeF55;
 use Tests\TestCase;
 
 class DailyOrdersTest extends TestCase
 {
+    use PairsLikeBeforeF55;
     use RefreshDatabase;
 
     private Kitchen $kitchen;
@@ -61,7 +63,7 @@ class DailyOrdersTest extends TestCase
             'user_id' => User::factory()->create(['name' => $name])->id,
             ...$attrs,
         ]);
-        app(PairCustomer::class)($customer, $this->kitchen, $this->shahidar, $this->admin);
+        $this->pairAllowingShared($customer, $this->kitchen, $this->shahidar, $this->admin);
 
         return $customer->fresh();
     }

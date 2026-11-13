@@ -123,12 +123,13 @@ class Kitchen extends Model
         return $this->hasMany(Settlement::class)->where('kind', 'cook');
     }
 
-    /** How many more regular customers this cook can take. */
-    public function freeRegularSlots(): int
+    /**
+     * F55: one cook, one regular customer. True while nobody is paired with her
+     * (or only $customer, who may keep her).
+     */
+    public function isFreeForRegular(?Customer $customer = null): bool
     {
-        $taken = $this->pairings_count ?? $this->pairings()->count();
-
-        return max(0, $this->max_regular_customers - $taken);
+        return ! $this->pairings()->when($customer, fn ($query) => $query->where('customer_id', '!=', $customer->id))->exists();
     }
 
     public function isApproved(): bool

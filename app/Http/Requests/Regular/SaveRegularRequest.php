@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Regular;
 
 use App\Enums\MealSlot;
+use App\Support\Geo\Bangladesh;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -27,6 +28,9 @@ class SaveRegularRequest extends FormRequest
             'max_price_taka' => ['nullable', 'integer', 'between:20,2000'],
             'weekdays' => ['required', 'array', 'min:1', 'max:7'],
             'weekdays.*' => ['distinct', 'integer', 'between:0,6'],
+            // F55: optional home pin, so the nearest free cook can be found. Admins only see it.
+            'lat' => ['nullable', 'required_with:lng', 'numeric', 'between:'.Bangladesh::MIN_LAT.','.Bangladesh::MAX_LAT],
+            'lng' => ['nullable', 'required_with:lat', 'numeric', 'between:'.Bangladesh::MIN_LNG.','.Bangladesh::MAX_LNG],
         ];
     }
 
@@ -40,6 +44,8 @@ class SaveRegularRequest extends FormRequest
             'meal_slots.required' => 'অন্তত একটা বেলা বেছে নিন।',
             'weekdays.required' => 'অন্তত একটা দিন বেছে নিন।',
             'plates.between' => 'প্লেট ১ থেকে ১০টা।',
+            'lat.between' => 'লোকেশনটি বাংলাদেশের ভেতরে নয়। ম্যাপে আবার পিন দিন।',
+            'lng.between' => 'লোকেশনটি বাংলাদেশের ভেতরে নয়। ম্যাপে আবার পিন দিন।',
             'max_price_taka.between' => 'সর্বোচ্চ দাম ৳২০ থেকে ৳২০০০-এর মধ্যে দিন, অথবা খালি রাখুন।',
         ];
     }

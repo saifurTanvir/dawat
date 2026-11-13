@@ -13,6 +13,7 @@ use App\Models\Order;
 use App\Services\Meta\MetaEvents;
 use App\Services\Orders\Billing;
 use App\Services\Orders\BookingPlanner;
+use App\Support\Geo\GeoPoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -111,6 +112,14 @@ class RegularController extends Controller
     }
 
     /** PUT /api/v1/regular — ask, ask again after stopping, or change the booking. */
+    /** F55: the home pin is optional and only ever replaced, never sent back. */
+    private static function setPin(Customer $customer, array $data): void
+    {
+        if (isset($data['lat'], $data['lng'])) {
+            $customer->location = GeoPoint::make($data['lat'], $data['lng']);
+        }
+    }
+
     public function save(SaveRegularRequest $request, BookingPlanner $planner, MetaEvents $meta): RegularResource
     {
         $data = $request->validated();
@@ -134,8 +143,13 @@ class RegularController extends Controller
             ];
 
             if (! $customer) {
-                return Customer::create([...$fields, 'user_id' => $user->id, 'source' => 'app']);
+                $customer = new Customer([...$fields, 'user_id' => $user->id, 'source' => 'app']);
+                self::setPin($customer, $data);
+                $customer->save();
+
+                return $customer;
             }
+            self::setPin($customer, $data);
             if ($customer->status === CustomerStatus::Stopped) {
                 $fields['status'] = CustomerStatus::Waiting;
             }

@@ -6,6 +6,7 @@ use App\Enums\KitchenStatus;
 use App\Filament\Actions\KitchenModerationActions;
 use App\Filament\Actions\PostForCookActions;
 use App\Filament\Actions\RemovalActions;
+use App\Models\Order;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -38,6 +39,19 @@ class KitchensTable
                     ->label('লোকেশন')
                     ->state(fn ($record) => $record->location !== null)
                     ->boolean(),
+                // F55: one cook, one regular customer; more than one is from before the rule.
+                TextColumn::make('pairings_count')->label('নিয়মিত গ্রাহক')->counts('pairings')->sortable()
+                    ->badge()
+                    ->formatStateUsing(fn (int $state) => match (true) {
+                        $state === 0 => 'খালি',
+                        $state === 1 => '১ জন',
+                        default => Order::banglaDigits($state).' জন — বেশি',
+                    })
+                    ->color(fn (int $state) => match (true) {
+                        $state === 0 => 'success',
+                        $state === 1 => 'gray',
+                        default => 'danger',
+                    }),
                 TextColumn::make('posts_count')->label('পোস্ট')->counts('posts')->sortable(),
                 TextColumn::make('rating_avg')->label('রেটিং')->sortable()
                     ->formatStateUsing(fn ($state, $record) => $record->rating_count ? '★ '.number_format((float) $state, 1).' ('.$record->rating_count.')' : '—')->placeholder('—'),
@@ -47,6 +61,10 @@ class KitchensTable
             ->filters([
                 SelectFilter::make('status')->label('অবস্থা')->options(KitchenStatus::class),
                 SelectFilter::make('area')->label('এলাকা')->relationship('area', 'name'),
+                Filter::make('regular_free')->label('নিয়মিত গ্রাহকের জন্য খালি')
+                    ->query(fn ($query) => $query->where('status', KitchenStatus::Approved)->whereDoesntHave('pairings')),
+                Filter::make('regular_over')->label('একাধিক নিয়মিত গ্রাহক (সরাতে হবে)')
+                    ->query(fn ($query) => $query->has('pairings', '>', 1)),
                 Filter::make('contact_waiting')
                     ->label('নম্বর অনুমোদনের অপেক্ষায়')
                     ->query(fn ($query) => $query->where('pending_contact_method', 'admin')),

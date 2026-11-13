@@ -80,7 +80,6 @@ class MyBookingController extends Controller
         return response()->json([
             'data' => [
                 'regular_customers' => $kitchen->pairings()->count(),
-                'max_regular_customers' => $kitchen->max_regular_customers,
                 'slots' => $slots,
                 // F46: what the team or a shahidar did for her today.
                 'acted_for' => ActForCook::today($kitchen),

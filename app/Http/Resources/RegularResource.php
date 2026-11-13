@@ -28,6 +28,8 @@ class RegularResource extends JsonResource
             'name' => $this->user->name,
             'area' => ['id' => $this->area->id, 'name' => $this->area->name],
             'address' => $this->address,
+            // F55: whether a home pin is set; the pin itself is never sent.
+            'has_location' => $this->location !== null,
             'note' => $this->note,
             'meal_slots' => $this->meal_slots,
             'plates' => $this->plates,

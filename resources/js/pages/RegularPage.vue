@@ -117,6 +117,18 @@
                 <p v-if="err('address')" class="error-text">{{ err('address') }}</p>
             </div>
 
+            <!-- F55: an optional home pin, so Dawat can find the nearest free cook. -->
+            <details class="rounded-xl border border-rule bg-plate p-4" :open="pinOpen" @toggle="pinOpen = $event.target.open">
+                <summary class="cursor-pointer font-semibold">
+                    ম্যাপে বাসা দেখান (ইচ্ছা হলে)
+                    <span v-if="booking?.has_location && !point" class="ml-1 text-sm font-normal text-leaf">· দেওয়া আছে</span>
+                    <span v-else-if="point" class="ml-1 text-sm font-normal text-leaf">· পিন দেওয়া হয়েছে</span>
+                </summary>
+                <p class="mt-2 text-sm text-muted">আপনার সবচেয়ে কাছের গৃহিণী খুঁজে দিতে কাজে লাগে। শুধু দাওয়াত টিম দেখবে, গৃহিণী বা আর কেউ না।</p>
+                <MapPicker v-if="pinOpen" v-model="point" :fallback-center="mapFallback" class="mt-3" />
+                <p v-if="err('lat')" class="error-text">{{ err('lat') }}</p>
+            </details>
+
             <fieldset>
                 <legend class="mb-2 font-semibold">কোন বেলা</legend>
                 <div class="flex flex-wrap gap-2">
@@ -209,6 +221,7 @@ import BoxSteps from '@/components/BoxSteps.vue';
 import ContactHours from '@/components/ContactHours.vue';
 import PushToggle from '@/components/PushToggle.vue';
 import ChoiceChip from '@/components/ChoiceChip.vue';
+import MapPicker from '@/components/MapPicker.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
 import { clockText, taka } from '@/lib/format';
@@ -228,6 +241,10 @@ const busy = ref(false);
 const editing = ref(false);
 const booking = ref(null);
 const areas = ref([]);
+// F55: optional home pin
+const point = ref(null);
+const pinOpen = ref(false);
+const mapFallback = computed(() => areas.value.find((a) => a.id === form.area_id)?.center ?? undefined);
 const error = ref('');
 const errors = ref({});
 const notice = ref('');
@@ -361,7 +378,7 @@ async function save() {
     error.value = '';
     errors.value = {};
     try {
-        const { data } = await api.put('/regular', { ...form, note: form.note || null, max_price_taka: form.max_price_taka || null });
+        const { data } = await api.put('/regular', { ...form, note: form.note || null, max_price_taka: form.max_price_taka || null, ...(point.value ? { lat: point.value.lat, lng: point.value.lng } : {}) });
         booking.value = data.data;
         notice.value = data.message === statusMessage.value ? '' : data.message;
         editing.value = false;

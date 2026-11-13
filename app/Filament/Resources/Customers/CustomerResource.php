@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Customers;
 use App\Actions\EnsurePerson;
 use App\Actions\PairCustomer;
 use App\Enums\CustomerStatus;
-use App\Enums\KitchenStatus;
 use App\Enums\MealSlot;
 use App\Filament\Actions\RemovalActions;
 use App\Filament\RelationManagers\CustomerOrdersRelationManager;
@@ -22,7 +21,9 @@ use App\Models\Order;
 use App\Models\User;
 use App\Services\Orders\Billing;
 use App\Services\Orders\BookingPlanner;
+use App\Services\Regular\PairingSuggester;
 use App\Support\ContactHours;
+use App\Support\Geo\MapLink;
 use App\Support\Roles;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -39,7 +40,9 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Callout;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -48,6 +51,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use UnitEnum;
 
 /** F25: regular customers, their standing booking and who feeds and delivers to them. */
@@ -143,36 +147,74 @@ class CustomerResource extends Resource
         return $schema->components(self::bookingFields());
     }
 
-    /** Cooks offered for pairing: approved, same area first, most free slots first. */
+    /** F55: free cooks only (one cook, one customer), nearest first; the suggested one is marked. */
     public static function kitchenOptions(Customer $customer): array
     {
         $currentId = $customer->pairing?->kitchen_id;
+        $rows = app(PairingSuggester::class)->freeCooks($customer);
+        $suggestedId = $rows->first()['kitchen']->id ?? null;
 
-        return Kitchen::query()
-            ->where('status', KitchenStatus::Approved)
-            ->with('area')
-            ->withCount('pairings')
-            ->get()
-            ->sortBy(fn (Kitchen $k) => [$k->area_id === $customer->area_id ? 0 : 1, -$k->freeRegularSlots()])
-            ->mapWithKeys(fn (Kitchen $k) => [$k->id => sprintf(
-                '%s — %s — খালি %d/%d%s',
-                $k->display_name,
-                $k->area?->name ?? 'এলাকা নেই',
-                $k->freeRegularSlots(),
-                $k->max_regular_customers,
-                $k->id === $currentId ? ' (এখনকার)' : '',
+        return $rows->mapWithKeys(fn (array $row) => [$row['kitchen']->id => sprintf(
+            '%s — %s — %s%s%s',
+            $row['kitchen']->display_name,
+            $row['kitchen']->area?->name ?? 'এলাকা নেই',
+            PairingSuggester::distanceText($row['distance_m']),
+            $row['kitchen']->id === $suggestedId ? ' ★ সাজেশন' : '',
+            $row['kitchen']->id === $currentId ? ' (এখনকার)' : '',
+        )])->all();
+    }
+
+    /** F55: shahidars of the customer's area, fewest regular customers first. */
+    public static function shahidarOptions(Customer $customer): array
+    {
+        return app(PairingSuggester::class)->shahidars($customer)
+            ->values()
+            ->mapWithKeys(fn (User $u, int $i) => [$u->id => sprintf(
+                '%s (%s) — %s জন নিয়মিত গ্রাহক%s',
+                $u->name,
+                $u->phone,
+                Order::banglaDigits($u->load),
+                $i === 0 ? ' ★ সাজেশন' : '',
             )])
             ->all();
     }
 
-    public static function shahidarOptions(Customer $customer): array
+    /** What the platform suggests for this customer right now. */
+    private static function suggestion(Customer $customer): array
     {
-        return User::role(Roles::SHAHIDAR)
-            ->whereHas('shahidarAreas', fn ($q) => $q->whereKey($customer->area_id))
-            ->orderBy('name')
-            ->get()
-            ->mapWithKeys(fn (User $u) => [$u->id => "{$u->name} ({$u->phone})"])
-            ->all();
+        $suggester = app(PairingSuggester::class);
+        $cook = $suggester->suggestCook($customer);
+
+        return [
+            'kitchen_id' => $cook['kitchen']->id ?? null,
+            'kitchen_name' => $cook['kitchen']->display_name ?? null,
+            'distance_m' => $cook['distance_m'] ?? null,
+            'shahidar_id' => $suggester->suggestShahidar($customer)?->id,
+        ];
+    }
+
+    /** F55: set the customer's home pin from a pasted map link or "lat, lng". */
+    public static function pinAction(): Action
+    {
+        return Action::make('pin')
+            ->label('বাসার পিন')
+            ->icon(Heroicon::OutlinedMapPin)
+            ->color('gray')
+            ->modalDescription('গ্রাহকের পাঠানো লোকেশন (গুগল ম্যাপ বা হোয়াটসঅ্যাপ লিংক) বা "23.78, 90.42" পেস্ট করুন। শুধু অ্যাডমিনরা দেখবেন; কাছের খালি গৃহিণী খুঁজতে লাগে।')
+            ->schema([
+                TextInput::make('where')->label('লোকেশন লিংক বা অক্ষাংশ, দ্রাঘিমাংশ')
+                    ->required()
+                    ->rule(fn () => function (string $attribute, $value, \Closure $fail) {
+                        if (! MapLink::parse($value)) {
+                            $fail('এখান থেকে লোকেশন পড়া গেল না। গুগল ম্যাপের লিংক বা "23.78, 90.42" দিন।');
+                        }
+                    }),
+            ])
+            ->action(function (Customer $record, array $data) {
+                $record->location = MapLink::parse($data['where']);
+                $record->save();
+                Notification::make()->title('বাসার পিন রাখা হয়েছে')->success()->send();
+            });
     }
 
     public static function pairAction(): Action
@@ -181,27 +223,43 @@ class CustomerResource extends Resource
             ->label(fn (Customer $record) => $record->pairing ? 'জুটি বদলান' : 'জুটি বাঁধুন')
             ->icon(Heroicon::OutlinedLink)
             ->color('success')
-            ->fillForm(fn (Customer $record) => [
-                'kitchen_id' => $record->pairing?->kitchen_id,
-                'shahidar_id' => $record->pairing?->shahidar_id,
-            ])
+            // F55: a new pairing starts on the platform's suggestion.
+            ->fillForm(function (Customer $record) {
+                $suggested = self::suggestion($record);
+
+                return [
+                    'kitchen_id' => $record->pairing?->kitchen_id ?? $suggested['kitchen_id'],
+                    'shahidar_id' => $record->pairing?->shahidar_id ?? $suggested['shahidar_id'],
+                ];
+            })
             ->schema(fn (Customer $record) => [
-                Select::make('kitchen_id')->label('গৃহিণী (রান্নাঘর)')->options(self::kitchenOptions($record))->required()->searchable()
-                    ->helperText('একই এলাকার আর বেশি জায়গা খালি এমন রান্নাঘর আগে।'),
+                Callout::make('প্ল্যাটফর্মের সাজেশন')
+                    ->description(fn () => Str::after(app(PairingSuggester::class)->suggestionLine($record), 'প্ল্যাটফর্মের সাজেশন: '))
+                    ->status(fn () => self::suggestion($record)['kitchen_id'] ? 'info' : 'warning'),
+                Select::make('kitchen_id')->label('গৃহিণী (রান্নাঘর)')->options(self::kitchenOptions($record))->required()->searchable()->live()
+                    ->helperText('শুধু অনুমোদিত আর খালি গৃহিণী — একজন গৃহিণী একজন গ্রাহকের সাথেই জোড়া হন। কাছের জন আগে।'),
+                Callout::make('আপনি সাজেশনের বাইরে বেছেছেন')
+                    ->description(fn () => 'সাজেশন ছিল '.self::suggestion($record)['kitchen_name'].'। অন্যজনকে বেছে নেওয়া যায় — ঠিক থাকলে সেভ করুন, জুটির ইতিহাসে লেখা থাকবে।')
+                    ->warning()
+                    ->visible(fn (Get $get) => ($s = self::suggestion($record)['kitchen_id']) && $get('kitchen_id') && (int) $get('kitchen_id') !== $s),
                 Select::make('shahidar_id')->label('শাহিদার')->options(self::shahidarOptions($record))->required()
-                    ->helperText('এই এলাকার শাহিদার। কেউ না থাকলে আগে "শাহিদার" পাতায় যোগ করুন।'),
+                    ->helperText('এই এলাকার শাহিদার, যার হাতে কম গ্রাহক তিনি আগে। একজন শাহিদার অনেকজনকে দিতে পারেন।'),
                 Textarea::make('reason')->label('বদলানোর কারণ')->maxLength(300)->rows(2)
                     ->visible(fn () => $record->pairing !== null)->required(fn () => $record->pairing !== null),
             ])
             ->action(function (Customer $record, array $data) {
-                app(PairCustomer::class)(
+                $suggested = self::suggestion($record);
+                $pairing = app(PairCustomer::class)(
                     $record,
                     Kitchen::findOrFail($data['kitchen_id']),
                     User::findOrFail($data['shahidar_id']),
                     auth()->user(),
                     $data['reason'] ?? null,
+                    $suggested,
                 );
-                Notification::make()->title('জুটি বাঁধা হয়েছে')->success()->send();
+                Notification::make()->title('জুটি বাঁধা হয়েছে')
+                    ->body($pairing->followedSuggestion() === false ? "সাজেশন ছিল {$suggested['kitchen_name']}, আপনি বেছেছেন {$pairing->kitchen->display_name}।" : null)
+                    ->success()->send();
             });
     }
 
@@ -293,6 +351,11 @@ class CustomerResource extends Resource
                     ->helperText('ক্লিক করলে হোয়াটসঅ্যাপ খুলবে — ফ্রি মেসেজ বা কল।'),
                 TextEntry::make('area.name')->label('এলাকা'),
                 TextEntry::make('address')->label('ঠিকানা')->columnSpan(2),
+                // F55: admins only; used to find the nearest free cook.
+                TextEntry::make('home_pin')->label('বাসার পিন')
+                    ->state(fn (Customer $record) => $record->location ? 'দেওয়া আছে — ম্যাপে দেখুন' : 'নেই (দূরত্ব এলাকার মাঝখান থেকে আন্দাজ)')
+                    ->url(fn (Customer $record) => $record->location ? MapLink::googleMaps($record->location) : null, shouldOpenInNewTab: true)
+                    ->color(fn (Customer $record) => $record->location ? 'primary' : 'gray'),
                 TextEntry::make('booking')->label('বুকিং')->state(fn (Customer $record) => $record->bookingSummary())->columnSpan(2),
                 TextEntry::make('note')->label('খাবার নিয়ে')->placeholder('—'),
                 TextEntry::make('billing')->label('টাকা দেন')->formatStateUsing(fn (?string $state) => Customer::BILLING_LABELS[$state] ?? '—'),

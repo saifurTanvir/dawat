@@ -41,7 +41,7 @@
             <!-- F26: regular customers today -->
             <section v-if="bookings && (bookings.regular_customers || bookings.slots.length)" class="mb-6 rounded-[var(--radius-plate)] bg-plate p-5" aria-labelledby="regular-title">
                 <h2 id="regular-title" class="font-semibold">আজকের অর্ডার</h2>
-                <p v-if="bookings.regular_customers" class="text-sm text-muted">নিয়মিত গ্রাহক {{ bn(bookings.regular_customers) }} জন · সর্বোচ্চ {{ bn(bookings.max_regular_customers) }}</p>
+                <p v-if="bookings.regular_customers" class="text-sm text-muted">নিয়মিত গ্রাহক {{ bn(bookings.regular_customers) }} জন</p>
                 <p v-if="!bookings.slots.length" class="mt-3 text-muted">আজ কারো বুকিং নেই।</p>
                 <div v-for="slot in bookings.slots" :key="slot.meal_slot" class="mt-4 border-t border-rule pt-3">
                     <p class="font-semibold">আজ {{ slot.label }}</p>
