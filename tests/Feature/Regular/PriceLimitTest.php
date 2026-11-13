@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Regular;
 
-use App\Actions\PairCustomer;
 use App\Enums\MealSlot;
 use App\Enums\OrderStatus;
 use App\Jobs\SendOrderSms;
@@ -19,10 +18,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
+use Tests\Support\PairsLikeBeforeF55;
 use Tests\TestCase;
 
 class PriceLimitTest extends TestCase
 {
+    use PairsLikeBeforeF55;
     use RefreshDatabase;
 
     private Kitchen $kitchen;
@@ -45,7 +46,7 @@ class PriceLimitTest extends TestCase
     private function regular(?int $maxTaka): Customer
     {
         $c = Customer::factory()->create(['area_id' => $this->area->id, 'max_price_paisa' => $maxTaka ? $maxTaka * 100 : null]);
-        app(PairCustomer::class)($c, $this->kitchen, $this->shahidar, User::factory()->admin()->create());
+        $this->pairAllowingShared($c, $this->kitchen, $this->shahidar, User::factory()->admin()->create());
 
         return $c->fresh();
     }

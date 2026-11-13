@@ -34,6 +34,20 @@ class PairingsRelationManager extends RelationManager
                 TextColumn::make('shahidar.name')->label('শাহিদার')->url(fn (Pairing $p) => Links::shahidar($p->shahidar_id)),
                 TextColumn::make('started_at')->label('শুরু')->date('j M Y'),
                 TextColumn::make('ended_at')->label('শেষ')->date('j M Y')->placeholder('চলছে'),
+                // F55: did the admin take the platform's suggestion?
+                TextColumn::make('suggestion')->label('প্ল্যাটফর্মের সাজেশন')
+                    ->state(fn (Pairing $p) => match ($p->followedSuggestion()) {
+                        null => '—',
+                        true => 'সাজেশন মেনে',
+                        false => 'অন্যজন (সাজেশন ছিল '.($p->suggestedKitchen?->display_name ?? '—').')',
+                    })
+                    ->badge()
+                    ->color(fn (Pairing $p) => match ($p->followedSuggestion()) {
+                        true => 'success',
+                        false => 'warning',
+                        default => 'gray',
+                    })
+                    ->toggleable(),
                 TextColumn::make('end_reason')->label('শেষের কারণ')->placeholder('—')->wrap(),
             ])
             ->filters([TernaryFilter::make('ended_at')->label('চলমান')->nullable()->trueLabel('শেষ হয়েছে')->falseLabel('চলছে')])

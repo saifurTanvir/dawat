@@ -24,9 +24,6 @@ class KitchenForm
                         TextInput::make('pickup_address')->label('পিকআপের ঠিকানা')->maxLength(255)
                             ->helperText('শাহিদার এই ঠিকানা থেকে নিয়মিত গ্রাহকের খাবার তুলবেন। ক্রেতারা কখনো দেখেন না।'),
                         TextInput::make('bfsa_reg_no')->label('BFSA রেজিস্ট্রেশন নম্বর')->maxLength(50),
-                        TextInput::make('max_regular_customers')->label('সর্বোচ্চ নিয়মিত গ্রাহক')
-                            ->numeric()->minValue(0)->maxValue(50)->required()
-                            ->helperText('প্রতিদিন কতজন নিয়মিত গ্রাহককে খাওয়াতে পারবেন।'),
                     ]),
                 Section::make('কোথায় দেখাবে (পরিধি)')
                     ->description('এই রান্নাঘরের পোস্ট কতদূর পর্যন্ত দেখাবে। বদলালে আজকের চালু পোস্ট আর পরের সব পোস্টে লাগবে।')

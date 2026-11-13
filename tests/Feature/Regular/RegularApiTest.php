@@ -5,6 +5,7 @@ namespace Tests\Feature\Regular;
 use App\Actions\PairCustomer;
 use App\Enums\CustomerStatus;
 use App\Models\Area;
+use App\Models\Customer;
 use App\Models\Kitchen;
 use App\Models\User;
 use App\Support\Roles;
@@ -38,6 +39,25 @@ class RegularApiTest extends TestCase
 
         $this->assertSame('নাসির', $user->fresh()->name);
         $this->assertSame('app', $user->fresh()->customer->source);
+    }
+
+    public function test_home_pin_is_kept_for_admins_and_never_sent_back(): void
+    {
+        $user = User::factory()->create();
+        $area = Area::factory()->create();
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->putJson('/api/v1/regular', $this->payload($area, ['lat' => 23.781234, 'lng' => 90.425678]))
+            ->assertOk()
+            ->assertJsonPath('data.has_location', true);
+
+        $this->assertStringNotContainsString('23.781234', $response->getContent());
+        $this->assertStringNotContainsString('"lat"', $response->getContent());
+        $this->assertEqualsWithDelta(23.781234, Customer::sole()->location->lat, 0.000001);
+
+        $this->actingAs($user, 'sanctum')
+            ->putJson('/api/v1/regular', $this->payload($area, ['lat' => 10.5, 'lng' => 90.4]))
+            ->assertUnprocessable()->assertJsonValidationErrors(['lat']);
     }
 
     public function test_validation_messages_are_bangla(): void
