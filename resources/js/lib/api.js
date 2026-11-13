@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { trackServerEvent } from './pixel';
 
 const TOKEN_KEY = 'dawat.token';
 
@@ -34,6 +35,12 @@ api.interceptors.request.use((config) => {
         config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
+});
+
+// F54: the server says when something worth counting for the ads happened.
+api.interceptors.response.use((response) => {
+    trackServerEvent(response.data?.meta_event);
+    return response;
 });
 
 /**

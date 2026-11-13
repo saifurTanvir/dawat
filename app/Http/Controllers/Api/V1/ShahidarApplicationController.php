@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Shahidar\ApplyRequest;
+use App\Services\Meta\MetaEvents;
 use App\Services\Shahidars\ShahidarApplications;
 use App\Support\ShahidarApplicationOptions as Options;
 use Illuminate\Http\JsonResponse;
@@ -28,7 +29,7 @@ class ShahidarApplicationController extends Controller
     }
 
     /** POST /api/v1/shahidar-applications — F53: apply to work as a shahidar. */
-    public function store(ApplyRequest $request, ShahidarApplications $applications): JsonResponse
+    public function store(ApplyRequest $request, ShahidarApplications $applications, MetaEvents $meta): JsonResponse
     {
         $data = $request->validated();
 
@@ -39,13 +40,14 @@ class ShahidarApplicationController extends Controller
             ], 422);
         }
 
-        [, $isNew] = $applications->submit($data);
+        [$application, $isNew] = $applications->submit($data);
 
         return response()->json([
             'message' => $isNew
                 ? 'আবেদন পেয়েছি। দাওয়াত টিম শিগগিরই আপনাকে ফোন করবে।'
                 : 'আপনার আগের আবেদনটা নতুন তথ্য দিয়ে হালনাগাদ করা হলো। দাওয়াত টিম শিগগিরই ফোন করবে।',
             'is_new' => $isNew,
+            'meta_event' => $isNew ? $meta->record('Lead', 'shahidar-application-'.$application->id, $request, phone: $data['phone'], custom: ['content_name' => 'shahidar']) : null,
         ], $isNew ? 201 : 200);
     }
 }

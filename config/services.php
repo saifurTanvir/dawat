@@ -65,4 +65,14 @@ return [
         'private_key' => env('WEBPUSH_PRIVATE_KEY'),
         'subject' => env('WEBPUSH_SUBJECT', env('APP_URL', 'https://dawat.cloud')),
     ],
+
+    // F54: Facebook ad tracking. Pixel in the browser + Conversions API from the server.
+    // Off unless META_PIXEL_ID is set; the server half also needs META_CAPI_TOKEN.
+    'meta' => [
+        'pixel_id' => env('META_PIXEL_ID', '4537200536607649'), // দাওয়াত ওয়েবসাইট dataset (public id, not a secret)
+        'capi_token' => env('META_CAPI_TOKEN'),
+        // Only while checking events in Events Manager → Test events; leave empty in normal use.
+        'test_event_code' => env('META_TEST_EVENT_CODE'),
+        'graph_version' => env('META_GRAPH_VERSION', 'v23.0'),
+    ],
 ];

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Post;
+use App\Services\Meta\MetaEvents;
 use App\Services\Orders\BookingPlanner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ use Illuminate\Validation\Rule;
 class OrderController extends Controller
 {
     /** POST /api/v1/posts/{post}/orders */
-    public function store(Request $request, Post $post, PlaceOrder $place): JsonResponse
+    public function store(Request $request, Post $post, PlaceOrder $place, MetaEvents $meta): JsonResponse
     {
         $data = $request->validate([
             'plates' => ['required', 'integer', 'between:1,'.PlaceOrder::MAX_PLATES],
@@ -37,6 +38,11 @@ class OrderController extends Controller
             'message' => $order->isSelfPickup()
                 ? 'বুক হয়েছে। গৃহিণী ফোন করে জানাবেন কোথায় নেবেন।'
                 : 'বুক হয়েছে। শাহিদার পৌঁছে দেবেন; ডেলিভারি কোড SMS-এ আসছে।',
+            'meta_event' => $meta->record('Purchase', 'order-'.$order->id, $request, $request->user(), custom: [
+                'value' => intdiv($order->totalPaisa(), 100),
+                'currency' => 'BDT',
+                'content_name' => 'feed',
+            ]),
         ], 201);
     }
 

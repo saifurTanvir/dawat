@@ -34,6 +34,8 @@
         <env name="LOCATION_FUZZ_MIN_M" value="0"/>
         <env name="LOCATION_FUZZ_MAX_M" value="0"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="META_PIXEL_ID" value=""/>
+        <env name="META_CAPI_TOKEN" value=""/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
     </php>
 </phpunit>
