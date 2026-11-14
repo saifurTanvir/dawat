@@ -4,6 +4,7 @@ namespace Tests\Feature\Geo;
 
 use App\Filament\Pages\Dashboard;
 use App\Filament\Resources\Customers\Pages\ViewCustomer;
+use App\Filament\Resources\Kitchens\Pages\EditKitchen;
 use App\Models\Area;
 use App\Models\Customer;
 use App\Models\Kitchen;
@@ -94,5 +95,27 @@ class LocationInputTest extends TestCase
             ->callAction('pin', ['where' => 'https://maps.app.goo.gl/AbCd123'])
             ->assertHasNoActionErrors();
         $this->assertEqualsWithDelta(23.7812345, $customer->fresh()->location->lat, 0.000001);
+    }
+
+    public function test_admin_sets_a_cooks_home_on_her_edit_page(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+        $kitchen = Kitchen::factory()->approved()->create();
+        $before = $kitchen->public_location;
+
+        Livewire::test(EditKitchen::class, ['record' => $kitchen->id])
+            ->assertFormSet(['where' => sprintf('%.6f, %.6f', $kitchen->location->lat, $kitchen->location->lng)])
+            ->fillForm(['where' => 'https://maps.app.goo.gl/AbCd123'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $kitchen->refresh();
+        $this->assertEqualsWithDelta(23.7812345, $kitchen->location->lat, 0.000001);
+        $this->assertNotEquals($before, $kitchen->public_location); // buyers' fuzzed point moves too
+
+        Livewire::test(EditKitchen::class, ['record' => $kitchen->id])
+            ->fillForm(['where' => 'কোথাও'])
+            ->call('save')
+            ->assertHasFormErrors(['where']);
     }
 }

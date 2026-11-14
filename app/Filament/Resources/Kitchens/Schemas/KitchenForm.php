@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Kitchens\Schemas;
 
 use App\Filament\Support\FeeFields;
+use App\Filament\Support\LocationField;
 use App\Filament\Support\ReachFields;
 use App\Support\PhoneNumber;
 use Filament\Forms\Components\Select;
@@ -25,6 +26,12 @@ class KitchenForm
                         TextInput::make('pickup_address')->label('পিকআপের ঠিকানা')->maxLength(255)
                             ->helperText('শাহিদার এই ঠিকানা থেকে নিয়মিত গ্রাহকের খাবার তুলবেন। ক্রেতারা কখনো দেখেন না।'),
                         TextInput::make('bfsa_reg_no')->label('BFSA রেজিস্ট্রেশন নম্বর')->maxLength(50),
+                        // F62: the home pin — link, current location, or address search
+                        LocationField::make('where', 'বাসার লোকেশন')
+                            ->afterStateHydrated(fn ($component, $record) => $component->state(
+                                $record?->location ? sprintf('%.6f, %.6f', $record->location->lat, $record->location->lng) : null
+                            ))
+                            ->helperText('ক্রেতারা ঠিক বাসা দেখেন না, শুধু কাছাকাছি দূরত্ব। বদলালে নতুন পোস্ট থেকে লাগবে।'),
                     ]),
                 // F56
                 FeeFields::section('শুধু এই গৃহিণীর জন্য। খালি রাখলে এলাকার নিয়ম, এলাকারও না থাকলে "সবার জন্য" নিয়ম চলবে। নতুন বক্স থেকে লাগবে।'),
