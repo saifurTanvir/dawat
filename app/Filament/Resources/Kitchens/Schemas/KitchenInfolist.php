@@ -26,6 +26,11 @@ class KitchenInfolist
                         TextEntry::make('status')->label('অবস্থা')->badge(),
                         TextEntry::make('user.name')->label('গৃহিণী')->placeholder('—'),
                         TextEntry::make('user.phone')->label('ফোন')->copyable(),
+                        // F59: where they came from
+                        TextEntry::make('user.campaign')->label('ক্যাম্পেইন')->placeholder('—')
+                            ->visible(fn ($record) => filled($record->user?->campaign)),
+                        TextEntry::make('user.intake_note')->label('তালিকার নোট')->placeholder('—')
+                            ->visible(fn ($record) => filled($record->user?->intake_note)),
                         // F57
                         TextEntry::make('number_check')->label('নম্বর যাচাই')
                             ->state(fn ($record) => LoginHelp::label($record->user))

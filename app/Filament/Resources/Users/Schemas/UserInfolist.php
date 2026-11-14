@@ -30,6 +30,9 @@ class UserInfolist
                         // F50: how the number was confirmed.
                         TextEntry::make('verified_via')->label('কীভাবে যাচাই')->state(fn (User $record) => LoginHelp::label($record))
                             ->badge()->color(fn (User $record) => $record->verified_via === 'sms' ? 'success' : ($record->verified_via ? 'warning' : 'gray')),
+                        // F59
+                        TextEntry::make('campaign')->label('ক্যাম্পেইন')->placeholder('—'),
+                        TextEntry::make('intake_note')->label('তালিকার নোট')->placeholder('—'),
                         TextEntry::make('created_at')->label('যোগ দিয়েছেন')->dateTime(),
                     ]),
                 // F49: this person's other pages, and their history as a buyer.
