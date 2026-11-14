@@ -58,6 +58,7 @@ final class Links
             $u === null => null,
             $u->isShahidar() => self::shahidar($u->id),
             $u->customer !== null => CustomerResource::getUrl('view', ['record' => $u->customer->id]),
+            $u->kitchen !== null => self::kitchen($u->kitchen->id),
             default => self::user($u->id),
         };
     }

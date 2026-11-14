@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Kitchens\Tables;
 use App\Enums\KitchenStatus;
 use App\Filament\Actions\KitchenModerationActions;
 use App\Filament\Actions\PostForCookActions;
+use App\Filament\Actions\RemarkActions;
 use App\Filament\Actions\RemovalActions;
 use App\Models\Order;
 use Filament\Actions\ActionGroup;
@@ -57,6 +58,8 @@ class KitchensTable
                     ->formatStateUsing(fn ($state, $record) => $record->rating_count ? '★ '.number_format((float) $state, 1).' ('.$record->rating_count.')' : '—')->placeholder('—'),
                 TextColumn::make('created_at')->label('নিবন্ধন')->since()->sortable(),
                 TextColumn::make('approved_at')->label('অনুমোদন')->dateTime('d M Y')->placeholder('—')->toggleable(isToggledHiddenByDefault: true),
+                // F63
+                RemarkActions::column('user.latestRemark'),
             ])
             ->filters([
                 SelectFilter::make('status')->label('অবস্থা')->options(KitchenStatus::class),
@@ -71,6 +74,7 @@ class KitchensTable
             ])
             ->recordActions([
                 ViewAction::make(),
+                RemarkActions::add(fn ($k) => $k->user),
                 ActionGroup::make([
                     PostForCookActions::postFor(),
                     PostForCookActions::menus(),

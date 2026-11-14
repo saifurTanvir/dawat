@@ -64,6 +64,17 @@ class User extends Authenticatable implements FilamentUser, HasName
     }
 
     /** Areas this user serves as a shahidar. */
+    /** F63: admins' remarks on this person, newest first. */
+    public function remarks(): HasMany
+    {
+        return $this->hasMany(Remark::class)->latest('id');
+    }
+
+    public function latestRemark(): HasOne
+    {
+        return $this->hasOne(Remark::class)->latestOfMany();
+    }
+
     public function shahidarAreas(): BelongsToMany
     {
         return $this->belongsToMany(Area::class, 'area_shahidar')->withTimestamps();

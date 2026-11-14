@@ -7,6 +7,7 @@ use App\Actions\PairCustomer;
 use App\Enums\CustomerStatus;
 use App\Enums\MealSlot;
 use App\Filament\Actions\LoginHelpActions;
+use App\Filament\Actions\RemarkActions;
 use App\Filament\Actions\RemovalActions;
 use App\Filament\RelationManagers\CustomerOrdersRelationManager;
 use App\Filament\RelationManagers\CustomerReviewsRelationManager;
@@ -429,6 +430,8 @@ class CustomerResource extends Resource
                 TextColumn::make('booking')->label('বুকিং')->state(fn (Customer $record) => $record->bookingSummary())->wrap(),
                 TextColumn::make('billing')->label('টাকা')->badge()->color('gray')->formatStateUsing(fn (?string $state) => Customer::BILLING_LABELS[$state] ?? '—'),
                 TextColumn::make('created_at')->label('যোগ')->since()->sortable(),
+                // F63
+                RemarkActions::column('user.latestRemark'),
             ])
             ->filters([
                 SelectFilter::make('status')->label('অবস্থা')->options(CustomerStatus::class),
@@ -438,6 +441,7 @@ class CustomerResource extends Resource
             ->recordActions([
                 ViewAction::make(),
                 self::pairAction(),
+                RemarkActions::add(fn (Customer $c) => $c->user),
                 ActionGroup::make([
                     EditAction::make()->mutateDataUsing(fn (array $data) => self::bookingData($data))
                         ->after(fn (Customer $record) => app(BookingPlanner::class)->bookLate($record)),

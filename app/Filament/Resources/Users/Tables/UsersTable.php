@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users\Tables;
 
 use App\Enums\UserStatus;
+use App\Filament\Actions\RemarkActions;
 use App\Filament\Actions\RemovalActions;
 use App\Filament\Actions\UserBlockActions;
 use App\Support\Roles;
@@ -28,6 +29,8 @@ class UsersTable
                     ->state(fn ($record) => $record->phone_verified_at ? 'যাচাই হয়েছে' : 'যাচাই হয়নি')
                     ->color(fn ($record) => $record->phone_verified_at ? 'success' : 'warning'),
                 TextColumn::make('created_at')->label('যোগ দিয়েছেন')->since()->sortable(),
+                // F63
+                RemarkActions::column(),
             ])
             ->filters([
                 SelectFilter::make('status')->label('অবস্থা')->options(UserStatus::class),
@@ -39,6 +42,7 @@ class UsersTable
             ])
             ->recordActions([
                 ViewAction::make(),
+                RemarkActions::add(fn ($u) => $u),
                 ActionGroup::make([...UserBlockActions::make(), RemovalActions::deleteUser()]),
             ]);
     }

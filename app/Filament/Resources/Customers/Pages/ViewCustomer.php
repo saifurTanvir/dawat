@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Customers\Pages;
 
 use App\Filament\Actions\LoginHelpActions;
+use App\Filament\Actions\RemarkActions;
 use App\Filament\Actions\RemovalActions;
 use App\Filament\Actions\ViewAsAction;
 use App\Filament\Resources\Customers\CustomerResource;
@@ -17,6 +18,7 @@ class ViewCustomer extends ViewRecord
         return [
             ViewAsAction::make(fn ($record) => $record->user, 'গ্রাহকের অ্যাপ দেখুন'),
             LoginHelpActions::group(fn ($record) => $record->user),
+            RemarkActions::add(fn ($record) => $record->user),
             CustomerResource::pairAction(),
             CustomerResource::pinAction(),
             CustomerResource::bookNowAction(),
