@@ -11,8 +11,8 @@ use App\Models\Customer;
 use App\Models\PeopleImport;
 use App\Models\PeopleImportRow;
 use App\Models\User;
+use App\Support\Geo\Geocoder;
 use App\Support\Geo\GeoPoint;
-use App\Support\Geo\MapLink;
 use App\Support\PhoneNumber;
 use App\Support\Roles;
 use Illuminate\Support\Collection;
@@ -114,7 +114,7 @@ class PeopleImporter
         $notes = [];
         $location = null;
         if (filled($v['location'] ?? '') && in_array($role, ['customer', 'cook'], true)) {
-            $point = MapLink::parse($v['location']);
+            $point = app(Geocoder::class)->point($v['location']);
             $point ? $location = [$point->lat, $point->lng] : $notes[] = 'লোকেশন পড়া যায়নি, বাদ দেওয়া হবে';
         }
         $data['location'] = $location;

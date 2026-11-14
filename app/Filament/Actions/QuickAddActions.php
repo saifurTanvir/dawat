@@ -8,10 +8,11 @@ use App\Filament\Pages\ImportPeople;
 use App\Filament\Resources\Customers\CustomerResource;
 use App\Filament\Resources\Kitchens\KitchenResource;
 use App\Filament\Resources\Shahidars\ShahidarResource;
+use App\Filament\Support\LocationField;
 use App\Filament\Support\PhoneField;
 use App\Models\Area;
 use App\Models\Kitchen;
-use App\Support\Geo\MapLink;
+use App\Support\Geo\Geocoder;
 use App\Support\PhoneNumber;
 use App\Support\Roles;
 use Closure;
@@ -120,13 +121,8 @@ final class QuickAddActions
                 ->options(fn () => Area::active()->orderBy('sort_order')->pluck('name', 'id')),
             TextInput::make('pickup_address')->label('পিকআপের ঠিকানা')->maxLength(255)
                 ->helperText('শাহিদার এখান থেকে খাবার তুলবেন। ক্রেতারা কখনো দেখেন না।'),
-            TextInput::make('where')->label('বাসার লোকেশন (ইচ্ছা হলে)')->live(onBlur: true)
-                ->helperText('গুগল ম্যাপ বা হোয়াটসঅ্যাপ লোকেশনের লিংক, বা "23.78, 90.42"।')
-                ->rule(fn () => function (string $attribute, mixed $value, Closure $fail) {
-                    if (filled($value) && ! MapLink::parse($value)) {
-                        $fail('এখান থেকে লোকেশন পড়া গেল না।');
-                    }
-                }),
+            // F62: link, current location or address search
+            LocationField::make('where')->live(onBlur: true),
             Toggle::make('approve')->label('এখনই অনুমোদন দিন (ফোনে কথা হয়েছে)')
                 ->visible(fn (Get $get) => filled($get('where')))
                 ->helperText('লোকেশন ছাড়া অনুমোদন দেওয়া যায় না।'),
@@ -148,7 +144,7 @@ final class QuickAddActions
                 'pickup_address' => filled($data['pickup_address'] ?? null) ? trim($data['pickup_address']) : null,
                 'status' => KitchenStatus::Pending,
             ]);
-            if ($point = MapLink::parse($data['where'] ?? null)) {
+            if ($point = app(Geocoder::class)->point($data['where'] ?? null)) {
                 $kitchen->location = $point;
             }
             $kitchen->save();

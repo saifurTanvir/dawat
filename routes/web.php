@@ -3,6 +3,7 @@
 use App\Http\Controllers\Web\BillController;
 use App\Http\Controllers\Web\SeoController;
 use App\Http\Controllers\Web\SpaController;
+use App\Support\Geo\Geocoder;
 use App\Support\QrImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,14 @@ Route::get('/admin-tools/login-qr', function (Request $request) {
 
     return response()->view('admin.login-qr', ['url' => $url, 'svg' => QrImage::svg($url)])->header('Cache-Control', 'no-store');
 })->name('admin.login-qr');
+
+// F62: admins look up a home pin from an address or a map link (the panel's location box).
+Route::get('/admin-tools/geocode', function (Request $request, Geocoder $geocoder) {
+    abort_unless($request->user()?->hasRole('admin'), 403);
+    $q = (string) $request->validate(['q' => ['required', 'string', 'min:3', 'max:500']])['q'];
+
+    return response()->json(['data' => $geocoder->search($q)]);
+})->middleware('throttle:60,1')->name('admin.geocode');
 
 // F39: a customer's bill, from a link.
 Route::get('/bill/{token}', [BillController::class, 'show'])->where('token', '[A-Za-z0-9]{40}')->name('bill.show');

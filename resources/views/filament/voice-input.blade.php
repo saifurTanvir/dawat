@@ -47,7 +47,7 @@
 
     function attach(root) {
         root.querySelectorAll('[data-voice-form] input[type=text], [data-voice-form] input[type=tel], [data-voice-form] input[type=number], [data-voice-form] input:not([type]), [data-voice-form] textarea').forEach((field) => {
-            if (field.dataset.micAdded || field.readOnly || field.closest('.fi-select-input, [role=combobox]')) return;
+            if (field.dataset.micAdded || field.readOnly || field.closest('.fi-select-input, [role=combobox], [data-no-mic]')) return;
             field.dataset.micAdded = '1';
             const wrap = field.parentElement;
             wrap.classList.add('dawat-mic-wrap');

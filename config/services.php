@@ -75,4 +75,10 @@ return [
         'test_event_code' => env('META_TEST_EVENT_CODE'),
         'graph_version' => env('META_GRAPH_VERSION', 'v23.0'),
     ],
+
+    // F62: address search for home pins. Without a key, OpenStreetMap is used.
+    'google_maps' => [
+        'key' => env('GOOGLE_MAPS_KEY'),
+    ],
+
 ];

@@ -21,7 +21,7 @@
                 <p v-if="hasLocation && !point" class="mt-2 rounded-lg bg-leaf-soft p-3 text-sm">
                     লোকেশন আগেই দেওয়া আছে। বাসা বদলালে শুধু তখন নতুন করে পিন দিন।
                 </p>
-                <MapPicker v-model="point" :fallback-center="mapFallback" class="mt-3" />
+                <MapPicker v-model="point" :fallback-center="mapFallback" :locate="false" class="mt-3" />
                 <p v-if="fieldError('lat')" class="error-text" role="alert">{{ fieldError('lat') }}</p>
             </fieldset>
 
