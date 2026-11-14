@@ -83,14 +83,14 @@ class FeedTest extends TestCase
 
     public function test_area_is_used_when_no_location_is_shared(): void
     {
-        $area = Area::factory()->create(['slug' => 'mirpur-10', 'center' => GeoPoint::make(...array_values(self::HERE))]);
+        $area = Area::factory()->create(['slug' => 'test-here', 'center' => GeoPoint::make(...array_values(self::HERE))]);
         $post = $this->postEast(400);
 
-        $this->getJson('/api/v1/feed?area=mirpur-10')
+        $this->getJson('/api/v1/feed?area=test-here')
             ->assertOk()
             ->assertJsonPath('data.0.id', $post->id)
             ->assertJsonPath('meta.origin', 'area')
-            ->assertJsonPath('meta.area.slug', 'mirpur-10');
+            ->assertJsonPath('meta.area.slug', 'test-here');
     }
 
     public function test_without_location_or_area_the_buyer_is_asked(): void

@@ -87,7 +87,7 @@ final class Seo
             'alternateName' => ['Dawat', 'দাওয়াত — পাড়ার ঘরের খাবার', 'dawat.cloud'],
             'url' => url('/'),
             'logo' => asset('icons/icon-512.png'),
-            'description' => 'ঢাকার '.self::of(config('dawat.seo.region')).' গৃহিণীদের ঘরে রান্না খাবার, অ্যাপে অর্ডার আর বাসায় পৌঁছে দেওয়া।',
+            'description' => self::of(config('dawat.seo.region')).' গৃহিণীদের ঘরে রান্না খাবার, অ্যাপে অর্ডার আর বাসায় পৌঁছে দেওয়া।',
             'telephone' => self::phoneIntl(),
             'areaServed' => self::areas()->map(fn (Area $a) => ['@type' => 'Place', 'name' => "{$a->name}, ঢাকা"])->values()->all(),
             'sameAs' => array_values(array_filter([config('dawat.contact.facebook_url')])),

@@ -33,7 +33,7 @@
 
                     <h2 id="join-title" class="mt-3 text-center font-serif text-2xl font-bold">দাওয়াতে যোগ দিন</h2>
                     <p class="mt-1 text-center text-muted">
-                        আমরা সবে শুরু করছি — বাড্ডা, গুলশান, বনানী, মহাখালী, রামপুরা আর বসুন্ধরায়।
+                        আমরা এখন ঢাকা শহরের সব এলাকায়।
                     </p>
 
                     <ul class="mt-5 space-y-3">

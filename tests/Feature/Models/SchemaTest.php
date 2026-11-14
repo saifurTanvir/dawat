@@ -8,6 +8,7 @@ use App\Models\Kitchen;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Support\Geo\GeoPoint;
+use App\Support\Geo\ServiceAreas;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -60,7 +61,7 @@ class SchemaTest extends TestCase
         $this->seed(DatabaseSeeder::class);
 
         $this->assertSame(13, Tag::count());
-        $this->assertSame(12, Area::count());
+        $this->assertSame(count(ServiceAreas::all()), Area::count());
         $this->assertNotNull(Area::where('slug', 'uttar-badda')->first()->center);
     }
 }

@@ -52,15 +52,22 @@
                         <input id="a-lives" v-model.trim="form.lives_in" class="field" maxlength="160" placeholder="যেমন: মধ্য বাড্ডা, আলাতুন্নেছা স্কুলের কাছে" />
                         <p v-if="err('lives_in')" class="error-text">{{ err('lives_in') }}</p>
                     </div>
-                    <ChipGroup
-                        label="কোন এলাকায় কাজ করতে চান"
-                        hint="একাধিক বেছে নিতে পারেন।"
-                        name="area_ids"
-                        multiple
-                        :options="areaOptions"
-                        v-model="form.area_ids"
-                        :error="err('area_ids')"
-                    />
+                    <!-- F60: all of Dhaka is a long list; search it, chosen ones stay on top. -->
+                    <div>
+                        <label for="a-area-search" class="sr-only">এলাকা খুঁজুন</label>
+                        <input id="a-area-search" v-model.trim="areaSearch" class="field mb-2 text-base" type="search" placeholder="এলাকা খুঁজুন, যেমন মিরপুর" />
+                        <ChipGroup
+                            label="কোন এলাকায় কাজ করতে চান"
+                            :hint="areaSearch ? '' : 'একাধিক বেছে নিতে পারেন। নিজের এলাকার নাম লিখে খুঁজুন।'"
+                            name="area_ids"
+                            multiple
+                            :options="areaOptions"
+                            v-model="form.area_ids"
+                            :error="err('area_ids')"
+                        />
+                        <p v-if="!areaSearch && areas.length > areaOptions.length" class="mt-2 text-sm text-muted">আরও {{ bn(areas.length - areaOptions.length) }}টা এলাকা আছে — ওপরে নাম লিখে খুঁজুন।</p>
+                        <p v-if="areaSearch && !areaOptions.length" class="mt-2 text-sm text-muted">এই নামে এলাকা নেই। কাছের বড় এলাকার নাম লিখে দেখুন।</p>
+                    </div>
                 </fieldset>
 
                 <fieldset class="space-y-5">
@@ -215,7 +222,14 @@ const form = reactive({
     agree: false,
 });
 
-const areaOptions = computed(() => areas.value.map((a) => ({ value: a.id, label: a.name })));
+const areaSearch = ref('');
+// Chosen areas first; then matches of the search, or the first 18 when not searching.
+const areaOptions = computed(() => {
+    const q = areaSearch.value.toLowerCase();
+    const chosen = areas.value.filter((a) => form.area_ids.includes(a.id));
+    const rest = areas.value.filter((a) => !form.area_ids.includes(a.id) && (!q || a.name.toLowerCase().includes(q) || a.slug?.includes(q)));
+    return [...chosen, ...(q ? rest : rest.slice(0, Math.max(0, 18 - chosen.length)))].map((a) => ({ value: a.id, label: a.name }));
+});
 const needsLicense = computed(() => opts.needs_license.includes(form.vehicle));
 const taka = (n) => `৳${bn(Number(n).toLocaleString('en-US'))}`;
 const incomeText = computed(() => `${taka(income.value.min)}–${taka(income.value.max)}`);

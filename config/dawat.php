@@ -87,6 +87,7 @@ return [
     'seo' => [
         // Search Console "HTML tag" method; not needed when the domain is verified by DNS.
         'google_verification' => env('GOOGLE_SITE_VERIFICATION'),
-        'region' => 'বাড্ডা, গুলশান, বনানী, মহাখালী, রামপুরা ও বসুন্ধরা',
+        // F60: all of Dhaka city. Used as "ঢাকা শহরের সব এলাকার …".
+        'region' => 'ঢাকা শহরের সব এলাকা',
     ],
 ];
