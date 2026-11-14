@@ -39,25 +39,31 @@ class Settlements
         });
     }
 
-    /** @return Collection<int, array{kitchen: Kitchen, orders: int, gross: int, commission: int, payable: int, from: ?string, to: ?string}> */
+    /**
+     * F56: Dawat's fee and the delivery share are fixed on each box (CookFees).
+     *
+     * @return Collection<int, array{kitchen: Kitchen, orders: int, gross: int, commission: int, delivery: int, payable: int, from: ?string, to: ?string}>
+     */
     public function cooksDue(): Collection
     {
         // Self-pickup boxes were paid to the cook directly (F29).
         $rows = Order::whereIn('status', self::COOKED)->whereNull('cook_settlement_id')->where('payment_method', '!=', 'cash_to_cook')
-            ->selectRaw('kitchen_id, COUNT(*) AS n, SUM(food_paisa) AS gross, MIN(service_date) AS d0, MAX(service_date) AS d1')
+            ->selectRaw('kitchen_id, COUNT(*) AS n, SUM(food_paisa) AS gross, SUM(platform_fee_paisa) AS fee, SUM(cook_delivery_paisa) AS cut, MIN(service_date) AS d0, MAX(service_date) AS d1')
             ->groupBy('kitchen_id')->get();
         $kitchens = Kitchen::whereIn('id', $rows->pluck('kitchen_id'))->with('user')->get()->keyBy('id');
 
         return $rows->map(function ($r) use ($kitchens) {
             $gross = (int) $r->gross;
-            $commission = $this->commission($gross);
+            $commission = (int) $r->fee;
+            $delivery = (int) $r->cut;
 
             return [
                 'kitchen' => $kitchens[$r->kitchen_id],
                 'orders' => (int) $r->n,
                 'gross' => $gross,
                 'commission' => $commission,
-                'payable' => $gross - $commission,
+                'delivery' => $delivery,
+                'payable' => $gross - $commission - $delivery,
                 'from' => (string) $r->d0,
                 'to' => (string) $r->d1,
             ];
@@ -107,7 +113,8 @@ class Settlements
                 throw ValidationException::withMessages(['kitchen' => 'এই গৃহিণীর পাওনা কিছু নেই।']);
             }
             $gross = (int) $orders->sum('food_paisa');
-            $commission = $this->commission($gross);
+            $commission = (int) $orders->sum('platform_fee_paisa');
+            $delivery = (int) $orders->sum('cook_delivery_paisa');
 
             $settlement = Settlement::create([
                 'kind' => 'cook',
@@ -115,7 +122,8 @@ class Settlements
                 'orders_count' => $orders->count(),
                 'gross_paisa' => $gross,
                 'commission_paisa' => $commission,
-                'amount_paisa' => $gross - $commission,
+                'delivery_paisa' => $delivery,
+                'amount_paisa' => $gross - $commission - $delivery,
                 'from_date' => $orders->min('service_date'),
                 'to_date' => $orders->max('service_date'),
                 'note' => $note,
@@ -152,10 +160,5 @@ class Settlements
 
             return $settlement;
         });
-    }
-
-    private function commission(int $gross): int
-    {
-        return (int) round($gross * (float) config('dawat.orders.commission_percent', 0) / 100);
     }
 }

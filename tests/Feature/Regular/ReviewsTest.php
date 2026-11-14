@@ -8,6 +8,7 @@ use App\Enums\OrderStatus;
 use App\Filament\Resources\Kitchens\Pages\ViewKitchen;
 use App\Filament\Resources\Kitchens\RelationManagers\ReviewsRelationManager;
 use App\Jobs\SendWebPush;
+use App\Models\AppSetting;
 use App\Models\BoxReview;
 use App\Models\Customer;
 use App\Models\Kitchen;
@@ -15,6 +16,7 @@ use App\Models\Order;
 use App\Models\Pairing;
 use App\Models\Post;
 use App\Models\User;
+use App\Services\Money\CookFees;
 use App\Services\Orders\Delivery;
 use App\Services\Orders\Settlements;
 use App\Support\Roles;
@@ -45,7 +47,8 @@ class ReviewsTest extends TestCase
     {
         parent::setUp();
         $this->travelTo(Carbon::parse('2026-11-12 14:00', 'Asia/Dhaka'));
-        config(['services.webpush.public_key' => 'x', 'services.webpush.private_key' => 'y', 'dawat.orders.commission_percent' => 10]);
+        config(['services.webpush.public_key' => 'x', 'services.webpush.private_key' => 'y']);
+        AppSetting::put(CookFees::KEY, ['platform_fee_type' => 'percent', 'platform_fee_value' => 1000, 'delivery_cut_type' => 'fixed', 'delivery_cut_value' => 0]);
         $this->kitchen = Kitchen::factory()->approved()->create();
         $this->shahidar = User::factory()->create(['name' => 'করিম']);
         $this->shahidar->assignRole(Roles::SHAHIDAR);

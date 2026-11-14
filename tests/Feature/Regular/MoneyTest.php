@@ -5,11 +5,13 @@ namespace Tests\Feature\Regular;
 use App\Enums\MealSlot;
 use App\Enums\OrderStatus;
 use App\Filament\Pages\Money;
+use App\Models\AppSetting;
 use App\Models\Customer;
 use App\Models\Kitchen;
 use App\Models\Order;
 use App\Models\Settlement;
 use App\Models\User;
+use App\Services\Money\CookFees;
 use App\Services\Orders\Settlements;
 use App\Support\Roles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -70,7 +72,7 @@ class MoneyTest extends TestCase
 
     public function test_cook_is_owed_for_delivered_and_failed_boxes_less_commission(): void
     {
-        config(['dawat.orders.commission_percent' => 10]);
+        AppSetting::put(CookFees::KEY, ['platform_fee_type' => 'percent', 'platform_fee_value' => 1000, 'delivery_cut_type' => 'fixed', 'delivery_cut_value' => 0]);
         $this->order(OrderStatus::Delivered, ['paid_at' => now(), 'collected_by' => $this->shahidar->id]);
         $this->order(OrderStatus::Failed);
         $this->order(OrderStatus::Cancelled);

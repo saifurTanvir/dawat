@@ -57,6 +57,7 @@
                             <input type="file" accept="image/*" multiple class="sr-only" @change="posting.images = [...$event.target.files].slice(0, 4)" />
                         </label>
                         <p v-if="posting.preview" class="rounded-lg bg-leaf-soft px-3 py-2 text-xs" role="status">{{ posting.preview }}</p>
+                        <CookShare :price-taka="posting.price_taka" :fees="posting.fees" :for-cook="false" />
                         <p v-if="posting.error" class="error-text" role="alert">{{ posting.error }}</p>
                         <div class="flex gap-2">
                             <button type="submit" class="btn-primary w-auto px-5" :disabled="busy">{{ busy ? 'পোস্ট হচ্ছে…' : 'পোস্ট দিন' }}</button>
@@ -197,6 +198,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import CookShare from '@/components/CookShare.vue';
 import CallButtons from '@/components/CallButtons.vue';
 import PlateSplitBar from '@/components/PlateSplitBar.vue';
 import PushToggle from '@/components/PushToggle.vue';
@@ -226,7 +228,7 @@ const waitingGroups = computed(() => {
 });
 
 function startPost(g) {
-    posting.value = { key: g.key, kitchen_id: g.kitchen_id, meal_slot: g.meal_slot, title: '', price_taka: 120, plates_total: g.plates, available_hours: 3, images: [], error: '', preview: '' };
+    posting.value = { key: g.key, kitchen_id: g.kitchen_id, meal_slot: g.meal_slot, title: '', price_taka: 120, plates_total: g.plates, available_hours: 3, images: [], error: '', preview: '', fees: null };
 }
 
 // F44: as the numbers change, show where the plates will go.
@@ -238,7 +240,10 @@ watch(() => posting.value && [posting.value.plates_total, posting.value.price_ta
     previewTimer = setTimeout(async () => {
         try {
             const { data } = await api.get(`/shahidar/kitchens/${p.kitchen_id}/preview`, { params: { meal_slot: p.meal_slot, plates: p.plates_total || 0, price_taka: p.price_taka || undefined } });
-            if (posting.value === p) p.preview = data.data.line;
+            if (posting.value === p) {
+                p.preview = data.data.line;
+                p.fees = data.data.fees ?? null;
+            }
         } catch {
             /* the preview is a hint only */
         }

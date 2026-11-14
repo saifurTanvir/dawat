@@ -12,6 +12,7 @@ use App\Models\Pairing;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\Images\UnreadablePhotoException;
+use App\Services\Money\CookFees;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Orders\Delivery;
 use App\Services\Orders\Settlements;
@@ -164,10 +165,14 @@ class ShahidarController extends Controller
             'price_taka' => ['nullable', 'integer', 'min:0', 'max:2000'],
         ]);
 
-        return response()->json(['data' => $split->preview(
-            $kitchen, MealSlot::from($data['meal_slot']), (int) $data['plates'],
-            isset($data['price_taka']) ? (int) $data['price_taka'] * 100 : null,
-        )]);
+        return response()->json(['data' => [
+            ...$split->preview(
+                $kitchen, MealSlot::from($data['meal_slot']), (int) $data['plates'],
+                isset($data['price_taka']) ? (int) $data['price_taka'] * 100 : null,
+            ),
+            // F56
+            'fees' => app(CookFees::class)->forApp($kitchen),
+        ]]);
     }
 
     /** Cooks a shahidar may post for: theirs, paired with their customers, or in their areas. */

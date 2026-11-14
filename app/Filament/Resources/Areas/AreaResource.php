@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Areas;
 
 use App\Filament\Resources\Areas\Pages\ManageAreas;
+use App\Filament\Support\FeeFields;
 use App\Models\Area;
 use App\Support\Geo\GeoPoint;
 use BackedEnum;
@@ -59,6 +60,8 @@ class AreaResource extends Resource
                     ->afterStateHydrated(fn ($component, ?Area $record) => $component->state(intdiv($record?->delivery_fee_paisa ?? 0, 100))),
                 TextInput::make('sort_order')->label('ক্রম')->numeric()->default(0),
                 Toggle::make('is_active')->label('চালু')->default(true),
+                // F56
+                FeeFields::section('এই এলাকার গৃহিণীদের জন্য। খালি রাখলে "সবার জন্য" নিয়ম চলবে; কোনো গৃহিণীর নিজের নিয়ম থাকলে সেটাই আগে।')->columnSpanFull()->collapsed(),
             ]);
     }
 

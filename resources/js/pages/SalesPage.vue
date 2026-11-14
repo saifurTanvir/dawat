@@ -19,7 +19,9 @@
                     <p class="text-xs text-muted">{{ bn(data.rating_count) }}টা রিভিউ</p>
                 </div>
             </div>
-            <p class="mt-2 text-xs text-muted">গত {{ bn(14) }} দিন · {{ bn(data.totals.plates) }} প্লেট<template v-if="data.totals.commission_percent"> · দাওয়াতের {{ bn(data.totals.commission_percent) }}% বাদে</template></p>
+            <p class="mt-2 text-xs text-muted">গত {{ bn(14) }} দিন · {{ bn(data.totals.plates) }} প্লেট<template v-if="data.totals.platform_fee_paisa || data.totals.delivery_cut_paisa"> · খাবারের দাম {{ taka(data.totals.gross_paisa) }} থেকে দাওয়াতের ফি {{ taka(data.totals.platform_fee_paisa) }} আর ডেলিভারি খরচ {{ taka(data.totals.delivery_cut_paisa) }} বাদে</template></p>
+            <!-- F56: today's rules, so she knows how her share is worked out -->
+            <p v-if="data.totals.fees" class="mt-1 text-xs text-muted">এখনকার নিয়ম: দাওয়াতের ফি {{ data.totals.fees.platform.text }}, ডেলিভারি খরচ {{ data.totals.fees.delivery.text }}। ক্রেতা নিজে এসে নিলে কিছু কাটা হয় না।</p>
 
             <h2 class="mt-6 text-lg font-semibold">দিন আর বেলা</h2>
             <p v-if="!data.days.length" class="mt-1 text-muted">এই সময়ে কিছু বিক্রি হয়নি।</p>

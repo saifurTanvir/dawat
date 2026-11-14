@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\Kitchen;
 use App\Services\Ai\FoodAssistant;
+use App\Services\Money\CookFees;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,6 +21,8 @@ class OwnKitchenResource extends JsonResource
         return [
             'id' => $this->id,
             'display_name' => $this->display_name,
+            // F56: what comes off her price, so the app can show her share as she types.
+            'fees' => app(CookFees::class)->forApp($this->resource),
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
             'rejection_reason' => $this->rejection_reason,

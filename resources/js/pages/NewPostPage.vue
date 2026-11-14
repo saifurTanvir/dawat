@@ -69,6 +69,7 @@
                         <label for="price" class="mb-1 block font-semibold">এক প্লেটের দাম (৳)</label>
                         <input id="price" v-model.number="form.price_taka" class="field" type="number" inputmode="numeric" min="20" max="2000" placeholder="১৫০" />
                         <p v-if="err('price_taka')" class="error-text">{{ err('price_taka') }}</p>
+                        <CookShare :price-taka="form.price_taka" :fees="fees" />
                         <p v-if="overLimit" class="mt-1 text-sm text-chili" role="status">
                             {{ bn(priceLimit.count) }} জন নিয়মিত গ্রাহকের সীমা ৳{{ bn(priceLimit.paisa / 100) }}। এর বেশি দামে তাঁদের আগে জিজ্ঞেস করা হবে।
                         </p>
@@ -178,6 +179,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import CookShare from '@/components/CookShare.vue';
 import ChoiceChip from '@/components/ChoiceChip.vue';
 import PostCard from '@/components/PostCard.vue';
 import { api, errorMessage } from '@/lib/api';
@@ -213,6 +215,7 @@ const errors = ref({});
 const photos = ref([]); // { file, url }
 const tags = ref([]);
 const kitchenName = ref('');
+const fees = ref(null); // F56
 const bookings = ref({}); // meal_slot => plates still to be booked today (F26)
 const limits = ref({}); // meal_slot => { paisa, count } lowest price limit (F30)
 const aiAvailable = ref(false);
@@ -290,6 +293,7 @@ onMounted(async () => {
         const [{ data: t }, { data: k }] = await Promise.all([api.get('/tags'), api.get('/kitchen')]);
         tags.value = t.data;
         kitchenName.value = k.data.display_name;
+        fees.value = k.data.fees ?? null;
         aiAvailable.value = !!k.data.ai_available;
         api.get('/my/bookings').then(({ data: b }) => {
             bookings.value = Object.fromEntries(b.data.slots.map((x) => [x.meal_slot, x.waiting_plates]));
