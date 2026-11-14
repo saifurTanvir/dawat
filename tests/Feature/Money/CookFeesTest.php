@@ -153,4 +153,15 @@ class CookFeesTest extends TestCase
         $area->refresh();
         $this->assertSame(['fixed', 1200, 'fixed', 1500], [$area->platform_fee_type, (int) $area->platform_fee_value, $area->delivery_cut_type, (int) $area->delivery_cut_value]);
     }
+
+    public function test_dawat_fee_is_flat_ten_taka_by_default_and_can_be_a_percent(): void
+    {
+        $kitchen = Kitchen::factory()->approved()->create();
+        $rules = app(CookFees::class)->rules($kitchen);
+        $this->assertSame(['type' => 'fixed', 'value' => 1000, 'source' => 'global'], $rules['platform']);
+        $this->assertSame(9000, app(CookFees::class)->breakdown($kitchen, 10000)['cook']);
+
+        $kitchen->update(['platform_fee_type' => 'percent', 'platform_fee_value' => 500]);
+        $this->assertSame(9500, app(CookFees::class)->breakdown($kitchen->fresh(), 10000)['cook']);
+    }
 }
