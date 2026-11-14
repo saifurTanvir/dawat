@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Shahidars;
 
 use App\Actions\EnsurePerson;
+use App\Filament\Actions\RemarkActions;
 use App\Filament\Actions\RemovalActions;
 use App\Filament\RelationManagers\KitchenActionsRelationManager;
 use App\Filament\RelationManagers\ShahidarOrdersRelationManager;
@@ -133,8 +134,11 @@ class ShahidarResource extends Resource
                 TextColumn::make('phone')->label('ফোন')->searchable()->copyable(),
                 TextColumn::make('shahidarAreas.name')->label('এলাকা')->badge()->color('success'),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
+                // F63
+                RemarkActions::column(),
             ])
             ->recordActions([
+                RemarkActions::add(fn (User $u) => $u),
                 EditAction::make(),
                 RemovalActions::removeShahidar(),
             ]);
