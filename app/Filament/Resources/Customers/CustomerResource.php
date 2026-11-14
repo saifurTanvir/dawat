@@ -248,6 +248,11 @@ class CustomerResource extends Resource
                     ->helperText('এই এলাকার শাহিদার, যার হাতে কম গ্রাহক তিনি আগে। একজন শাহিদার অনেকজনকে দিতে পারেন।'),
                 Textarea::make('reason')->label('বদলানোর কারণ')->maxLength(300)->rows(2)
                     ->visible(fn () => $record->pairing !== null)->required(fn () => $record->pairing !== null),
+                // F59: where they came from
+                TextEntry::make('user.campaign')->label('ক্যাম্পেইন')->placeholder('—')
+                    ->visible(fn ($record) => filled($record->user?->campaign)),
+                TextEntry::make('user.intake_note')->label('তালিকার নোট')->placeholder('—')
+                    ->visible(fn ($record) => filled($record->user?->intake_note)),
                 // F57
                 ...LoginHelpActions::callCheckbox($record->user),
             ])

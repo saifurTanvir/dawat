@@ -4,6 +4,7 @@ namespace App\Filament\Actions;
 
 use App\Actions\EnsurePerson;
 use App\Enums\KitchenStatus;
+use App\Filament\Pages\ImportPeople;
 use App\Filament\Resources\Customers\CustomerResource;
 use App\Filament\Resources\Kitchens\KitchenResource;
 use App\Filament\Resources\Shahidars\ShahidarResource;
@@ -35,7 +36,17 @@ final class QuickAddActions
 
     public static function all(): array
     {
-        return [self::customer(), self::cook(), self::shahidar()];
+        return [self::customer(), self::cook(), self::shahidar(), self::fromList()];
+    }
+
+    /** F59: many at once, from a marketing list. */
+    public static function fromList(): Action
+    {
+        return Action::make('fromList')
+            ->label('তালিকা থেকে যোগ করুন')
+            ->icon(Heroicon::OutlinedArrowUpTray)
+            ->color('gray')
+            ->url(ImportPeople::getUrl());
     }
 
     public static function customer(): Action
