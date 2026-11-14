@@ -42,8 +42,8 @@ class AdminSettingsTest extends TestCase
 
         Livewire::test(ManageAreas::class)
             ->callAction(CreateAction::class, [
-                'name' => 'শ্যামলী',
-                'slug' => 'Shyamoli',
+                'name' => 'সাভার',
+                'slug' => 'Savar',
                 'center_lat' => 23.7746,
                 'center_lng' => 90.3657,
                 'radius_m' => 1500,
@@ -52,7 +52,7 @@ class AdminSettingsTest extends TestCase
             ])
             ->assertHasNoActionErrors();
 
-        $area = Area::where('slug', 'shyamoli')->firstOrFail();
+        $area = Area::where('slug', 'savar')->firstOrFail();
         $this->assertEqualsWithDelta(23.7746, $area->center->lat, 1e-6);
     }
 

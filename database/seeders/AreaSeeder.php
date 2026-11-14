@@ -8,7 +8,7 @@ use App\Support\Geo\ServiceAreas;
 use Illuminate\Database\Seeder;
 
 /**
- * Dawat's service areas (the Badda side of Dhaka). Centre points are
+ * Dawat's service areas (all of Dhaka city, F60). Centre points are
  * approximate; correct them from the admin panel.
  */
 class AreaSeeder extends Seeder
@@ -16,7 +16,7 @@ class AreaSeeder extends Seeder
     public function run(): void
     {
         // The same list the F31 migration adds; existing areas keep any admin edits.
-        $areas = ServiceAreas::LIST;
+        $areas = ServiceAreas::all();
 
         foreach ($areas as $order => [$slug, $name, $lat, $lng, $radius]) {
             Area::firstOrCreate(

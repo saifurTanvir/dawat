@@ -7,6 +7,7 @@ use App\Models\Area;
 use App\Models\Kitchen;
 use App\Models\Post;
 use App\Support\Geo\GeoPoint;
+use App\Support\Geo\ServiceAreas;
 use App\Support\Seo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -16,14 +17,17 @@ class SeoTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_the_migration_sets_the_badda_side_service_areas(): void
+    public function test_the_migrations_cover_all_of_dhaka(): void
     {
         $active = Area::active()->orderBy('sort_order')->pluck('slug')->all();
 
-        $this->assertSame([
-            'uttar-badda', 'madhya-badda', 'dakkhin-badda', 'merul-badda', 'shahjadpur', 'satarkul',
-            'bashundhara', 'rampura', 'gulshan-1', 'gulshan-2', 'banani', 'mohakhali',
-        ], $active);
+        // F31's Badda side first, then F60's rest of Dhaka city.
+        $this->assertSame(array_column(ServiceAreas::all(), 0), $active);
+        $this->assertContains('mohammadpur', $active);
+        $this->assertContains('lalbagh', $active);
+        $this->assertContains('banasree', $active);
+        $this->assertContains('aftabnagar', $active);
+        $this->assertContains('mirpur-10', $active);
     }
 
     public function test_home_page_has_readable_text_meta_and_structured_data(): void
