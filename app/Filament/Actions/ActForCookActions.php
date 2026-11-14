@@ -10,6 +10,7 @@ use App\Models\Post;
 use App\Services\Kitchens\ActForCook;
 use App\Services\Kitchens\CookActions;
 use App\Services\Orders\BookingPlanner;
+use App\Services\Regular\TodayMenu;
 use App\Support\ContactHours;
 use Closure;
 use Filament\Actions\Action;
@@ -76,6 +77,26 @@ final class ActForCookActions
                 self::attempt($action, fn () => self::act()->run($record, auth()->user(), 'ready',
                     "আজ {$slot->label()}: খাবার রেডি জানানো হয়েছে".(filled($data['note'] ?? null) ? " — {$data['note']}" : ''),
                     fn () => self::cook()->ready($record, $slot, $data['note'] ?? null)), 'রেডি জানানো হয়েছে');
+            });
+    }
+
+    /** F61: tell the cook's regular customers what she is cooking today. */
+    public static function menuNotice(): Action
+    {
+        return Action::make('menuNoticeFor')
+            ->label('আজকের রান্না জানান')
+            ->icon(Heroicon::OutlinedMegaphone)
+            ->visible(fn (Kitchen $record) => $record->isApproved())
+            ->modalDescription('এই গৃহিণীর নিয়মিত গ্রাহক ফোনে জানবেন, আর অ্যাপে বলতে পারবেন খাবেন কি না।')
+            ->schema([
+                Select::make('meal_slot')->label('কোন বেলা')->options(MealSlot::options())->required()->native(false)->default('lunch'),
+                TextInput::make('title')->label('কী রান্না হবে')->required()->minLength(2)->maxLength(150)->placeholder('যেমন: খিচুড়ি, ডিম ভুনা'),
+            ])
+            ->action(function (Kitchen $record, array $data, Action $action) {
+                $slot = MealSlot::from($data['meal_slot']);
+                self::attempt($action, fn () => self::act()->run($record, auth()->user(), 'menu_notice',
+                    "আজ {$slot->label()}-এর রান্না জানানো হয়েছে: {$data['title']}",
+                    fn () => app(TodayMenu::class)->announce($record, $slot, $data['title'], 'admin', auth()->user())), 'গ্রাহককে জানানো হয়েছে');
             });
     }
 

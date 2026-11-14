@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\CustomerStatus;
+use App\Enums\MealSlot;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Regular\SaveRegularRequest;
 use App\Http\Resources\RegularResource;
@@ -13,10 +14,12 @@ use App\Models\Order;
 use App\Services\Meta\MetaEvents;
 use App\Services\Orders\Billing;
 use App\Services\Orders\BookingPlanner;
+use App\Services\Regular\TodayMenu;
 use App\Support\Geo\GeoPoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /** F25: a buyer asks for regular home food, and later sees who feeds and delivers. */
@@ -69,6 +72,25 @@ class RegularController extends Controller
         $planner->cancel($order, 'customer', 'গ্রাহক: আজ না');
 
         return RegularResource::make($customer->fresh(self::WITH))->additional(['message' => 'আজকের খাবার বাদ দেওয়া হয়েছে।']);
+    }
+
+    /** POST /api/v1/regular/choices {meal_slot, choice: eat|skip|change, wish} — F61: today's answer. */
+    public function choose(Request $request, TodayMenu $menu): RegularResource
+    {
+        $customer = Customer::where('user_id', $request->user()->id)->firstOrFail();
+        $data = $request->validate([
+            'meal_slot' => ['required', Rule::enum(MealSlot::class)],
+            'choice' => ['required', Rule::in(['eat', 'skip', 'change'])],
+            'wish' => ['nullable', 'string', 'max:300'],
+        ], ['choice.required' => 'একটা বেছে নিন।']);
+
+        $menu->choose($customer, MealSlot::from($data['meal_slot']), $data['choice'], $data['wish'] ?? null, $request->user());
+
+        return RegularResource::make($customer->fresh(self::WITH))->additional(['message' => match ($data['choice']) {
+            'eat' => 'ঠিক আছে, আজ খাবার আসবে।',
+            'skip' => 'আজ এই বেলার খাবার আসবে না।',
+            'change' => 'জানানো হয়েছে। আপনার শাহিদার শিগগিরই ফোন করে অন্য খাবারের ব্যবস্থা করবেন।',
+        }]);
     }
 
     /** POST /api/v1/regular/orders/{order}/accept — "নেব" at today's higher price (F30). */

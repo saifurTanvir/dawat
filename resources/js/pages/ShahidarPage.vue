@@ -14,6 +14,27 @@
                 হাতে জমা টাকা <strong>{{ taka(day.cash_held_paisa) }}</strong> · দাওয়াত টিমকে বুঝিয়ে দিন
             </p>
 
+            <!-- F61: customers who will not eat today's dish — call, arrange, then mark it -->
+            <section v-if="day.meal_requests?.length" class="mt-4 rounded-[var(--radius-plate)] bg-turmeric-soft p-4" aria-labelledby="req-title">
+                <h2 id="req-title" class="font-semibold">আজ অন্য খাবার চান ({{ bn(day.meal_requests.filter((r) => !r.handled).length) }} জন বাকি)</h2>
+                <div v-for="r in day.meal_requests" :key="r.id" class="mt-3 border-t border-rule pt-3 first:mt-2 first:border-0 first:pt-0">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="font-semibold">{{ r.customer }} · {{ r.meal_slot_label }}</p>
+                            <p class="text-sm text-muted">{{ r.area }} · {{ r.address }}</p>
+                            <p class="mt-1 text-sm">রান্না ছিল: {{ r.menu_title || '—' }} <span class="text-muted">({{ r.kitchen }})</span></p>
+                            <p class="text-sm">চান: <strong>{{ r.wish }}</strong></p>
+                        </div>
+                        <CallButtons :phone="r.phone" :contact="r.contact" />
+                    </div>
+                    <p v-if="r.handled" class="mt-2 rounded-lg bg-leaf-soft px-3 py-2 text-sm">ব্যবস্থা হয়েছে<template v-if="r.handled_by"> ({{ r.handled_by }})</template><template v-if="r.handled_note">: {{ r.handled_note }}</template></p>
+                    <form v-else class="mt-2 flex gap-2" @submit.prevent="handleRequest(r)">
+                        <input v-model.trim="requestNotes[r.id]" class="field flex-1 text-base" maxlength="300" placeholder="কী ব্যবস্থা হলো, যেমন: সালমা আপার মাছ-ভাত" aria-label="কী ব্যবস্থা হলো" />
+                        <button type="submit" class="btn-primary w-auto shrink-0 px-4 text-sm" :disabled="busy">ব্যবস্থা হয়েছে</button>
+                    </form>
+                </div>
+            </section>
+
             <!-- F38: what is waiting right now, meal by meal -->
             <div class="mt-4 rounded-[var(--radius-plate)] bg-plate p-4">
                 <p class="font-semibold">এখন: তুলতে {{ bn(pickupCount) }}টা বক্স · পৌঁছাতে {{ bn(onTheWay.length) }}টা<template v-if="asking.length"> · ফোন {{ bn(asking.length) }}টা</template></p>
@@ -357,6 +378,22 @@ onBeforeUnmount(() => {
     clearInterval(timer);
     document.removeEventListener('visibilitychange', refreshIfVisible);
 });
+
+// F61
+const requestNotes = ref({});
+async function handleRequest(r) {
+    busy.value = true;
+    try {
+        const { data } = await api.post(`/shahidar/meal-choices/${r.id}/handled`, { note: requestNotes.value[r.id] || null });
+        notice.value = data.message;
+        const fresh = await api.get('/shahidar/today');
+        day.value.meal_requests = fresh.data.data.meal_requests;
+    } catch (e) {
+        notice.value = errorMessage(e);
+    } finally {
+        busy.value = false;
+    }
+}
 
 async function refreshCash() {
     try {

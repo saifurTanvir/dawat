@@ -6,6 +6,7 @@ use App\Actions\PublishPost;
 use App\Enums\MealSlot;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Api\V1\My\MyMenuController;
+use App\Http\Controllers\Api\V1\My\MyMenuNoticeController;
 use App\Http\Controllers\Controller;
 use App\Models\BoxReview;
 use App\Models\Kitchen;
@@ -19,6 +20,7 @@ use App\Services\Money\CookFees;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Posts\PlateSplit;
 use App\Services\Posts\PostForCook;
+use App\Services\Regular\TodayMenu;
 use App\Services\Reviews\BoxReviews;
 use App\Services\Reviews\Sales;
 use App\Support\ContactHours;
@@ -107,6 +109,8 @@ class ShahidarKitchenController extends Controller
             ],
             'slots' => $slots,
             'menus' => MyMenuController::rows($kitchen),
+            // F61
+            'menu_notices' => MyMenuNoticeController::rows($kitchen),
             // F56: shown under the price, as the cook sees it.
             'fees' => app(CookFees::class)->forApp($kitchen),
             'log' => ActForCook::today($kitchen),
@@ -208,6 +212,18 @@ class ShahidarKitchenController extends Controller
             fn () => KitchenMenu::updateOrCreate(['kitchen_id' => $kitchen->id, 'meal_slot' => $slot->value], MyMenuController::attributes($data)));
 
         return response()->json(['data' => MyMenuController::rows($kitchen), 'message' => 'মেনু রাখা হয়েছে, গৃহিণীকে জানানো হয়েছে।']);
+    }
+
+    /** PUT /api/v1/shahidar/kitchens/{kitchen}/menu-notices/{slot} — F61: today's dish, for the cook. */
+    public function saveNotice(Request $request, Kitchen $kitchen, string $slot, TodayMenu $menu): JsonResponse
+    {
+        $this->allow($request, $kitchen);
+        $slot = MealSlot::tryFrom($slot) ?? abort(404);
+        $data = MyMenuNoticeController::validateTitle($request);
+        $this->act->run($kitchen, $request->user(), 'menu_notice', "আজ {$slot->label()}-এর রান্না জানানো হয়েছে: {$data['title']}",
+            fn () => $menu->announce($kitchen, $slot, $data['title'], ActForCook::role($request->user()), $request->user()));
+
+        return response()->json(['data' => MyMenuNoticeController::rows($kitchen), 'message' => 'গ্রাহককে জানানো হয়েছে।']);
     }
 
     /** DELETE /api/v1/shahidar/kitchens/{kitchen}/menus/{slot} */

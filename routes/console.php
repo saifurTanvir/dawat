@@ -23,3 +23,5 @@ Schedule::command('bills:issue')->dailyAt('07:10')->timezone('Asia/Dhaka')->with
 
 // F43: cooks' daily menus post themselves at their time.
 Schedule::command('posts:daily-menus')->everyMinute()->withoutOverlapping();
+// F61: from 8 am, daily menus tell regular customers what is cooking today.
+Schedule::command('menus:announce')->everyFiveMinutes()->withoutOverlapping();

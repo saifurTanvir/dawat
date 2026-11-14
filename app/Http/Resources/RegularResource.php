@@ -7,6 +7,7 @@ use App\Enums\OrderStatus;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Services\Orders\BookingPlanner;
+use App\Services\Regular\TodayMenu;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -37,6 +38,8 @@ class RegularResource extends JsonResource
             'weekdays' => $this->weekdays,
             'booking_summary' => $this->bookingSummary(),
             'kitchen' => $pairing ? ['name' => $pairing->kitchen->display_name] : null,
+            // F61: what each meal's cook is making today, and the customer's answer.
+            'today_menu' => app(TodayMenu::class)->forCustomer($this->resource),
             'shahidar' => $pairing ? ['name' => $pairing->shahidar->name, 'phone' => $pairing->shahidar->phone] : null,
             'today' => $this->whenLoaded('todayOrders', fn () => $this->todayOrders->map(fn (Order $o) => [
                 'id' => $o->id,
