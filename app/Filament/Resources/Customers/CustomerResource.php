@@ -13,6 +13,7 @@ use App\Filament\RelationManagers\CustomerReviewsRelationManager;
 use App\Filament\Resources\Bills\BillResource;
 use App\Filament\Resources\Customers\Pages\ListCustomers;
 use App\Filament\Resources\Customers\Pages\ViewCustomer;
+use App\Filament\Support\LocationField;
 use App\Filament\Support\PhoneField;
 use App\Models\Area;
 use App\Models\Bill;
@@ -25,6 +26,7 @@ use App\Services\Orders\BookingPlanner;
 use App\Services\Otp\LoginHelp;
 use App\Services\Regular\PairingSuggester;
 use App\Support\ContactHours;
+use App\Support\Geo\Geocoder;
 use App\Support\Geo\MapLink;
 use App\Support\Roles;
 use BackedEnum;
@@ -112,6 +114,8 @@ class CustomerResource extends Resource
             PhoneField::make()->helperText('এই নম্বরে OTP দিয়ে গ্রাহক নিজেও অ্যাপে দেখতে পারবেন।'),
             TextInput::make('name')->label('নাম')->required()->maxLength(60),
             ...self::bookingFields(),
+            // F62: the home pin, to find the nearest free cook
+            LocationField::make('where'),
         ];
     }
 
@@ -119,14 +123,16 @@ class CustomerResource extends Resource
     {
         return DB::transaction(function () use ($data) {
             $user = app(EnsurePerson::class)($data['phone'], $data['name'], Roles::BUYER);
-            if ($user->customer) {
-                // Asking again after stopping, or re-entered by an admin: update in place.
-                $user->customer->fill(self::bookingData($data))->save();
-
-                return $user->customer;
+            $customer = $user->customer ?? new Customer(['user_id' => $user->id, 'source' => 'admin']);
+            // Asking again after stopping, or re-entered by an admin: update in place.
+            $customer->fill(self::bookingData($data));
+            // F62: a home pin given in the form
+            if ($point = app(Geocoder::class)->point($data['where'] ?? null)) {
+                $customer->location = $point;
             }
+            $customer->save();
 
-            return Customer::create([...self::bookingData($data), 'user_id' => $user->id, 'source' => 'admin']);
+            return $customer;
         });
     }
 
@@ -202,18 +208,11 @@ class CustomerResource extends Resource
             ->label('বাসার পিন')
             ->icon(Heroicon::OutlinedMapPin)
             ->color('gray')
-            ->modalDescription('গ্রাহকের পাঠানো লোকেশন (গুগল ম্যাপ বা হোয়াটসঅ্যাপ লিংক) বা "23.78, 90.42" পেস্ট করুন। শুধু অ্যাডমিনরা দেখবেন; কাছের খালি গৃহিণী খুঁজতে লাগে।')
-            ->schema([
-                TextInput::make('where')->label('লোকেশন লিংক বা অক্ষাংশ, দ্রাঘিমাংশ')
-                    ->required()
-                    ->rule(fn () => function (string $attribute, $value, \Closure $fail) {
-                        if (! MapLink::parse($value)) {
-                            $fail('এখান থেকে লোকেশন পড়া গেল না। গুগল ম্যাপের লিংক বা "23.78, 90.42" দিন।');
-                        }
-                    }),
-            ])
+            ->modalDescription('গ্রাহকের পাঠানো লোকেশন লিংক পেস্ট করুন, তাঁর বাসায় থাকলে "এখানকার লোকেশন" চাপুন, বা ঠিকানা খুঁজুন। শুধু অ্যাডমিনরা দেখবেন; কাছের খালি গৃহিণী খুঁজতে লাগে।')
+            ->fillForm(fn (Customer $record) => ['where' => $record->location ? sprintf('%.6f, %.6f', $record->location->lat, $record->location->lng) : null])
+            ->schema([LocationField::make('where', 'বাসার লোকেশন', required: true)])
             ->action(function (Customer $record, array $data) {
-                $record->location = MapLink::parse($data['where']);
+                $record->location = app(Geocoder::class)->point($data['where']);
                 $record->save();
                 Notification::make()->title('বাসার পিন রাখা হয়েছে')->success()->send();
             });

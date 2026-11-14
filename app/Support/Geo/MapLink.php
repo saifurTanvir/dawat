@@ -16,7 +16,7 @@ final class MapLink
         }
         $text = strtr($text, ['০' => '0', '১' => '1', '২' => '2', '৩' => '3', '৪' => '4', '৫' => '5', '৬' => '6', '৭' => '7', '৮' => '8', '৯' => '9']);
 
-        if (! preg_match('/(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{2,3}\.\d{3,})/', urldecode($text), $m)) {
+        if (! preg_match('/(-?\d{1,2}\.\d{2,})\s*,\s*(-?\d{2,3}\.\d{2,})/', urldecode($text), $m)) {
             return null;
         }
         [$lat, $lng] = [(float) $m[1], (float) $m[2]];

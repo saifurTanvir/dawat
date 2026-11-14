@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Auth\OtpController;
 use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\FeedController;
+use App\Http\Controllers\Api\V1\GeocodeController;
 use App\Http\Controllers\Api\V1\HistoryController;
 use App\Http\Controllers\Api\V1\HomeController;
 use App\Http\Controllers\Api\V1\ImpersonationController;
@@ -82,6 +83,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/impersonate/end', [ImpersonationController::class, 'end'])->name('impersonate.end');
         Route::post('/auth/logout', [OtpController::class, 'logout'])->name('auth.logout');
         Route::get('/me', [MeController::class, 'show'])->name('me');
+        // F62: find a home pin from an address or a map link
+        Route::get('/geocode', GeocodeController::class)->middleware('throttle:20,1')->name('geocode');
         Route::post('/push/subscribe', [PushController::class, 'subscribe'])->middleware('throttle:comments')->name('push.subscribe');
         Route::delete('/push/subscribe', [PushController::class, 'unsubscribe'])->name('push.unsubscribe');
         Route::patch('/me', [MeController::class, 'update'])->name('me.update');
