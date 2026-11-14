@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Kitchens\Schemas;
 
 use App\Models\Kitchen;
 use App\Services\Feed\PostReach;
+use App\Services\Otp\LoginHelp;
 use App\Support\ContactHours;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -25,6 +26,10 @@ class KitchenInfolist
                         TextEntry::make('status')->label('অবস্থা')->badge(),
                         TextEntry::make('user.name')->label('গৃহিণী')->placeholder('—'),
                         TextEntry::make('user.phone')->label('ফোন')->copyable(),
+                        // F57
+                        TextEntry::make('number_check')->label('নম্বর যাচাই')
+                            ->state(fn ($record) => LoginHelp::label($record->user))
+                            ->badge()->color(fn ($record) => $record->user?->phone_verified_at ? 'success' : 'warning'),
                         TextEntry::make('call_now')->label('কল করা যাবে?')
                             ->state(fn (Kitchen $record) => ContactHours::adminLine($record->user))
                             ->url(fn (Kitchen $record) => ContactHours::whatsappUrl($record->user->phone), shouldOpenInNewTab: true)

@@ -66,6 +66,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     // F1: phone + OTP sign-in
     Route::middleware('throttle:otp')->prefix('auth')->name('auth.')->group(function () {
         Route::post('/otp', [OtpController::class, 'request'])->middleware('throttle:otp-send')->name('otp');
+        // F57: sign up without a code, or get a code when the account exists
+        Route::post('/start', [OtpController::class, 'start'])->middleware('throttle:otp-send')->name('start');
         Route::post('/verify', [OtpController::class, 'verify'])->name('verify');
         // F50: when the SMS does not arrive
         Route::post('/link', [OtpController::class, 'link'])->name('link');
