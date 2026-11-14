@@ -104,7 +104,8 @@ class MoneyTest extends TestCase
             ->assertHasNoActionErrors();
 
         $this->assertSame(34000, (int) Settlement::where('kind', 'shahidar')->value('amount_paisa'));
-        $this->assertSame(30000, (int) Settlement::where('kind', 'cook')->value('amount_paisa'));
+        // F56: two ৳150 boxes less the default flat Dawat fee of ৳10 a plate.
+        $this->assertSame(28000, (int) Settlement::where('kind', 'cook')->value('amount_paisa'));
         $this->assertSame(0, Order::whereNull('cook_settlement_id')->count());
         $this->assertTrue(app(Settlements::class)->cooksDue()->isEmpty());
         $this->assertTrue(app(Settlements::class)->shahidarCash()->isEmpty());
