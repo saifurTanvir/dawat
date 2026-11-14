@@ -32,6 +32,9 @@
                 <span aria-hidden="true" class="text-leaf">›</span>
             </RouterLink>
 
+            <!-- F61: today's dish, and the customer's answer -->
+            <TodayMenuCard v-if="booking.today_menu?.length" :meals="booking.today_menu" @updated="onChoice" />
+
             <!-- F45: meals of the booking with no box yet today, and why -->
             <div v-if="booking.today_missing?.length" class="rounded-[var(--radius-plate)] bg-plate p-5">
                 <h2 class="font-semibold">আজ যে বেলায় বক্স নেই</h2>
@@ -222,6 +225,7 @@ import ContactHours from '@/components/ContactHours.vue';
 import PushToggle from '@/components/PushToggle.vue';
 import ChoiceChip from '@/components/ChoiceChip.vue';
 import MapPicker from '@/components/MapPicker.vue';
+import TodayMenuCard from '@/components/TodayMenuCard.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
 import { clockText, taka } from '@/lib/format';
@@ -255,6 +259,11 @@ const todayIso = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).fo
 
 function dateText(iso) {
     return new Intl.DateTimeFormat('bn-BD', { day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`));
+}
+
+function onChoice(data) {
+    booking.value = data.data;
+    notice.value = data.message;
 }
 
 async function act(request) {

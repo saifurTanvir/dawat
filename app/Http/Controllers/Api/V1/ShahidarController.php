@@ -7,6 +7,7 @@ use App\Enums\MealSlot;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Post\PostForCookRequest;
 use App\Models\Kitchen;
+use App\Models\MealChoice;
 use App\Models\Order;
 use App\Models\Pairing;
 use App\Models\Post;
@@ -18,6 +19,7 @@ use App\Services\Orders\Delivery;
 use App\Services\Orders\Settlements;
 use App\Services\Posts\PlateSplit;
 use App\Services\Posts\PostForCook;
+use App\Services\Regular\TodayMenu;
 use App\Support\ContactHours;
 use App\Support\DhakaTime;
 use Illuminate\Http\JsonResponse;
@@ -76,6 +78,8 @@ class ShahidarController extends Controller
             'posts' => $this->todayPosts($me, $pairings->pluck('kitchen_id')->merge($orders->pluck('kitchen_id'))->unique()->values()),
             // F28: cash collected and not yet handed to Dawat.
             'cash_held_paisa' => $this->money->cashHeldBy($me),
+            // F61: my customers who will not eat today's dish and want something else.
+            'meal_requests' => TodayMenu::requestsToday($me)->map(fn (MealChoice $c) => self::mealRequest($c))->values(),
         ]]);
     }
 
@@ -173,6 +177,37 @@ class ShahidarController extends Controller
             // F56
             'fees' => app(CookFees::class)->forApp($kitchen),
         ]]);
+    }
+
+    public static function mealRequest(MealChoice $c): array
+    {
+        $user = $c->customer->user;
+
+        return [
+            'id' => $c->id,
+            'meal_slot_label' => $c->meal_slot->label(),
+            'customer' => $user->name,
+            'phone' => $user->phone,
+            'area' => $c->customer->area?->name,
+            'address' => $c->customer->address,
+            'kitchen' => $c->kitchen?->display_name,
+            'menu_title' => $c->menu_title,
+            'wish' => $c->wish,
+            'handled' => $c->status === 'handled',
+            'handled_note' => $c->handled_note,
+            'handled_by' => $c->handler?->name,
+            'contact' => ContactHours::card($user, [$c->meal_slot], 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। আজ '.$c->meal_slot->label().'-এ কী খেতে চান জানতে ফোন করছি।'),
+        ];
+    }
+
+    /** POST /api/v1/shahidar/meal-choices/{choice}/handled {note} — F61: "ব্যবস্থা হয়েছে". */
+    public function handleMealChoice(Request $request, MealChoice $choice, TodayMenu $menu): JsonResponse
+    {
+        abort_unless($choice->shahidar_id === $request->user()->id && $choice->choice === 'change', 404);
+        $data = $request->validate(['note' => ['nullable', 'string', 'max:300']]);
+        $menu->handle($choice, $request->user(), $data['note'] ?? null);
+
+        return response()->json(['message' => 'ব্যবস্থা হয়েছে বলে রাখা হলো, অ্যাডমিনকে জানানো হয়েছে।']);
     }
 
     /** Cooks a shahidar may post for: theirs, paired with their customers, or in their areas. */

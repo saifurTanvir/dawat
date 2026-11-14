@@ -99,6 +99,9 @@
                 </template>
             </div>
 
+            <!-- F61: today's dish for the cook's regular customer -->
+            <MenuNoticeCard v-if="data.menu_notices" :rows="data.menu_notices" :endpoint="`/shahidar/kitchens/${id}/menu-notices`" :for-cook="false" @saved="data.menu_notices = $event" />
+
             <!-- Daily menus -->
             <div class="mt-4 rounded-[var(--radius-plate)] bg-plate p-4">
                 <h2 class="font-semibold">প্রতিদিনের মেনু</h2>
@@ -158,6 +161,7 @@
 import { onMounted, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import CookShare from '@/components/CookShare.vue';
+import MenuNoticeCard from '@/components/MenuNoticeCard.vue';
 import CallButtons from '@/components/CallButtons.vue';
 import PlateSplitBar from '@/components/PlateSplitBar.vue';
 import ReviewList from '@/components/ReviewList.vue';

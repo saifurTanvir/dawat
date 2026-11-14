@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\KitchenController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\My\MyBookingController;
 use App\Http\Controllers\Api\V1\My\MyMenuController;
+use App\Http\Controllers\Api\V1\My\MyMenuNoticeController;
 use App\Http\Controllers\Api\V1\My\MyPostController;
 use App\Http\Controllers\Api\V1\My\MySalesController;
 use App\Http\Controllers\Api\V1\OrderController;
@@ -121,6 +122,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/my/bookings/off', [MyBookingController::class, 'off'])->middleware('can:publish-posts')->name('my.bookings.off');
         // F43: daily menus that post themselves
         Route::get('/my/menus', [MyMenuController::class, 'index'])->name('my.menus.index');
+        // F61: today's dish, told to the regular customer
+        Route::get('/my/menu-notices', [MyMenuNoticeController::class, 'index'])->name('my.menu-notices.index');
+        Route::put('/my/menu-notices/{slot}', [MyMenuNoticeController::class, 'save'])->middleware('can:publish-posts')->name('my.menu-notices.save');
         // F47: sales, reviews and history
         Route::get('/my/sales', [MySalesController::class, 'index'])->name('my.sales');
         Route::post('/my/reviews/{review}/reply', [MySalesController::class, 'reply'])->middleware('throttle:comments')->name('my.reviews.reply');
@@ -152,6 +156,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('/kitchens/{kitchen}/ready', [ShahidarKitchenController::class, 'ready'])->name('kitchens.ready');
             Route::post('/kitchens/{kitchen}/off', [ShahidarKitchenController::class, 'off'])->name('kitchens.off');
             Route::put('/kitchens/{kitchen}/menus/{slot}', [ShahidarKitchenController::class, 'saveMenu'])->name('kitchens.menus.save');
+            // F61
+            Route::put('/kitchens/{kitchen}/menu-notices/{slot}', [ShahidarKitchenController::class, 'saveNotice'])->name('kitchens.menu-notices.save');
+            Route::post('/meal-choices/{choice}/handled', [ShahidarController::class, 'handleMealChoice'])->name('meal-choices.handled');
             Route::delete('/kitchens/{kitchen}/menus/{slot}', [ShahidarKitchenController::class, 'deleteMenu'])->name('kitchens.menus.destroy');
             Route::patch('/posts/{post}', [ShahidarKitchenController::class, 'updatePost'])->name('posts.update');
             Route::post('/posts/{post}/sold-out', [ShahidarKitchenController::class, 'soldOut'])->name('posts.sold-out');
@@ -167,6 +174,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::put('/regular', [RegularController::class, 'save'])->middleware('throttle:comments')->name('regular.save');
         // F26: skip today's box, days off
         Route::post('/regular/orders/{order}/skip', [RegularController::class, 'skip'])->name('regular.orders.skip');
+        // F61: "আজ খাব না" / "এই খাবার খাব না"
+        Route::post('/regular/choices', [RegularController::class, 'choose'])->middleware('throttle:comments')->name('regular.choices');
         Route::post('/regular/orders/{order}/accept', [RegularController::class, 'accept'])->name('regular.orders.accept');
         Route::post('/regular/pauses', [RegularController::class, 'pause'])->middleware('throttle:comments')->name('regular.pauses.store');
         Route::delete('/regular/pauses/{pause}', [RegularController::class, 'unpause'])->name('regular.pauses.destroy');
