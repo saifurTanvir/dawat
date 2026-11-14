@@ -23,13 +23,17 @@ class UsersTable
                 TextColumn::make('name')->label('নাম')->searchable()->placeholder('—'),
                 TextColumn::make('roles.name')->label('রোল')->badge()->color('gray'),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
+                // F57
+                TextColumn::make('phone_verified_at')->label('নম্বর')->badge()
+                    ->state(fn ($record) => $record->phone_verified_at ? 'যাচাই হয়েছে' : 'যাচাই হয়নি')
+                    ->color(fn ($record) => $record->phone_verified_at ? 'success' : 'warning'),
                 TextColumn::make('created_at')->label('যোগ দিয়েছেন')->since()->sortable(),
             ])
             ->filters([
                 SelectFilter::make('status')->label('অবস্থা')->options(UserStatus::class),
                 // F50
                 SelectFilter::make('verified_via')->label('নম্বর যাচাই')
-                    ->options(['sms' => 'SMS-এ যাচাই', 'whatsapp' => 'হোয়াটসঅ্যাপ কোডে (SMS-এ না)', 'link' => 'লগইন লিংকে (SMS-এ না)']),
+                    ->options(['sms' => 'SMS-এ যাচাই', 'whatsapp' => 'হোয়াটসঅ্যাপ কোডে (SMS-এ না)', 'link' => 'লগইন লিংকে (SMS-এ না)', 'call' => 'ফোনে কথা বলে (অ্যাডমিন)', 'none' => 'যাচাই হয়নি (কোড ছাড়া খোলা)']),
                 SelectFilter::make('roles')->label('রোল')->relationship('roles', 'name')
                     ->options(array_combine(Roles::all(), Roles::all())),
             ])

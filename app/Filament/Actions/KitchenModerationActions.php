@@ -22,7 +22,10 @@ class KitchenModerationActions
                 ->requiresConfirmation()
                 ->modalDescription('অনুমোদনের আগে গৃহিণীর সাথে ফোনে কথা বলে নিশ্চিত হয়েছেন তো?')
                 ->visible(fn (Kitchen $record) => $record->status !== KitchenStatus::Approved)
-                ->action(function (Kitchen $record) {
+                // F57: a cook who signed up without a code is verified on the call.
+                ->schema(fn (Kitchen $record) => LoginHelpActions::callCheckbox($record->user))
+                ->action(function (Kitchen $record, array $data) {
+                    LoginHelpActions::confirmCall($record->user, $data);
                     $record->approve(auth()->user());
                     Notification::make()->title('অনুমোদন দেওয়া হয়েছে')->success()->send();
                 }),

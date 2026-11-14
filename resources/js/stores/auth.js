@@ -51,6 +51,20 @@ export const useAuthStore = defineStore('auth', {
             }
         },
 
+        /**
+         * F57: a new number is signed up at once (no SMS); an existing account gets a code.
+         * Returns the server's answer; mode is 'signed_up' or 'code'.
+         */
+        async start(phone) {
+            const { data } = await api.post('/auth/start', { phone, device_name: 'pwa' });
+            if (data.mode === 'signed_up') {
+                this.token = data.token;
+                this.user = data.user;
+                setToken(data.token);
+            }
+            return data;
+        },
+
         async requestCode(phone) {
             const { data } = await api.post('/auth/otp', { phone });
             return data;

@@ -11,6 +11,7 @@ use App\Support\Seo;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Forms\Components\Checkbox;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Validation\ValidationException;
@@ -28,6 +29,7 @@ final class LoginHelpActions
             self::resend($userOf),
             self::whatsappCode($userOf),
             self::loginLink($userOf),
+            self::verifiedByCall($userOf),
         ])->label('লগইনে সাহায্য')->icon(Heroicon::OutlinedKey)->button()->color('gray');
     }
 
@@ -108,5 +110,47 @@ final class LoginHelpActions
                     ])
                     ->send();
             });
+    }
+
+    /** F57: the number of someone who signed up without a code, confirmed on a call. */
+    public static function verifiedByCall(Closure $userOf): Action
+    {
+        return Action::make('verifiedByCall')
+            ->visible(fn ($record) => self::allowed($userOf)($record) && LoginHelp::isUnverified($userOf($record)))
+            ->label('ফোনে কথা বলে নম্বর যাচাই করেছি')
+            ->icon(Heroicon::OutlinedPhoneArrowUpRight)
+            ->color('success')
+            ->requiresConfirmation()
+            ->modalDescription(fn ($record) => 'এই নম্বরে ('.$userOf($record)->phone.') ফোন করে মানুষটার সাথে কথা হয়েছে, নম্বরটা তাঁরই।')
+            ->action(function ($record) use ($userOf) {
+                LoginHelp::markVerified($userOf($record), 'call', auth()->id());
+                Notification::make()->title('নম্বর যাচাই হয়েছে')->success()->send();
+            });
+    }
+
+    /**
+     * F57: before giving work to someone whose number is not verified, the admin
+     * confirms they called. Add to an action's schema; then call confirmCall().
+     */
+    public static function callCheckbox(?User $user): array
+    {
+        if (! $user || ! LoginHelp::isUnverified($user)) {
+            return [];
+        }
+
+        return [
+            Checkbox::make('called_and_verified')
+                ->label("ফোন করে নম্বর যাচাই করেছি ({$user->phone})")
+                ->helperText('এই মানুষটা কোড ছাড়া অ্যাকাউন্ট খুলেছেন, নম্বর এখনো যাচাই হয়নি।')
+                ->accepted()
+                ->validationMessages(['accepted' => 'আগে ফোন করে নম্বর যাচাই করুন।']),
+        ];
+    }
+
+    public static function confirmCall(?User $user, array $data): void
+    {
+        if ($user && LoginHelp::isUnverified($user) && ! empty($data['called_and_verified'])) {
+            LoginHelp::markVerified($user, 'call', auth()->id());
+        }
     }
 }

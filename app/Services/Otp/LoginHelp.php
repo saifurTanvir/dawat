@@ -102,6 +102,15 @@ class LoginHelp
     }
 
     /** How the number was confirmed; an SMS confirmation always wins. */
+    /** F57: signed up without a code; an admin confirms the number on a call. */
+    public const UNVERIFIED = 'none';
+
+    /** Signed up on their own without a code (not added by an admin) and not yet confirmed. */
+    public static function isUnverified(User $user): bool
+    {
+        return $user->verified_via === self::UNVERIFIED && $user->phone_verified_at === null;
+    }
+
     public static function markVerified(User $user, string $via, ?int $by = null): void
     {
         if ($user->verified_via === 'sms' && $via !== 'sms') {
@@ -123,6 +132,8 @@ class LoginHelp
             'sms' => 'SMS-এ যাচাই',
             'whatsapp' => 'SMS-এ যাচাই হয়নি — অ্যাডমিন'.($by ? " ({$by->name})" : '').' হোয়াটসঅ্যাপে কোড দিয়েছেন',
             'link' => 'SMS-এ যাচাই হয়নি — অ্যাডমিন'.($by ? " ({$by->name})" : '').' লগইন লিংক দিয়েছেন',
+            'call' => 'অ্যাডমিন'.($by ? " ({$by->name})" : '').' ফোনে কথা বলে যাচাই করেছেন',
+            self::UNVERIFIED => 'নম্বর যাচাই হয়নি — কোড ছাড়া অ্যাকাউন্ট খুলেছেন',
             default => $user->phone_verified_at ? 'যাচাই হয়েছে' : 'এখনো ঢোকেননি',
         };
     }

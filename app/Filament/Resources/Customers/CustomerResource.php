@@ -6,6 +6,7 @@ use App\Actions\EnsurePerson;
 use App\Actions\PairCustomer;
 use App\Enums\CustomerStatus;
 use App\Enums\MealSlot;
+use App\Filament\Actions\LoginHelpActions;
 use App\Filament\Actions\RemovalActions;
 use App\Filament\RelationManagers\CustomerOrdersRelationManager;
 use App\Filament\RelationManagers\CustomerReviewsRelationManager;
@@ -21,6 +22,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Services\Orders\Billing;
 use App\Services\Orders\BookingPlanner;
+use App\Services\Otp\LoginHelp;
 use App\Services\Regular\PairingSuggester;
 use App\Support\ContactHours;
 use App\Support\Geo\MapLink;
@@ -246,8 +248,11 @@ class CustomerResource extends Resource
                     ->helperText('এই এলাকার শাহিদার, যার হাতে কম গ্রাহক তিনি আগে। একজন শাহিদার অনেকজনকে দিতে পারেন।'),
                 Textarea::make('reason')->label('বদলানোর কারণ')->maxLength(300)->rows(2)
                     ->visible(fn () => $record->pairing !== null)->required(fn () => $record->pairing !== null),
+                // F57
+                ...LoginHelpActions::callCheckbox($record->user),
             ])
             ->action(function (Customer $record, array $data) {
+                LoginHelpActions::confirmCall($record->user, $data);
                 $suggested = self::suggestion($record);
                 $pairing = app(PairCustomer::class)(
                     $record,
@@ -344,6 +349,10 @@ class CustomerResource extends Resource
             Section::make('গ্রাহক')->columns(3)->schema([
                 TextEntry::make('user.name')->label('নাম'),
                 TextEntry::make('user.phone')->label('ফোন')->copyable(),
+                // F57
+                TextEntry::make('number_check')->label('নম্বর যাচাই')
+                    ->state(fn ($record) => LoginHelp::label($record->user))
+                    ->badge()->color(fn ($record) => $record->user?->phone_verified_at ? 'success' : 'warning'),
                 TextEntry::make('status')->label('অবস্থা')->badge(),
                 TextEntry::make('call_now')->label('কল করা যাবে?')->columnSpan(2)
                     ->state(fn (Customer $record) => ContactHours::adminLine($record->user, $record->todayOrders()->pluck('meal_slot')->all()))

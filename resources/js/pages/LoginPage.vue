@@ -4,8 +4,8 @@
             {{ step === 'phone' ? 'মোবাইল নম্বর দিয়ে ঢুকুন' : 'SMS-এর কোডটি দিন' }}
         </h1>
         <p class="mt-1 text-muted">
-            <template v-if="step === 'phone'">পাসওয়ার্ড লাগবে না। নম্বরে একটা কোড যাবে।</template>
-            <template v-else>{{ phoneShown }} নম্বরে {{ bn(codeLength) }} অঙ্কের কোড পাঠানো হয়েছে।</template>
+            <template v-if="step === 'phone'">পাসওয়ার্ড লাগবে না। নতুন হলে নম্বর দিলেই অ্যাকাউন্ট খুলে যাবে।</template>
+            <template v-else>{{ phoneShown }} নম্বরে আগে থেকেই অ্যাকাউন্ট আছে। ঢুকতে {{ bn(codeLength) }} অঙ্কের কোডটি দিন, যা এইমাত্র SMS-এ গেছে।</template>
         </p>
 
         <form v-if="step === 'phone'" class="mt-6" novalidate @submit.prevent="sendCode">
@@ -24,7 +24,7 @@
             />
             <p v-if="error" id="phone-error" class="error-text" role="alert">{{ error }}</p>
             <button type="submit" class="btn-primary mt-5" :disabled="busy">
-                {{ busy ? 'কোড পাঠানো হচ্ছে…' : 'কোড পাঠান' }}
+                {{ busy ? 'একটু অপেক্ষা…' : 'এগিয়ে যান' }}
             </button>
         </form>
 
@@ -122,11 +122,21 @@ function startCooldown(seconds) {
     }, 1000);
 }
 
+function goNext() {
+    const next = typeof route.query.next === 'string' && route.query.next.startsWith('/') ? route.query.next : '/';
+    router.replace(next);
+}
+
 async function sendCode() {
     error.value = '';
     busy.value = true;
     try {
-        const data = await auth.requestCode(phone.value);
+        // F57: the first time, a new number goes straight in; resending asks for a code again.
+        const data = step.value === 'phone' ? await auth.start(phone.value) : await auth.requestCode(phone.value);
+        if (data.mode === 'signed_up') {
+            goNext();
+            return;
+        }
         devAnyCode.value = Boolean(data.dev_any_code);
         step.value = 'code';
         startCooldown(data.resend_after ?? 60);
@@ -148,8 +158,7 @@ async function verify() {
     busy.value = true;
     try {
         await auth.verifyCode(phone.value, code.value);
-        const next = typeof route.query.next === 'string' && route.query.next.startsWith('/') ? route.query.next : '/';
-        router.replace(next);
+        goNext();
     } catch (e) {
         error.value = errorMessage(e);
         code.value = '';
