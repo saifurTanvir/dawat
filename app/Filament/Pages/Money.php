@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Kitchen;
 use App\Models\Settlement;
 use App\Models\User;
+use App\Services\Money\CookFees;
 use App\Services\Orders\Billing;
 use App\Services\Orders\Settlements;
 use BackedEnum;
@@ -42,7 +43,8 @@ class Money extends Page
             'owing' => $money->customersOwing(),
             'dues' => app(Billing::class)->dues()->filter(fn (array $r) => $r['customer']->paysByBill() || $r['billed_due'] > 0)->values(),
             'recent' => Settlement::with(['kitchen', 'shahidar'])->latest('id')->limit(15)->get(),
-            'commission' => (float) config('dawat.orders.commission_percent', 0),
+            // F56
+            'feesLine' => collect(app(CookFees::class)->rules(null))->map(fn ($r, $part) => CookFees::PART_LABELS[$part].' '.CookFees::ruleText($r))->implode(', ').' (এলাকা বা গৃহিণীভেদে আলাদা হতে পারে)।',
         ];
     }
 

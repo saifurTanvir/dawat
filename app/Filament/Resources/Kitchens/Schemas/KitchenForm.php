@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Kitchens\Schemas;
 
+use App\Filament\Support\FeeFields;
 use App\Filament\Support\ReachFields;
 use App\Support\PhoneNumber;
 use Filament\Forms\Components\Select;
@@ -25,6 +26,8 @@ class KitchenForm
                             ->helperText('শাহিদার এই ঠিকানা থেকে নিয়মিত গ্রাহকের খাবার তুলবেন। ক্রেতারা কখনো দেখেন না।'),
                         TextInput::make('bfsa_reg_no')->label('BFSA রেজিস্ট্রেশন নম্বর')->maxLength(50),
                     ]),
+                // F56
+                FeeFields::section('শুধু এই গৃহিণীর জন্য। খালি রাখলে এলাকার নিয়ম, এলাকারও না থাকলে "সবার জন্য" নিয়ম চলবে। নতুন বক্স থেকে লাগবে।'),
                 Section::make('কোথায় দেখাবে (পরিধি)')
                     ->description('এই রান্নাঘরের পোস্ট কতদূর পর্যন্ত দেখাবে। বদলালে আজকের চালু পোস্ট আর পরের সব পোস্টে লাগবে।')
                     ->schema(ReachFields::make(relationship: true)),

@@ -117,6 +117,7 @@
                         <label class="text-xs text-muted">প্লেট<input v-model.number="menuForm.plates_total" class="field text-base" type="number" min="1" max="20" /></label>
                         <label class="text-xs text-muted">কখন<input v-model="menuForm.post_at" class="field text-base" type="time" /></label>
                     </div>
+                    <CookShare :price-taka="menuForm.price_taka" :fees="data.fees" :for-cook="false" />
                     <div class="flex flex-wrap gap-1 text-xs">
                         <label v-for="(d, i) in days" :key="i" class="flex items-center gap-1 rounded-full border border-rule px-2 py-1"><input v-model="menuForm.weekdays" type="checkbox" :value="i" class="accent-leaf" /> {{ d }}</label>
                     </div>
@@ -156,6 +157,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import CookShare from '@/components/CookShare.vue';
 import CallButtons from '@/components/CallButtons.vue';
 import PlateSplitBar from '@/components/PlateSplitBar.vue';
 import ReviewList from '@/components/ReviewList.vue';

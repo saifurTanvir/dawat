@@ -43,6 +43,7 @@
                     <span class="mb-1 block text-muted">কয় প্লেট</span>
                     <input v-model.number="form.plates_total" class="field" inputmode="numeric" type="number" min="1" max="20" />
                 </label>
+                <CookShare class="col-span-2 mt-0" :price-taka="form.price_taka" :fees="fees" />
                 <label class="block text-sm">
                     <span class="mb-1 block text-muted">কখন পোস্ট হবে</span>
                     <input v-model="form.post_at" class="field" type="time" min="06:00" max="22:00" />
@@ -76,8 +77,12 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
+import CookShare from '@/components/CookShare.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
+
+// F56: what comes off her price, from GET /kitchen
+defineProps({ fees: { type: Object, default: null } });
 
 const slots = { breakfast: 'সকালের নাস্তা', lunch: 'দুপুর', snack: 'বিকেলের নাস্তা', dinner: 'রাত' };
 const days = ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহস্পতি', 'শুক্র', 'শনি'];

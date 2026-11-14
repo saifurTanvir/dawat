@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'slug', 'center', 'radius_m', 'delivery_fee_paisa', 'is_active', 'sort_order'])]
+#[Fillable(['platform_fee_type', 'platform_fee_value', 'delivery_cut_type', 'delivery_cut_value', 'name', 'slug', 'center', 'radius_m', 'delivery_fee_paisa', 'is_active', 'sort_order'])]
 class Area extends Model
 {
     /** @use HasFactory<AreaFactory> */

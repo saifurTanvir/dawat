@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\Kitchen;
 use App\Models\KitchenMenu;
 use App\Services\Images\UnreadablePhotoException;
+use App\Services\Money\CookFees;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Posts\PostForCook;
 use Filament\Actions\Action;
@@ -45,7 +46,8 @@ final class PostForCookActions
             ->schema([
                 Select::make('meal_slot')->label('কোন বেলা')->options(MealSlot::options())->required()->native(false),
                 TextInput::make('title')->label('খাবার')->required()->minLength(2)->maxLength(100)->placeholder('ভাত, মুরগির ঝোল, ডাল'),
-                TextInput::make('price_taka')->label('প্লেটের দাম (৳)')->numeric()->required()->minValue(20)->maxValue(2000),
+                TextInput::make('price_taka')->label('প্লেটের দাম (৳)')->numeric()->required()->minValue(20)->maxValue(2000)->live(debounce: 400)
+                    ->helperText(fn ($state, Kitchen $record) => CookFees::shareLine($record, (int) $state)),
                 TextInput::make('plates_total')->label('কয় প্লেট')->numeric()->required()->minValue(1)->maxValue(20)
                     ->helperText('নিয়মিত গ্রাহকদের প্লেট আগে যাবে, বাকিটা ফিডে।'),
                 Select::make('available_hours')->label('কতক্ষণ পাওয়া যাবে')->options(collect(range(1, 6))->mapWithKeys(fn ($h) => [$h => $h.' ঘণ্টা']))->required()->native(false),
@@ -92,7 +94,9 @@ final class PostForCookActions
                     ->schema([
                         Select::make('meal_slot')->label('বেলা')->options(MealSlot::options())->required()->native(false)->distinct(),
                         TextInput::make('title')->label('খাবার')->required()->maxLength(100)->columnSpan(3),
-                        TextInput::make('price_taka')->label('দাম (৳)')->numeric()->required()->minValue(20)->maxValue(2000),
+                        TextInput::make('price_taka')->label('দাম (৳)')->numeric()->required()->minValue(20)->maxValue(2000)->live(debounce: 400)
+                            // Inside the repeater $record may be the menu row; the cook is on the action.
+                            ->helperText(fn ($state, $record, $livewire) => CookFees::shareLine($record instanceof Kitchen ? $record : ($record?->kitchen ?? null), (int) $state)),
                         TextInput::make('plates_total')->label('প্লেট')->numeric()->required()->minValue(1)->maxValue(20),
                         TextInput::make('post_at')->label('কখন পোস্ট হবে')->type('time')->required()->default('10:00')->regex('/^([01]\d|2[0-3]):[0-5]\d(:\d\d)?$/')
                             ->helperText('ঢাকার সময়, যেমন ১০:০০'),

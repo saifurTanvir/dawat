@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
-#[Fillable([
+#[Fillable(['platform_fee_type', 'platform_fee_value', 'delivery_cut_type', 'delivery_cut_value',
     'user_id', 'display_name', 'area_id', 'pickup_address', 'location', 'status',
     'allow_call', 'allow_message', 'allow_comment', 'allow_order', 'contact_phone', 'contact_name', 'max_regular_customers', 'reach_m',
 ])]

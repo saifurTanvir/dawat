@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\MealSlot;
 use App\Enums\OrderStatus;
+use App\Services\Money\CookFees;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +16,16 @@ class Order extends Model
     protected $guarded = ['id'];
 
     protected $hidden = ['delivery_code_hash'];
+
+    /** F56: the cook's fees are fixed on each box when it is made or its food changes. */
+    protected static function booted(): void
+    {
+        static::saving(function (Order $order) {
+            if (! $order->exists || $order->isDirty(['food_paisa', 'plates', 'payment_method', 'receive', 'kitchen_id'])) {
+                app(CookFees::class)->stamp($order);
+            }
+        });
+    }
 
     protected function casts(): array
     {

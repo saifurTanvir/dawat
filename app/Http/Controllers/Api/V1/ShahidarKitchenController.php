@@ -15,6 +15,7 @@ use App\Models\Pairing;
 use App\Models\Post;
 use App\Services\Kitchens\ActForCook;
 use App\Services\Kitchens\CookActions;
+use App\Services\Money\CookFees;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Posts\PlateSplit;
 use App\Services\Posts\PostForCook;
@@ -106,6 +107,8 @@ class ShahidarKitchenController extends Controller
             ],
             'slots' => $slots,
             'menus' => MyMenuController::rows($kitchen),
+            // F56: shown under the price, as the cook sees it.
+            'fees' => app(CookFees::class)->forApp($kitchen),
             'log' => ActForCook::today($kitchen),
             // F47: what she sold and what customers said (shahidars may see who).
             'sales' => app(Sales::class)->forKitchen($kitchen, 7, withNames: true),

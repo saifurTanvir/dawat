@@ -22,12 +22,12 @@
         @endif
     </x-filament::section>
 
-    <x-filament::section heading="গৃহিণীদের পাওনা" :description="'পৌঁছানো বা রান্না-হয়ে-ফেরত আসা বক্সের খাবারের দাম'.($commission > 0 ? ', দাওয়াতের '.$commission.'% বাদে।' : '।')">
+    <x-filament::section heading="গৃহিণীদের পাওনা" :description="'পৌঁছানো বা রান্না-হয়ে-ফেরত আসা বক্সের খাবারের দাম, দাওয়াতের ফি আর ডেলিভারি খরচ বাদে। এখনকার সাধারণ নিয়ম: '.$feesLine">
         @if ($cooks->isEmpty())
             <p class="text-sm text-gray-500">কারো পাওনা বাকি নেই।</p>
         @else
             <table class="dawat-money w-full text-sm">
-                <thead><tr class="text-left text-gray-500"><th class="py-2">রান্নাঘর</th><th>সময়</th><th>বক্স</th><th class="r">খাবার</th><th class="r">কমিশন</th><th class="r">দিতে হবে</th><th></th></tr></thead>
+                <thead><tr class="text-left text-gray-500"><th class="py-2">রান্নাঘর</th><th>সময়</th><th>বক্স</th><th class="r">খাবার</th><th class="r">দাওয়াতের ফি</th><th class="r">ডেলিভারি</th><th class="r">দিতে হবে</th><th></th></tr></thead>
                 <tbody>
                     @foreach ($cooks as $row)
                         <tr class="border-t border-gray-200 dark:border-white/10">
@@ -36,6 +36,7 @@
                             <td>{{ $row['orders'] }}</td>
                             <td class="r">{{ $tk($row['gross']) }}</td>
                             <td class="r">{{ $tk($row['commission']) }}</td>
+                            <td class="r">{{ $tk($row['delivery']) }}</td>
                             <td class="r" style="font-weight:600">{{ $tk($row['payable']) }}</td>
                             <td class="r">{{ ($this->payCookAction)(['kitchen' => $row['kitchen']->id]) }}</td>
                         </tr>
