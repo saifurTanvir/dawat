@@ -177,13 +177,26 @@ class DeliveryTest extends TestCase
     {
         $this->actingAs(User::factory()->admin()->create());
 
-        Livewire::test(ManageStickers::class)->callAction('newSheet', ['pages' => 1])->assertHasNoActionErrors();
+        Livewire::test(ManageStickers::class)->callAction('newSheet', ['paper' => 'a4', 'pages' => 1])->assertHasNoActionErrors();
 
         $this->assertSame(32, Sticker::count());
         $batch = Sticker::value('batch');
-        $this->get("/admin/stickers/sheet/{$batch}")->assertOk()->assertSee('<svg', false)->assertSee(Sticker::first()->displayCode());
+        $this->get("/admin/stickers/sheet/{$batch}?paper=a4")->assertOk()->assertSee('<svg', false)->assertSee(Sticker::first()->displayCode())->assertSee('size: A4', false);
         $this->get('/admin/stickers')->assertOk();
         $this->get('/admin/orders')->assertOk();
+    }
+
+    public function test_thermal_labels_hold_four_stickers_each(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        Livewire::test(ManageStickers::class)->callAction('newSheet', ['paper' => 'thermal', 'pages' => 5])->assertHasNoActionErrors();
+
+        $this->assertSame(20, Sticker::count());
+        $html = $this->get('/admin/stickers/sheet/'.Sticker::value('batch'))->assertOk()
+            ->assertSee('size: 75mm 100mm', false)->assertSee(Sticker::latest('id')->first()->displayCode())->getContent();
+        $this->assertSame(5, substr_count($html, '<section class="label">'));
+        $this->assertSame(20, substr_count($html, '<div class="sticker">'));
     }
 
     public function test_sticker_codes_avoid_look_alike_characters(): void
