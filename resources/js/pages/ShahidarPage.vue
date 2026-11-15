@@ -14,6 +14,9 @@
                 হাতে জমা টাকা <strong>{{ taka(day.cash_held_paisa) }}</strong> · দাওয়াত টিমকে বুঝিয়ে দিন
             </p>
 
+            <!-- F64: guest plates -->
+            <ShahidarGuestMeals v-if="day.guest_meals?.length" :rows="day.guest_meals" @updated="onGuest" />
+
             <!-- F61: customers who will not eat today's dish — call, arrange, then mark it -->
             <section v-if="day.meal_requests?.length" class="mt-4 rounded-[var(--radius-plate)] bg-turmeric-soft p-4" aria-labelledby="req-title">
                 <h2 id="req-title" class="font-semibold">আজ অন্য খাবার চান ({{ bn(day.meal_requests.filter((r) => !r.handled).length) }} জন বাকি)</h2>
@@ -221,6 +224,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import CookShare from '@/components/CookShare.vue';
 import CallButtons from '@/components/CallButtons.vue';
+import ShahidarGuestMeals from '@/components/ShahidarGuestMeals.vue';
 import PlateSplitBar from '@/components/PlateSplitBar.vue';
 import PushToggle from '@/components/PushToggle.vue';
 import StickerScanner from '@/components/StickerScanner.vue';
@@ -378,6 +382,12 @@ onBeforeUnmount(() => {
     clearInterval(timer);
     document.removeEventListener('visibilitychange', refreshIfVisible);
 });
+
+// F64
+function onGuest(data) {
+    day.value.guest_meals = data.data;
+    notice.value = data.message;
+}
 
 // F61
 const requestNotes = ref({});

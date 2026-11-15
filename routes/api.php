@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\FeedController;
 use App\Http\Controllers\Api\V1\GeocodeController;
+use App\Http\Controllers\Api\V1\GuestMealController;
 use App\Http\Controllers\Api\V1\HistoryController;
 use App\Http\Controllers\Api\V1\HomeController;
 use App\Http\Controllers\Api\V1\ImpersonationController;
@@ -126,6 +127,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         // F43: daily menus that post themselves
         Route::get('/my/menus', [MyMenuController::class, 'index'])->name('my.menus.index');
         // F61: today's dish, told to the regular customer
+        // F64: guest meals the customer asked for; no customer names.
+        Route::get('/my/guest-meals', [GuestMealController::class, 'forCook'])->name('my.guest-meals.index');
+        Route::post('/my/guest-meals/{guest}/reply', [GuestMealController::class, 'reply'])->middleware('throttle:comments')->name('my.guest-meals.reply');
         Route::get('/my/menu-notices', [MyMenuNoticeController::class, 'index'])->name('my.menu-notices.index');
         Route::put('/my/menu-notices/{slot}', [MyMenuNoticeController::class, 'save'])->middleware('can:publish-posts')->name('my.menu-notices.save');
         // F47: sales, reviews and history
@@ -161,6 +165,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::put('/kitchens/{kitchen}/menus/{slot}', [ShahidarKitchenController::class, 'saveMenu'])->name('kitchens.menus.save');
             // F61
             Route::put('/kitchens/{kitchen}/menu-notices/{slot}', [ShahidarKitchenController::class, 'saveNotice'])->name('kitchens.menu-notices.save');
+            Route::get('/guest-meals', [GuestMealController::class, 'forShahidar'])->name('guest-meals.index');
+            Route::post('/guest-meals/{guest}/cook', [GuestMealController::class, 'cookAnswered'])->name('guest-meals.cook');
+            Route::get('/guest-meals/{guest}/posts', [GuestMealController::class, 'posts'])->name('guest-meals.posts');
+            Route::post('/guest-meals/{guest}/arrange', [GuestMealController::class, 'arrange'])->name('guest-meals.arrange');
+            Route::post('/guest-meals/{guest}/close', [GuestMealController::class, 'close'])->name('guest-meals.close');
             Route::post('/meal-choices/{choice}/handled', [ShahidarController::class, 'handleMealChoice'])->name('meal-choices.handled');
             Route::delete('/kitchens/{kitchen}/menus/{slot}', [ShahidarKitchenController::class, 'deleteMenu'])->name('kitchens.menus.destroy');
             Route::patch('/posts/{post}', [ShahidarKitchenController::class, 'updatePost'])->name('posts.update');
@@ -178,6 +187,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         // F26: skip today's box, days off
         Route::post('/regular/orders/{order}/skip', [RegularController::class, 'skip'])->name('regular.orders.skip');
         // F61: "আজ খাব না" / "এই খাবার খাব না"
+        Route::get('/regular/guest-meals', [GuestMealController::class, 'mine'])->name('regular.guest-meals.index');
+        Route::post('/regular/guest-meals', [GuestMealController::class, 'store'])->middleware('throttle:comments')->name('regular.guest-meals.store');
+        Route::post('/regular/guest-meals/{guest}/cancel', [GuestMealController::class, 'cancel'])->middleware('throttle:comments')->name('regular.guest-meals.cancel');
         Route::post('/regular/choices', [RegularController::class, 'choose'])->middleware('throttle:comments')->name('regular.choices');
         Route::post('/regular/orders/{order}/accept', [RegularController::class, 'accept'])->name('regular.orders.accept');
         Route::post('/regular/pauses', [RegularController::class, 'pause'])->middleware('throttle:comments')->name('regular.pauses.store');

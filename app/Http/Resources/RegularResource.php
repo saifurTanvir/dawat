@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Enums\CustomerStatus;
 use App\Enums\OrderStatus;
+use App\Http\Controllers\Api\V1\GuestMealController;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Services\Orders\BookingPlanner;
@@ -40,6 +41,8 @@ class RegularResource extends JsonResource
             'kitchen' => $pairing ? ['name' => $pairing->kitchen->display_name] : null,
             // F61: what each meal's cook is making today, and the customer's answer.
             'today_menu' => app(TodayMenu::class)->forCustomer($this->resource),
+            // F64: extra plates for guests, and how each request stands.
+            'guest_meals' => $pairing ? GuestMealController::forCustomer($this->resource) : [],
             'shahidar' => $pairing ? ['name' => $pairing->shahidar->name, 'phone' => $pairing->shahidar->phone] : null,
             'today' => $this->whenLoaded('todayOrders', fn () => $this->todayOrders->map(fn (Order $o) => [
                 'id' => $o->id,

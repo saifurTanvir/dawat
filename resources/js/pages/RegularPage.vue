@@ -35,6 +35,9 @@
             <!-- F61: today's dish, and the customer's answer -->
             <TodayMenuCard v-if="booking.today_menu?.length" :meals="booking.today_menu" @updated="onChoice" />
 
+            <!-- F64: extra plates for guests -->
+            <GuestMealCard v-if="booking.kitchen && booking.status === 'active'" :rows="booking.guest_meals || []" :slots="booking.meal_slots || ['lunch']" @updated="onGuest" />
+
             <!-- F45: meals of the booking with no box yet today, and why -->
             <div v-if="booking.today_missing?.length" class="rounded-[var(--radius-plate)] bg-plate p-5">
                 <h2 class="font-semibold">আজ যে বেলায় বক্স নেই</h2>
@@ -226,6 +229,7 @@ import PushToggle from '@/components/PushToggle.vue';
 import ChoiceChip from '@/components/ChoiceChip.vue';
 import MapPicker from '@/components/MapPicker.vue';
 import TodayMenuCard from '@/components/TodayMenuCard.vue';
+import GuestMealCard from '@/components/GuestMealCard.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
 import { clockText, taka } from '@/lib/format';
@@ -259,6 +263,11 @@ const todayIso = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).fo
 
 function dateText(iso) {
     return new Intl.DateTimeFormat('bn-BD', { day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`));
+}
+
+function onGuest(data) {
+    booking.value.guest_meals = data.data;
+    notice.value = data.message;
 }
 
 function onChoice(data) {

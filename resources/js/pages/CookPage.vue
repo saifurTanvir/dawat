@@ -33,6 +33,7 @@
         <!-- Registered: show where they stand -->
         <div v-else class="mt-4">
             <template v-if="kitchen.can_post">
+                <CookGuestRequests />
                 <RouterLink :to="{ name: 'new-post' }" class="btn-primary">আজকের রান্না পোস্ট করুন</RouterLink>
                 <RouterLink :to="{ name: 'my-posts' }" class="btn-quiet mt-2 w-full border border-rule">আমার পোস্ট ও প্লেট বাকি</RouterLink>
                 <RouterLink :to="{ name: 'sales' }" class="btn-quiet mt-2 mb-6 w-full border border-rule">যা বিক্রি করেছি · পাওনা · রিভিউ</RouterLink>
@@ -126,6 +127,7 @@ import { computed, onMounted, ref } from 'vue';
 import ContactHours from '@/components/ContactHours.vue';
 import DailyMenu from '@/components/DailyMenu.vue';
 import MenuNoticeCard from '@/components/MenuNoticeCard.vue';
+import CookGuestRequests from '@/components/CookGuestRequests.vue';
 import PushToggle from '@/components/PushToggle.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn, placeOf } from '@/lib/bn';

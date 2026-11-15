@@ -80,6 +80,8 @@ class ShahidarController extends Controller
             'cash_held_paisa' => $this->money->cashHeldBy($me),
             // F61: my customers who will not eat today's dish and want something else.
             'meal_requests' => TodayMenu::requestsToday($me)->map(fn (MealChoice $c) => self::mealRequest($c))->values(),
+            // F64: guest plates my customers asked for.
+            'guest_meals' => GuestMealController::shahidarRows($me->id),
         ]]);
     }
 

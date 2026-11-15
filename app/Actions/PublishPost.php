@@ -9,6 +9,7 @@ use App\Models\Post;
 use App\Models\User;
 use App\Services\Images\FoodPhotoProcessor;
 use App\Services\Orders\BookingPlanner;
+use App\Services\Regular\GuestMeals;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -72,6 +73,8 @@ class PublishPost
 
                 // F26: paired regular customers get their plates first.
                 $this->bookings->bookForPost($post);
+                // F64: guest plates the cook already said yes to.
+                app(GuestMeals::class)->fulfilForPost($post);
 
                 PostPublished::dispatch($post);
 
