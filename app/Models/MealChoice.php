@@ -8,14 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * F61: a regular customer's answer for one meal today.
- * skip = "আজ খাব না"; change = "এই খাবার খাব না" — the shahidar or an admin
+ * eat = "খাব" (the default, said out loud); skip = "আজ খাব না"; change = "এই খাবার খাব না" — the shahidar or an admin
  * arranges other food and marks it handled.
  */
 class MealChoice extends Model
 {
     protected $guarded = ['id'];
 
-    public const CHOICES = ['skip' => 'আজ খাবেন না', 'change' => 'এই খাবার খাবেন না'];
+    public const CHOICES = ['eat' => 'খাবেন বলেছেন', 'skip' => 'আজ খাবেন না', 'change' => 'এই খাবার খাবেন না'];
 
     protected function casts(): array
     {

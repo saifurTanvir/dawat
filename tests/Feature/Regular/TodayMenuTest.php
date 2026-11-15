@@ -181,4 +181,31 @@ class TodayMenuTest extends TestCase
         $this->assertSame('handled', MealChoice::sole()->status);
         $this->assertSame($this->admin->id, MealChoice::sole()->handled_by);
     }
+
+    public function test_eat_is_the_default_and_can_be_confirmed_and_still_books(): void
+    {
+        MenuNotice::create(['kitchen_id' => $this->kitchen->id, 'service_date' => '2026-11-15', 'meal_slot' => 'lunch', 'title' => 'খিচুড়ি', 'source' => 'cook']);
+
+        $this->actingAs($this->customer->user, 'sanctum')->getJson('/api/v1/regular')
+            ->assertJsonPath('data.today_menu.0.choice', 'eat')
+            ->assertJsonPath('data.today_menu.0.confirmed', false);
+
+        $this->choose('eat')->assertOk()
+            ->assertJsonPath('data.today_menu.0.choice', 'eat')
+            ->assertJsonPath('data.today_menu.0.confirmed', true);
+        $this->assertSame('eat', MealChoice::sole()->choice);
+        Queue::assertNotPushed(SendWebPush::class, fn ($job) => $job->userId === $this->shahidar->id);
+
+        // Said "খাব": still booked when the cook posts.
+        $this->livePost();
+        $this->assertSame(1, Order::where('status', OrderStatus::Booked)->count());
+    }
+
+    public function test_eat_cannot_bring_back_a_box_cancelled_by_a_no(): void
+    {
+        $this->livePost();
+        $this->choose('skip')->assertOk()->assertJsonPath('data.today_menu.0.can_undo', false);
+        $this->choose('eat')->assertUnprocessable();
+        $this->assertSame(OrderStatus::Cancelled, Order::sole()->status);
+    }
 }

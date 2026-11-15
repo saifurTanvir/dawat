@@ -15,12 +15,25 @@
             </div>
 
             <template v-if="m.can_choose">
-                <div v-if="asking !== m.slot" class="mt-2 flex flex-wrap gap-2">
-                    <button v-if="m.choice !== 'eat' && m.can_undo" type="button" class="btn-quiet min-h-10 border border-rule px-3 text-sm" :disabled="busy" @click="send(m, 'eat')">খাব</button>
-                    <button v-if="m.choice !== 'skip'" type="button" class="btn-quiet min-h-10 border border-rule px-3 text-sm" :disabled="busy" @click="send(m, 'skip')">আজ খাব না</button>
-                    <button v-if="m.choice !== 'change' && m.title" type="button" class="btn-quiet min-h-10 border border-rule px-3 text-sm" :disabled="busy" @click="ask(m)">এই খাবার খাব না</button>
+                <!-- Three answers; "খাব" is chosen until they say otherwise. -->
+                <div v-if="asking !== m.slot" class="mt-2 grid grid-cols-3 gap-2" role="radiogroup" :aria-label="`${m.label}: খাবেন?`">
+                    <button
+                        type="button"
+                        role="radio"
+                        :aria-checked="m.choice === 'eat'"
+                        :class="[btn, m.choice === 'eat' ? on : off]"
+                        :disabled="busy || (m.choice !== 'eat' && !m.can_undo)"
+                        @click="m.choice === 'eat' && m.confirmed ? null : send(m, 'eat')"
+                    >
+                        <span v-if="m.choice === 'eat'" aria-hidden="true">✓ </span>খাব
+                    </button>
+                    <button type="button" role="radio" :aria-checked="m.choice === 'skip'" :class="[btn, m.choice === 'skip' ? onNo : off]" :disabled="busy" @click="m.choice === 'skip' ? null : send(m, 'skip')">আজ খাব না</button>
+                    <button type="button" role="radio" :aria-checked="m.choice === 'change'" :class="[btn, m.choice === 'change' ? onNo : off]" :disabled="busy || !m.title" @click="m.choice === 'change' ? null : ask(m)">এই খাবার খাব না</button>
                 </div>
-                <form v-else class="mt-2" @submit.prevent="send(m, 'change')">
+                <p v-if="asking !== m.slot && m.choice === 'eat'" class="mt-1.5 text-xs text-muted">
+                    {{ m.confirmed ? 'আপনি খাবেন বলেছেন। খাবার আসবে।' : 'কিছু না বললেও খাবার আসবে। নিশ্চিত করতে "খাব" চাপুন।' }}
+                </p>
+                <form v-else-if="asking === m.slot" class="mt-2" @submit.prevent="send(m, 'change')">
                     <label :for="`wish-${m.slot}`" class="mb-1 block text-sm font-semibold">কী খেতে চান?</label>
                     <input :id="`wish-${m.slot}`" v-model.trim="wish" class="field text-base" maxlength="300" placeholder="যেমন: মাছ ছাড়া কিছু, শুধু ডাল-ভাত" />
                     <p class="mt-1 text-xs text-muted">আপনার শাহিদার আর দাওয়াত টিম জানবেন, গৃহিণী নন।</p>
@@ -41,6 +54,12 @@ import { api, errorMessage } from '@/lib/api';
 
 defineProps({ meals: { type: Array, required: true } });
 const emit = defineEmits(['updated']);
+
+// Segmented buttons: green when eating, chili outline when not.
+const btn = 'min-h-11 rounded-xl border px-2 text-sm font-semibold leading-tight disabled:opacity-50';
+const on = 'border-leaf bg-leaf text-white';
+const onNo = 'border-chili bg-chili/10 text-chili';
+const off = 'border-rule bg-plate text-ink';
 
 const busy = ref(false);
 const error = ref('');
