@@ -77,7 +77,8 @@ class TodayMenu
     }
 
     /**
-     * The customer's answer: 'eat' (undo), 'skip' or 'change' with what they want.
+     * The customer's answer: 'eat' ("খাব" — the default, now said out loud; also undoes
+     * an earlier no before booking), 'skip', or 'change' with what they want.
      */
     public function choose(Customer $customer, MealSlot $slot, string $choice, ?string $wish, User $by): ?MealChoice
     {
@@ -96,15 +97,19 @@ class TodayMenu
             $existing = MealChoice::where('customer_id', $customer->id)->whereDate('service_date', $today)->where('meal_slot', $slot->value)->first();
 
             if ($choice === 'eat') {
-                $existing?->delete();
-
-                return null;
+                // A box cancelled by an earlier "no" cannot come back from here.
+                if ($order && $order->status === OrderStatus::Cancelled && $existing && $existing->choice !== 'eat') {
+                    throw ValidationException::withMessages(['meal_slot' => 'আজকের বক্স আগেই বাতিল হয়েছে। খেতে চাইলে শাহিদারকে ফোন করুন।']);
+                }
+                if ($order && ! in_array($order->status, [OrderStatus::Booked, OrderStatus::Asking, OrderStatus::Cancelled], true)) {
+                    return $existing; // already on the way: nothing to say
+                }
             }
 
-            if ($order && ! in_array($order->status, [OrderStatus::Booked, OrderStatus::Asking, OrderStatus::Cancelled], true)) {
+            if ($choice !== 'eat' && $order && ! in_array($order->status, [OrderStatus::Booked, OrderStatus::Asking, OrderStatus::Cancelled], true)) {
                 throw ValidationException::withMessages(['meal_slot' => 'খাবার আগেই রওনা হয়ে গেছে। শাহিদারকে ফোন করুন।']);
             }
-            if ($order && $order->status !== OrderStatus::Cancelled) {
+            if ($choice !== 'eat' && $order && $order->status !== OrderStatus::Cancelled) {
                 $this->planner->cancel($order, 'customer', $choice === 'skip' ? 'গ্রাহক: আজ খাবেন না' : 'গ্রাহক: এই খাবার খাবেন না');
             }
 
@@ -127,7 +132,7 @@ class TodayMenu
         });
 
         if ($choice === 'eat') {
-            // Back on: book now if the cook has already posted.
+            // Back on (or still on): book now if the cook has already posted.
             $this->planner->bookLate($customer);
         } elseif ($result && $result->choice === 'change' && ($result->wasRecentlyCreated || $result->wasChanged(['choice', 'wish', 'status']))) {
             $this->alert($result->loadMissing('customer.user'));
@@ -244,14 +249,16 @@ class TodayMenu
                 'slot' => $slot->value,
                 'label' => $slot->label(),
                 'title' => $title,
+                // No answer = eats (the default); 'confirmed' when they said "খাব" themselves.
                 'choice' => $choice?->choice ?? 'eat',
+                'confirmed' => $choice?->choice === 'eat',
                 'wish' => $choice?->wish,
                 'handled' => $choice?->status === 'handled',
                 'handled_note' => $choice?->status === 'handled' ? $choice->handled_note : null,
                 // Can still answer until the box leaves the cook.
                 'can_choose' => ! $order || in_array($order->status, [OrderStatus::Booked, OrderStatus::Asking, OrderStatus::Cancelled], true),
                 // A box already cancelled cannot come back; "খাব" only undoes an answer given before booking.
-                'can_undo' => $choice !== null && ! ($order && $order->status === OrderStatus::Cancelled),
+                'can_undo' => $choice?->choice !== 'eat' && $choice !== null ? ! ($order && $order->status === OrderStatus::Cancelled) : true,
             ];
         }
 
