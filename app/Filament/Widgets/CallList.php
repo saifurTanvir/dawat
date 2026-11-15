@@ -1,0 +1,45 @@
+<?php
+
+namespace App\Filament\Widgets;
+
+use App\Filament\Actions\CallRequestActions;
+use App\Filament\Resources\CallRequests\CallRequestResource;
+use App\Models\CallRequest;
+use Filament\Actions\Action;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Filament\Widgets\TableWidget;
+
+/** F66: on top of the dashboard — people waiting for the owner's call. */
+class CallList extends TableWidget
+{
+    protected static ?int $sort = -3;
+
+    protected int|string|array $columnSpan = 'full';
+
+    protected static ?string $heading = 'যোগাযোগ করতে হবে';
+
+    public static function canView(): bool
+    {
+        return CallRequest::open()->exists();
+    }
+
+    public function table(Table $table): Table
+    {
+        return $table
+            ->query(fn () => CallRequest::query()->open()->with('user'))
+            ->defaultSort('created_at')
+            ->paginated([10])
+            ->headerActions([
+                Action::make('all')->label('সব দেখুন')->link()->url(CallRequestResource::getUrl()),
+            ])
+            ->columns([
+                TextColumn::make('name')->label('কে')->weight('semibold')
+                    ->state(fn (CallRequest $r) => $r->name ?: ($r->user?->name ?: $r->phone))
+                    ->description(fn (CallRequest $r) => $r->phone),
+                TextColumn::make('reason')->label('কেন')->wrap()->limit(100),
+                TextColumn::make('status')->label('অবস্থা')->badge(),
+            ])
+            ->recordActions([...CallRequestActions::row(), CallRequestActions::done()]);
+    }
+}
