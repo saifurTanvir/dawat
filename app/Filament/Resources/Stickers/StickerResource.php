@@ -51,8 +51,11 @@ class StickerResource extends Resource
                 ),
             ])
             ->recordActions([
-                Action::make('print')->label('এই ব্যাচ প্রিন্ট')->icon(Heroicon::OutlinedPrinter)
+                Action::make('print')->label('এই ব্যাচ প্রিন্ট (থার্মাল)')->icon(Heroicon::OutlinedPrinter)
                     ->url(fn (Sticker $record) => route('filament.admin.stickers.sheet', $record->batch))
+                    ->openUrlInNewTab(),
+                Action::make('printA4')->label('A4')->icon(Heroicon::OutlinedDocument)->color('gray')
+                    ->url(fn (Sticker $record) => route('filament.admin.stickers.sheet', ['batch' => $record->batch, 'paper' => 'a4']))
                     ->openUrlInNewTab(),
             ]);
     }
