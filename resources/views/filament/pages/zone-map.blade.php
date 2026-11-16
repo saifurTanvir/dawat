@@ -1,0 +1,97 @@
+@php($bn = fn ($n) => \App\Services\Geo\Zones::bn($n))
+<x-filament-panels::page>
+    {{-- Inside the page root: a Livewire component must have a single root element. --}}
+    <style>
+        .dz th, .dz td { padding: 6px 10px 6px 0; text-align: left; vertical-align: top; }
+        .dz .r { text-align: right; }
+        .dz tbody tr { border-top: 1px solid rgb(229 231 235); }
+        .dz .muted { color: rgb(107 114 128); font-size: .75rem; }
+        .dz-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .75rem; }
+        .dz-stat { border: 1px solid rgb(229 231 235); border-radius: .75rem; padding: .75rem 1rem; }
+        .dz-stat b { display: block; font-size: 1.5rem; }
+        .dz-badge { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: .75rem; font-weight: 600; }
+        .dz-ready { background: #dcfce7; color: #166534; } .dz-some { background: #fef3c7; color: #92400e; } .dz-none { background: #f3f4f6; color: #6b7280; }
+        .dz-map { height: 28rem; width: 100%; border-radius: .75rem; overflow: hidden; border: 1px solid rgb(229 231 235); }
+        .dark .dz-stat, .dark .dz-map { border-color: rgba(255,255,255,.1); }
+    </style>
+
+    <div class="dz-stats">
+        <div class="dz-stat"><span class="muted">মোট জোন (১ কিমি)</span><b>{{ $bn($totals['zones']) }}</b></div>
+        <div class="dz-stat"><span class="muted">গৃহিণী আছে এমন জোন</span><b>{{ $bn($totals['zones_with_cooks']) }}</b></div>
+        <div class="dz-stat"><span class="muted">৩+ গৃহিণী (কর্পোরেটের জন্য তৈরি)</span><b>{{ $bn($totals['zones_ready']) }}</b></div>
+        <div class="dz-stat"><span class="muted">গৃহিণী (অনুমোদিত / অপেক্ষায়)</span><b>{{ $bn($totals['cooks']) }} / {{ $bn($totals['pending']) }}</b></div>
+        <div class="dz-stat"><span class="muted">গ্রাহক</span><b>{{ $bn($totals['customers']) }}</b></div>
+        <div class="dz-stat"><span class="muted">শাহিদার</span><b>{{ $bn($totals['shahidars']) }}</b></div>
+    </div>
+
+    <x-filament::section heading="ম্যাপ" description="সবুজ: ৩+ অনুমোদিত গৃহিণী · হলুদ: ১–২ জন · ধূসর: নেই। বৃত্তে চাপলে নাম আর সংখ্যা। শুধু যাঁদের বাসার পিন আছে তাঁরা ম্যাপে।">
+        <div wire:ignore class="dz-map" data-zone-map='@json(['zones' => $mapData, 'radius' => $radius])'></div>
+    </x-filament::section>
+
+    @if ($totals['outside'] || $totals['no_area'])
+        <p class="text-sm text-gray-500">
+            @if ($totals['outside']) পিন সব জোনের বাইরে: {{ $bn($totals['outside']) }} জন। @endif
+            @if ($totals['no_area']) পিন বা এলাকা কিছুই নেই: {{ $bn($totals['no_area']) }} জন। @endif
+        </p>
+    @endif
+
+    @foreach ($areas as $a)
+        <x-filament::section :heading="$a['name']" :description="'গৃহিণী '.$bn($a['cooks']).' (অপেক্ষায় '.$bn($a['pending']).') · গ্রাহক '.$bn($a['customers']).' · এলাকার শাহিদার '.$bn($a['shahidars'])" collapsible :collapsed="$a['cooks'] + $a['pending'] + $a['customers'] === 0">
+            <table class="dz w-full text-sm">
+                <thead><tr class="text-gray-500"><th>জোন</th><th>মূল ঠিকানা</th><th class="r">গৃহিণী</th><th class="r">অপেক্ষায়</th><th class="r">গ্রাহক</th><th>অবস্থা</th></tr></thead>
+                <tbody>
+                    @foreach ($a['zones'] as $z)
+                        <tr>
+                            <td class="font-medium">{{ $z['name'] }}<div class="muted"><a href="https://www.google.com/maps?q={{ $z['center']->lat }},{{ $z['center']->lng }}" target="_blank" rel="noopener">ম্যাপে দেখুন</a></div></td>
+                            <td>{{ $a['name'] }}</td>
+                            <td class="r">{{ $bn($z['cooks']) }}</td>
+                            <td class="r">{{ $bn($z['pending']) }}</td>
+                            <td class="r">{{ $bn($z['customers']) }}</td>
+                            <td>
+                                @if ($z['cooks'] >= 3) <span class="dz-badge dz-ready">কর্পোরেট রিচ করা যায়</span>
+                                @elseif ($z['cooks'] > 0) <span class="dz-badge dz-some">আরও গৃহিণী লাগবে</span>
+                                @else <span class="dz-badge dz-none">গৃহিণী নেই</span> @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                    @if ($a['unpinned']['cooks'] + $a['unpinned']['pending'] + $a['unpinned']['customers'] > 0)
+                        <tr>
+                            <td class="font-medium">পিন ছাড়া<div class="muted">বাসার লোকেশন দেননি — কোন জোনে বলা যাচ্ছে না</div></td>
+                            <td>{{ $a['name'] }}</td>
+                            <td class="r">{{ $bn($a['unpinned']['cooks']) }}</td>
+                            <td class="r">{{ $bn($a['unpinned']['pending']) }}</td>
+                            <td class="r">{{ $bn($a['unpinned']['customers']) }}</td>
+                            <td></td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </x-filament::section>
+    @endforeach
+
+    <script>
+        (function () {
+            const bn = (n) => String(n).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[d]);
+            function draw() {
+                document.querySelectorAll('[data-zone-map]').forEach((el) => {
+                    if (el._dz || !window.L) return;
+                    el._dz = true;
+                    const cfg = JSON.parse(el.dataset.zoneMap);
+                    const map = L.map(el, { scrollWheelZoom: false }).setView([23.78, 90.40], 12);
+                    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; OpenStreetMap' }).addTo(map);
+                    const shapes = [];
+                    for (const z of cfg.zones) {
+                        const color = z.k >= 3 ? '#16a34a' : (z.k > 0 ? '#d97706' : '#9ca3af');
+                        const c = L.circle(z.c, { radius: cfg.radius, color, weight: 1, fillColor: color, fillOpacity: z.k > 0 || z.u > 0 ? 0.3 : 0.05 })
+                            .bindPopup(`<b>${z.n}</b><br>গৃহিণী ${bn(z.k)} (অপেক্ষায় ${bn(z.p)})<br>গ্রাহক ${bn(z.u)}`)
+                            .addTo(map);
+                        if (z.k > 0 || z.u > 0) shapes.push(c);
+                    }
+                    if (shapes.length) map.fitBounds(L.featureGroup(shapes).getBounds().pad(0.1));
+                });
+            }
+            if (window.L) draw(); else window.addEventListener('load', draw);
+            document.addEventListener('livewire:navigated', draw);
+        })();
+    </script>
+</x-filament-panels::page>
