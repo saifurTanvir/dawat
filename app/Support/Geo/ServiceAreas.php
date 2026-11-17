@@ -119,9 +119,33 @@ final class ServiceAreas
         ['demra', 'ডেমরা', 23.7230, 90.4790, 1500],
     ];
 
+    /**
+     * F69: areas outside Dhaka city where cooks asked to join. Dawat now grows
+     * zone by zone wherever a cook (or shahidar, or customer) is, so nobody is
+     * turned away for living outside the city. Town centres are approximate.
+     */
+    public const BEYOND = [
+        ['ashulia', 'আশুলিয়া', 23.8900, 90.3150, 3500],
+        ['savar', 'সাভার', 23.8450, 90.2600, 3000],
+        ['birulia', 'বিরুলিয়া', 23.8370, 90.3180, 2000],
+        ['hemayetpur', 'হেমায়েতপুর', 23.7930, 90.2720, 2000],
+        ['dhamrai', 'ধামরাই', 23.9150, 90.2100, 2500],
+        ['keraniganj', 'কেরানীগঞ্জ (জিনজিরা/কালিন্দী)', 23.6960, 90.3960, 2500],
+        ['ati-bazar', 'আটি বাজার (কেরানীগঞ্জ)', 23.7150, 90.3390, 2000],
+        ['charkutub', 'চরকুতুব (কেরানীগঞ্জ)', 23.6800, 90.4180, 1500],
+        ['signboard', 'সাইনবোর্ড', 23.6930, 90.4880, 1500],
+        ['fatullah', 'ফতুল্লা', 23.6350, 90.4890, 2500],
+        ['bandar', 'বন্দর (নারায়ণগঞ্জ)', 23.6080, 90.5150, 3000],
+        ['daudkandi', 'দাউদকান্দি', 23.5310, 90.7210, 3000],
+        ['ghior', 'ঘিওর (মানিকগঞ্জ)', 23.8870, 89.9050, 2500],
+        ['mymensingh', 'ময়মনসিংহ শহর', 24.7539, 90.4073, 4000],
+        ['bogura', 'বগুড়া শহর', 24.8481, 89.3730, 4000],
+        ['barishal', 'বরিশাল শহর', 22.7010, 90.3535, 4000],
+    ];
+
     /** Every Dawat area, in the order they are listed. */
     public static function all(): array
     {
-        return [...self::LIST, ...self::MORE];
+        return [...self::LIST, ...self::MORE, ...self::BEYOND];
     }
 }
