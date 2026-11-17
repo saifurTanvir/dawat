@@ -45,7 +45,9 @@ class PinLinkTest extends TestCase
 
         $this->get($link->url())->assertOk()
             ->assertSee('লোকেশন ছাড়া আপনাকে অনবোর্ড করা যাচ্ছে না')
-            ->assertSee('আপনি কি এখন বাসায় আছেন?');
+            ->assertSee('আপনি কি এখন বাসায় আছেন?')
+            // GPS failing (e.g. inside Messenger) must fall back to the map, not dead-end.
+            ->assertSee('ফোনের লোকেশন পাওয়া যায়নি, সমস্যা নেই');
 
         $this->postJson(route('pin.store', $link->token), [...$this->near(500), 'mode' => 'home', 'accuracy' => 25])
             ->assertOk()->assertJson(['result' => 'saved']);
