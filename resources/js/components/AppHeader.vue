@@ -9,11 +9,16 @@
 
         <!-- F48: which role the app is used as, and switching -->
         <ModeMenu v-if="auth.isSignedIn" />
+        <NotificationBell v-if="auth.isSignedIn" />
         <RouterLink v-if="!auth.isSignedIn && route.name !== 'login'" to="/login" class="btn-quiet -mr-4 min-h-10">
             ঢুকুন
         </RouterLink>
-        <button v-else-if="auth.isSignedIn" type="button" class="btn-quiet -mr-4 min-h-10 w-auto shrink-0 whitespace-nowrap px-3" @click="logout">
-            বের হন
+        <button v-else-if="auth.isSignedIn" type="button" class="btn-quiet -mr-4 min-h-10 w-auto shrink-0 whitespace-nowrap px-3 max-[419px]:-mr-2 max-[419px]:px-2" aria-label="বের হন" title="বের হন" @click="logout">
+            <span class="max-[419px]:hidden">বের হন</span>
+            <!-- F66: on narrow phones the bell needs the room; a door icon instead -->
+            <svg viewBox="0 0 24 24" class="hidden size-6 max-[419px]:block" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" /><path d="M10 16l-4-4 4-4" /><path d="M6 12h10" />
+            </svg>
         </button>
     </header>
 </template>
@@ -21,6 +26,8 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import ModeMenu from '@/components/ModeMenu.vue';
+import NotificationBell from '@/components/NotificationBell.vue';
+import { useNotificationsStore } from '@/stores/notifications';
 import { useAuthStore } from '@/stores/auth';
 
 const auth = useAuthStore();
@@ -29,6 +36,7 @@ const router = useRouter();
 
 async function logout() {
     await auth.logout();
+    useNotificationsStore().setUnread(0);
     router.push('/');
 }
 </script>

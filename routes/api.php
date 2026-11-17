@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\My\MyMenuController;
 use App\Http\Controllers\Api\V1\My\MyMenuNoticeController;
 use App\Http\Controllers\Api\V1\My\MyPostController;
 use App\Http\Controllers\Api\V1\My\MySalesController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\PostShowController;
@@ -86,6 +87,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/me', [MeController::class, 'show'])->name('me');
         // F62: find a home pin from an address or a map link
         Route::get('/geocode', GeocodeController::class)->middleware('throttle:20,1')->name('geocode');
+        // F66: the 🔔 list
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::get('/notifications/unread', [NotificationController::class, 'unread'])->name('notifications.unread');
+        Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->whereNumber('id')->name('notifications.read');
         Route::post('/push/subscribe', [PushController::class, 'subscribe'])->middleware('throttle:comments')->name('push.subscribe');
         Route::delete('/push/subscribe', [PushController::class, 'unsubscribe'])->name('push.unsubscribe');
         Route::patch('/me', [MeController::class, 'update'])->name('me.update');

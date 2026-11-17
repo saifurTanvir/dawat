@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\AppNotification;
 use App\Models\PushSubscription;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -23,6 +24,7 @@ class SendWebPush implements ShouldQueue
         public string $body,
         public string $url = '/',
         public ?string $tag = null,
+        public ?int $notificationId = null,
     ) {}
 
     public function handle(): void
@@ -38,11 +40,17 @@ class SendWebPush implements ShouldQueue
             'privateKey' => config('services.webpush.private_key'),
         ]], ['TTL' => 6 * 3600, 'urgency' => 'high']);
 
+        // F66: say what part of the app it is about, and open it through the
+        // in-app list so it is marked read. "badge" is the unread count.
+        $section = AppNotification::sectionOf($this->url);
         $payload = json_encode([
             'title' => $this->title,
             'body' => $this->body,
             'url' => $this->url,
+            'open' => $this->notificationId ? '/n/'.$this->notificationId : $this->url,
+            'section' => $section['icon'].' '.$section['label'],
             'tag' => $this->tag,
+            'unread' => AppNotification::where('user_id', $this->userId)->unread()->count(),
         ], JSON_UNESCAPED_UNICODE);
 
         foreach ($subs as $sub) {
