@@ -24,6 +24,29 @@
         <div class="dz-stat"><span class="muted">শাহিদার</span><b>{{ $bn($totals['shahidars']) }}</b></div>
     </div>
 
+    @if ($showPinLinks)
+        <x-filament::section heading="পিন ছাড়া গৃহিণী" description="এঁদের বাসার লোকেশন নেই, তাই কোনো জোনে পড়েননি। লিংক পাঠান — লগইন ছাড়াই খোলে, ৭ দিন চলে।">
+            @if ($pinless->isEmpty())
+                <p class="text-sm text-gray-500">সবার লোকেশন আছে।</p>
+            @else
+                <table class="dz w-full text-sm" data-pin-links>
+                    <thead><tr class="text-gray-500"><th>রান্নাঘর</th><th>মোবাইল</th><th>এলাকা</th><th>লিংক</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach ($pinless as $row)
+                            <tr data-phone="{{ $row['kitchen']->user?->phone }}" data-url="{{ $row['link']->url() }}" data-message="{{ $row['link']->message() }}">
+                                <td class="font-medium">{{ $row['kitchen']->display_name }}<div class="muted">{{ $row['kitchen']->user?->name }}</div></td>
+                                <td>{{ $row['kitchen']->user?->phone }}</td>
+                                <td>{{ $row['kitchen']->area?->name ?? '—' }}</td>
+                                <td><a href="{{ $row['link']->url() }}" target="_blank" rel="noopener" class="muted">{{ \Illuminate\Support\Str::after($row['link']->url(), '://') }}</a>@if ($row['link']->submitted_at)<div class="muted">পিন দিয়েছেন — যাচাই বাকি</div>@endif</td>
+                                <td>@if ($row['kitchen']->user?->phone)<a href="https://wa.me/{{ \App\Support\PhoneNumber::international($row['kitchen']->user->phone) }}?text={{ rawurlencode($row['link']->message()) }}" target="_blank" rel="noopener" class="dz-badge dz-ready">WhatsApp</a>@endif</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+        </x-filament::section>
+    @endif
+
     <x-filament::section heading="ম্যাপ" description="সবুজ: ৩+ অনুমোদিত গৃহিণী · হলুদ: ১–২ জন · ধূসর: নেই। বৃত্তে চাপলে নাম আর সংখ্যা। শুধু যাঁদের বাসার পিন আছে তাঁরা ম্যাপে।">
         <div wire:ignore class="dz-map" data-zone-map='@json(['zones' => $mapData, 'radius' => $radius])'></div>
     </x-filament::section>

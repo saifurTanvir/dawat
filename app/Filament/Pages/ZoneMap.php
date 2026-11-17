@@ -2,6 +2,9 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\KitchenStatus;
+use App\Models\Kitchen;
+use App\Models\PinLink;
 use App\Services\Geo\Zones;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -30,6 +33,9 @@ class ZoneMap extends Page
     /** Show only zones/areas that have someone in them. */
     public bool $onlyBusy = true;
 
+    /** F68: list cooks without a home pin, with their links. */
+    public bool $showPinLinks = false;
+
     protected function getViewData(): array
     {
         $report = app(Zones::class)->report();
@@ -46,16 +52,46 @@ class ZoneMap extends Page
             'u' => $z['customers'],
         ])->values();
 
-        return ['areas' => $areas, 'totals' => $report['totals'], 'mapData' => $map, 'radius' => Zones::RADIUS_M];
+        $pinless = $this->showPinLinks
+            ? Kitchen::query()->whereNull('location')->whereIn('status', [KitchenStatus::Approved, KitchenStatus::Pending])->with(['user', 'area'])->orderBy('id')->get()
+                ->map(fn (Kitchen $k) => ['kitchen' => $k, 'link' => PinLink::forKitchen($k, auth()->user())])
+            : collect();
+
+        return ['pinless' => $pinless, 'areas' => $areas, 'totals' => $report['totals'], 'mapData' => $map, 'radius' => Zones::RADIUS_M];
     }
 
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('pins')
+                ->label(fn () => $this->showPinLinks ? 'লোকেশন লিংক লুকান' : 'পিন ছাড়া গৃহিণী ও লিংক')
+                ->icon(Heroicon::OutlinedMapPin)
+                ->color('warning')
+                ->action(fn () => $this->showPinLinks = ! $this->showPinLinks),
             Action::make('toggle')
                 ->label(fn () => $this->onlyBusy ? 'সব এলাকা দেখুন' : 'শুধু যেখানে কেউ আছে')
                 ->color('gray')
                 ->action(fn () => $this->onlyBusy = ! $this->onlyBusy),
+            // F68: links for every cook without a home pin, to send on WhatsApp/Messenger.
+            Action::make('pinLinks')
+                ->label('পিন ছাড়াদের লোকেশন লিংক (CSV)')
+                ->icon(Heroicon::OutlinedMapPin)
+                ->color('warning')
+                ->action(function (): StreamedResponse {
+                    $kitchens = Kitchen::query()->whereNull('location')->whereIn('status', [KitchenStatus::Approved, KitchenStatus::Pending])->with(['user', 'area'])->get();
+                    $by = auth()->user();
+
+                    return response()->streamDownload(function () use ($kitchens, $by) {
+                        $out = fopen('php://output', 'w');
+                        fwrite($out, "\xEF\xBB\xBF");
+                        fputcsv($out, ['রান্নাঘর', 'গৃহিণী', 'মোবাইল', 'এলাকা', 'লিংক', 'মেসেজ']);
+                        foreach ($kitchens as $k) {
+                            $link = PinLink::forKitchen($k, $by);
+                            fputcsv($out, [$k->display_name, $k->user?->name, $k->user?->phone, $k->area?->name, $link->url(), $link->message()]);
+                        }
+                        fclose($out);
+                    }, 'dawat-pin-links-'.now(config('app.display_timezone'))->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+                }),
             Action::make('csv')
                 ->label('CSV নামান')
                 ->icon(Heroicon::OutlinedArrowDownTray)
