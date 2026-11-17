@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AppNotification;
 use App\Models\OtpCode;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -10,7 +11,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 // Delete OTP codes older than a day.
-Schedule::command('model:prune', ['--model' => [OtpCode::class]])->daily();
+Schedule::command('model:prune', ['--model' => [OtpCode::class, AppNotification::class]])->daily();
 
 // F11: close posts whose time is up.
 Schedule::command('posts:expire')->everyFiveMinutes()->withoutOverlapping();

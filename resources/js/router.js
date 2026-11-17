@@ -111,6 +111,19 @@ const routes = [
         component: () => import('./pages/LinkLoginPage.vue'),
     },
     {
+        // F66: the 🔔 list, and where a tapped phone notification lands
+        path: '/notifications',
+        name: 'notifications',
+        component: () => import('./pages/NotificationsPage.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/n/:id(\\d+)',
+        name: 'open-notification',
+        component: () => import('./pages/OpenNotificationPage.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
         path: '/s/:code',
         name: 'sticker',
         component: () => import('./pages/StickerPage.vue'),

@@ -50,7 +50,8 @@ export function agoText(iso, now = Date.now()) {
     const minutes = Math.floor((now - new Date(iso).getTime()) / 60000);
     if (minutes < 1) return 'এইমাত্র';
     if (minutes < 60) return `${bn(minutes)} মিনিট আগে`;
-    return `${bn(Math.floor(minutes / 60))} ঘণ্টা আগে`;
+    if (minutes < 24 * 60) return `${bn(Math.floor(minutes / 60))} ঘণ্টা আগে`;
+    return `${bn(Math.floor(minutes / (24 * 60)))} দিন আগে`;
 }
 
 /** Default meal slot for the current Dhaka time. */
