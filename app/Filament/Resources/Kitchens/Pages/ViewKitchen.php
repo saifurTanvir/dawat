@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Kitchens\Pages;
 use App\Filament\Actions\ActForCookActions;
 use App\Filament\Actions\KitchenModerationActions;
 use App\Filament\Actions\LoginHelpActions;
+use App\Filament\Actions\PinLinkActions;
 use App\Filament\Actions\PostForCookActions;
 use App\Filament\Actions\RemarkActions;
 use App\Filament\Actions\RemovalActions;
@@ -25,6 +26,7 @@ class ViewKitchen extends ViewRecord
             PostForCookActions::postFor(),
             ViewAsAction::make(fn ($record) => $record->user, 'গৃহিণীর অ্যাপ দেখুন'),
             LoginHelpActions::group(fn ($record) => $record->user),
+            PinLinkActions::make(), // F68
             RemarkActions::add(fn ($record) => $record->user),
             ActionGroup::make([
                 ActForCookActions::menuNotice(),

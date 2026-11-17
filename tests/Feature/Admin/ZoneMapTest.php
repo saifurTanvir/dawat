@@ -50,6 +50,7 @@ class ZoneMapTest extends TestCase
         }
 
         $small = Area::factory()->create(['radius_m' => 900]);
+        $this->assertCount(7, app(Zones::class)->forArea(Area::factory()->create(['radius_m' => 1500])));
         $this->assertCount(1, app(Zones::class)->forArea($small));
     }
 

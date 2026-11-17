@@ -56,7 +56,9 @@ final class Zones
                 $north = $step * ($q + $s * cos(deg2rad(60)));
                 $east = $step * ($s * sin(deg2rad(60)));
                 $dist = hypot($north, $east);
-                if ($dist > $reach + 1) {
+                // A ring is kept while its circles reach at least half a radius past the area's edge,
+                // so a 1.5 km area gets 7 zones and a 1 km area just one.
+                if ($dist > $reach + $r / 2 + 1) {
                     continue;
                 }
                 $out[] = [
@@ -152,7 +154,7 @@ final class Zones
                     [$best, $bestD] = [$key, $d];
                 }
             }
-            if ($best !== null && $bestD <= self::RADIUS_M * 1.05) {
+            if ($best !== null && $bestD <= self::RADIUS_M * 1.5) {
                 $zones->put($best, array_merge($zones[$best], [$field => $zones[$best][$field] + 1]));
 
                 return;
