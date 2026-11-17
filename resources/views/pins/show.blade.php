@@ -101,20 +101,30 @@
         return {
             home() {
                 err('ask-msg');
-                if (!navigator.geolocation) { err('ask-msg', 'এই ফোনে লোকেশন নেওয়া যাচ্ছে না। "বাইরে আছি" চেপে ম্যাপে দিন।'); return; }
+                // GPS often fails inside the Facebook/Messenger browser or indoors.
+                // Never dead-end: fall back to the map, near the rough GPS fix if we have one.
+                const fallback = (text, lat = null, lng = null) => {
+                    mode = 'map'; accuracy = null;
+                    $('pick-hint').textContent = text;
+                    show('search-box');
+                    lat === null ? openMap(center[0], center[1], 15) : openMap(lat, lng, 17);
+                };
+                if (!navigator.geolocation) { fallback('ফোনের লোকেশন পাওয়া যাচ্ছে না, সমস্যা নেই। বাসার কাছের রাস্তা/মসজিদ/দোকানের নাম লিখে খুঁজুন, তারপর পিনটা বাসার উপর রাখুন।'); return; }
                 err('ask-msg', 'লোকেশন নিচ্ছি… ফোন অনুমতি চাইলে "Allow" চাপুন।');
                 navigator.geolocation.getCurrentPosition((p) => {
-                    accuracy = p.coords.accuracy;
-                    if (accuracy > 100) {
-                        err('ask-msg', `ফোনের লোকেশন ঠিকমতো আসেনি (প্রায় ${Math.round(accuracy)} মিটার এদিক-ওদিক)। জানালার কাছে গিয়ে আবার চাপুন, বা "বাইরে আছি" চেপে ম্যাপে বাসা দেখান।`);
+                    err('ask-msg');
+                    if (p.coords.accuracy > 100) {
+                        fallback('ফোনের লোকেশন পুরো ঠিক আসেনি, তাই কাছাকাছি দেখাচ্ছি। পিনটা টেনে বা ম্যাপে চেপে ঠিক আপনার বাসার উপর রাখুন।', p.coords.latitude, p.coords.longitude);
                         return;
                     }
-                    err('ask-msg'); mode = 'home';
+                    accuracy = p.coords.accuracy; mode = 'home';
                     $('pick-hint').textContent = 'আপনার ফোনের লোকেশন। পিনটা ঠিক আপনার বাসার উপর আছে তো? দরকার হলে একটু সরিয়ে দিন।';
                     show('search-box', false);
                     openMap(p.coords.latitude, p.coords.longitude, 18);
-                }, () => err('ask-msg', 'লোকেশন পাওয়া যায়নি। ফোনের লোকেশন (GPS) চালু করে "Allow" দিন, অথবা "বাইরে আছি" চেপে ম্যাপে দিন।'),
-                { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+                }, () => {
+                    err('ask-msg');
+                    fallback('ফোনের লোকেশন পাওয়া যায়নি, সমস্যা নেই। বাসার কাছের রাস্তা/মসজিদ/দোকানের নাম লিখে খুঁজুন, তারপর পিনটা বাসার উপর রাখুন।');
+                }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
             },
             away() {
                 mode = 'map'; accuracy = null;
