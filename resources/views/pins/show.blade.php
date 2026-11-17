@@ -66,7 +66,7 @@
             </div>
             <ul id="results" class="space-y-1"></ul>
             <div id="map" class="pin-map"></div>
-            <p class="text-sm text-gray-600">ম্যাপে লাল পিনটা টেনে বা ম্যাপে চেপে ঠিক আপনার বাসার উপর রাখুন।</p>
+            <p class="text-sm text-gray-600">ম্যাপে নীল পিনটা টেনে বা ম্যাপে চেপে ঠিক আপনার বাসার উপর রাখুন।</p>
             <button id="save" type="button" class="pin-btn pin-primary" onclick="pin.save()">✅ এটাই আমার বাসা</button>
             <button type="button" class="pin-btn pin-quiet" onclick="pin.restart()">পেছনে যান</button>
             <p id="pick-msg" class="pin-err" hidden></p>
