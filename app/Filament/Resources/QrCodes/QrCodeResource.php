@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\QrCodes;
 
 use App\Filament\Resources\QrCodes\Pages\ManageQrCodes;
+use App\Filament\Support\FeatureGate;
 use App\Models\QrCode;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -22,6 +23,8 @@ use UnitEnum;
 
 class QrCodeResource extends Resource
 {
+    use FeatureGate;
+
     protected static ?string $model = QrCode::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQrCode;

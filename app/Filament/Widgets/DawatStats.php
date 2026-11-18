@@ -12,6 +12,7 @@ use App\Models\Kitchen;
 use App\Models\Post;
 use App\Models\Report;
 use App\Models\User;
+use App\Support\AdminFeatures;
 use App\Support\DhakaTime;
 use App\Support\Roles;
 use Filament\Widgets\StatsOverviewWidget;
@@ -20,6 +21,12 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 /** F23: today at a glance, in Dhaka time. */
 class DawatStats extends StatsOverviewWidget
 {
+    /** F69: admins, and staff with this part's feature. */
+    public static function canView(): bool
+    {
+        return AdminFeatures::allows(static::class);
+    }
+
     protected static ?int $sort = 1;
 
     protected ?string $pollingInterval = '60s';

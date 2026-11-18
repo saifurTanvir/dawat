@@ -36,7 +36,8 @@ final class LoginHelpActions
     /** Never for admin accounts (they sign in to the panel with a password). */
     private static function allowed(Closure $userOf): Closure
     {
-        return fn ($record) => ($u = $userOf($record)) !== null && ! ($u->exists && $u->hasRole('admin'));
+        // F69: login links and codes are an admin's tools, never for Dawat's own team accounts.
+        return fn ($record) => auth()->user()?->isAdmin() && ($u = $userOf($record)) !== null && ! ($u->exists && $u->isTeam());
     }
 
     public static function resend(Closure $userOf): Action

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Companies;
 
 use App\Actions\EnsurePerson;
 use App\Filament\Resources\Companies\Pages\ManageCompanies;
+use App\Filament\Support\FeatureGate;
 use App\Filament\Support\PhoneField;
 use App\Models\Area;
 use App\Models\Company;
@@ -30,6 +31,8 @@ use UnitEnum;
  */
 class CompanyResource extends Resource
 {
+    use FeatureGate;
+
     protected static ?string $model = Company::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;

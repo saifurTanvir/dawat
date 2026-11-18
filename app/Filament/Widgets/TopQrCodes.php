@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\QrCode;
+use App\Support\AdminFeatures;
 use App\Support\DhakaTime;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -12,6 +13,12 @@ use Illuminate\Database\Eloquent\Builder;
 /** F23: which printed QR codes bring people (and contacts) in. */
 class TopQrCodes extends TableWidget
 {
+    /** F69: admins, and staff with this part's feature. */
+    public static function canView(): bool
+    {
+        return AdminFeatures::allows(static::class);
+    }
+
     protected static ?int $sort = 4;
 
     protected static ?string $heading = 'কোন QR কোড কাজ করছে';

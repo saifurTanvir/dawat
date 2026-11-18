@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Stickers;
 
 use App\Filament\Resources\Stickers\Pages\ManageStickers;
+use App\Filament\Support\FeatureGate;
 use App\Models\Sticker;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -16,6 +17,8 @@ use UnitEnum;
 /** F27: pre-printed QR stickers for boxes. */
 class StickerResource extends Resource
 {
+    use FeatureGate;
+
     protected static ?string $model = Sticker::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQrCode;

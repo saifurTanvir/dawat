@@ -7,6 +7,7 @@ use App\Models\CallRequest;
 use App\Models\Order;
 use App\Support\DhakaTime;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Textarea;
@@ -43,7 +44,11 @@ final class CallRequestActions
             ->schema(fn (CallRequest $r) => [
                 Textarea::make('body')->label('কী কথা হলো')->rows(3)->maxLength(1000)
                     ->placeholder('যেমন: বক্স কাল সকালে দেব বলেছি, শুক্রবার থেকে খাবার দেবেন'),
-                Radio::make('status')->label('অবস্থা')->options(CallRequestStatus::options())->inline()->required(),
+                // F69: one tick closes it — it leaves "যোগাযোগ করতে হবে".
+                Checkbox::make('close')->label('কথা শেষ — তালিকা থেকে সরিয়ে দিন')->live()
+                    ->helperText('উপরের লেখাটাই থাকবে বন্ধ করার কারণ হিসেবে।'),
+                Radio::make('status')->label('অবস্থা')->options(CallRequestStatus::options())->inline()->required()
+                    ->hidden(fn ($get) => (bool) $get('close')),
                 Placeholder::make('history')->label('আগের রিমার্কস')
                     ->content(fn () => self::history($r))
                     ->visible(fn () => ! empty($r->notes)),
@@ -52,9 +57,10 @@ final class CallRequestActions
                 if (filled($data['body'] ?? null)) {
                     $r->addNote($data['body'], auth()->user());
                 }
-                self::setStatus($r, CallRequestStatus::from($data['status']));
+                $close = (bool) ($data['close'] ?? false);
+                self::setStatus($r, $close ? CallRequestStatus::Done : CallRequestStatus::from($data['status']));
                 $r->save();
-                Notification::make()->title('রাখা হয়েছে')->success()->send();
+                Notification::make()->title($close ? 'রাখা হয়েছে, তালিকা থেকে সরানো হলো' : 'রাখা হয়েছে')->success()->send();
             });
     }
 
@@ -62,7 +68,15 @@ final class CallRequestActions
     {
         return Action::make('done')->label('কথা হয়েছে')->icon(Heroicon::OutlinedCheck)->color('success')
             ->visible(fn (CallRequest $r) => $r->status !== CallRequestStatus::Done)
-            ->action(function (CallRequest $r) {
+            ->modalHeading(fn (CallRequest $r) => 'কথা হয়েছে — '.($r->name ?: $r->phone))
+            ->modalDescription('তালিকা থেকে সরে যাবে।')
+            ->modalSubmitActionLabel('বন্ধ করুন')
+            // F69: close with a word on what was said.
+            ->schema([Textarea::make('body')->label('কী কথা হলো (ইচ্ছা হলে)')->rows(2)->maxLength(1000)])
+            ->action(function (CallRequest $r, array $data) {
+                if (filled($data['body'] ?? null)) {
+                    $r->addNote($data['body'], auth()->user());
+                }
                 self::setStatus($r, CallRequestStatus::Done);
                 $r->save();
                 Notification::make()->title('কথা হয়েছে')->success()->send();

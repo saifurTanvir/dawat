@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Filament\Support\Links;
 use App\Models\PinLink;
 use App\Services\Kitchens\PinLinks;
+use App\Support\AdminFeatures;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
@@ -23,7 +24,7 @@ class PinReviews extends TableWidget
 
     public static function canView(): bool
     {
-        return PinLink::query()->needsReview()->exists();
+        return AdminFeatures::allows(static::class) && (PinLink::query()->needsReview()->exists());
     }
 
     public function table(Table $table): Table

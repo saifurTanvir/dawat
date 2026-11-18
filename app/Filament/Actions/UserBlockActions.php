@@ -19,7 +19,9 @@ class UserBlockActions
                 ->color('danger')
                 ->requiresConfirmation()
                 ->modalDescription('এই নম্বর দিয়ে আর লগইন করা যাবে না, আর বর্তমান লগইনও বাতিল হবে।')
-                ->visible(fn (User $record) => ! $record->isBlocked() && $record->id !== auth()->id())
+                ->visible(fn (User $record) => ! $record->isBlocked() && $record->id !== auth()->id()
+                    // F69: only an admin may block one of Dawat's own team.
+                    && (! $record->isTeam() || auth()->user()?->isAdmin()))
                 ->action(function (User $record) {
                     $record->update(['status' => UserStatus::Blocked]);
                     $record->tokens()->delete();
@@ -35,7 +37,7 @@ class UserBlockActions
                 ->icon('heroicon-o-check')
                 ->color('success')
                 ->requiresConfirmation()
-                ->visible(fn (User $record) => $record->isBlocked())
+                ->visible(fn (User $record) => $record->isBlocked() && (! $record->isTeam() || auth()->user()?->isAdmin()))
                 ->action(function (User $record) {
                     $record->update(['status' => UserStatus::Active]);
                     Notification::make()->title('ইউজার আবার চালু')->success()->send();

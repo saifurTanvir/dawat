@@ -23,7 +23,7 @@ class Impersonate
 
     public static function canOpen(User $actor, User $target): bool
     {
-        if ($actor->id === $target->id || $target->hasRole(Roles::ADMIN) || $target->isBlocked()) {
+        if ($actor->id === $target->id || $target->isTeam() || $target->isBlocked()) {
             return false;
         }
         if ($actor->hasRole(Roles::ADMIN)) {

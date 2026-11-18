@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\PageWidgets\DeliveryQualityTable;
+use App\Filament\Support\FeatureGate;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -11,6 +12,8 @@ use UnitEnum;
 /** F67: which shahidars skip the sticker or hand over without any check. */
 class DeliveryQuality extends Page
 {
+    use FeatureGate;
+
     protected string $view = 'filament.pages.delivery-quality';
 
     protected static ?string $slug = 'delivery-quality';

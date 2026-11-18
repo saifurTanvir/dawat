@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Resources\Kitchens\KitchenResource;
+use App\Filament\Support\FeatureGate;
 use App\Filament\Support\FeeFields;
 use App\Models\AppSetting;
 use App\Models\Area;
@@ -18,6 +19,8 @@ use UnitEnum;
 /** F56: what comes off a cook's price — for everyone, and who has their own. */
 class CookFeesPage extends Page
 {
+    use FeatureGate;
+
     protected string $view = 'filament.pages.cook-fees';
 
     protected static ?string $slug = 'cook-fees';

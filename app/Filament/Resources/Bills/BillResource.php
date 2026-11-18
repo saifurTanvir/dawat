@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Bills;
 use App\Filament\Resources\Bills\Pages\ListBills;
 use App\Filament\Resources\Bills\Pages\ViewBill;
 use App\Filament\Resources\Customers\CustomerResource;
+use App\Filament\Support\FeatureGate;
 use App\Models\Bill;
 use App\Models\Order;
 use App\Services\Orders\Billing;
@@ -29,6 +30,8 @@ use UnitEnum;
 /** F39: customers' weekly and monthly bills, part payments and what is still due. */
 class BillResource extends Resource
 {
+    use FeatureGate;
+
     protected static ?string $model = Bill::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;

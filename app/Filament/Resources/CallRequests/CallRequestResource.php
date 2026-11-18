@@ -5,6 +5,7 @@ namespace App\Filament\Resources\CallRequests;
 use App\Enums\CallRequestStatus;
 use App\Filament\Actions\CallRequestActions;
 use App\Filament\Resources\CallRequests\Pages\ManageCallRequests;
+use App\Filament\Support\FeatureGate;
 use App\Filament\Support\Links;
 use App\Filament\Support\PhoneField;
 use App\Models\CallRequest;
@@ -28,6 +29,8 @@ use UnitEnum;
  */
 class CallRequestResource extends Resource
 {
+    use FeatureGate;
+
     protected static ?string $model = CallRequest::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPhoneArrowUpRight;

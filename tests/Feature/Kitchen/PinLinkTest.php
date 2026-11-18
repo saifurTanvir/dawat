@@ -73,10 +73,9 @@ class PinLinkTest extends TestCase
         $this->postJson(route('pin.store', $link->token), [...$this->near(6000), 'mode' => 'map'])
             ->assertOk()->assertJson(['result' => 'review']);
         $this->assertNull($this->kitchen->fresh()->location);
-        $this->assertTrue(PinReviews::canView());
-
         $admin = User::factory()->admin()->create();
         $this->actingAs($admin);
+        $this->assertTrue(PinReviews::canView()); // F69: widgets show to admins and their staff only
         Livewire::test(PinReviews::class)->assertCanSeeTableRecords([$link])->callTableAction('accept', $link);
         $this->assertNotNull($this->kitchen->fresh()->location);
         $this->assertFalse(PinReviews::canView());

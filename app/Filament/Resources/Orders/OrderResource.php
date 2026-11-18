@@ -8,6 +8,7 @@ use App\Filament\Actions\ActForCookActions;
 use App\Filament\Actions\RemovalActions;
 use App\Filament\Resources\Orders\Pages\ManageOrders;
 use App\Filament\Resources\Orders\Pages\ViewOrder;
+use App\Filament\Support\FeatureGate;
 use App\Filament\Support\Links;
 use App\Models\Order;
 use App\Models\User;
@@ -39,6 +40,8 @@ use UnitEnum;
 /** F26: every regular customer's box, today by default. */
 class OrderResource extends Resource
 {
+    use FeatureGate;
+
     protected static ?string $model = Order::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArchiveBox;

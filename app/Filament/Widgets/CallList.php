@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Filament\Actions\CallRequestActions;
 use App\Filament\Resources\CallRequests\CallRequestResource;
 use App\Models\CallRequest;
+use App\Support\AdminFeatures;
 use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -21,7 +22,7 @@ class CallList extends TableWidget
 
     public static function canView(): bool
     {
-        return CallRequest::open()->exists();
+        return AdminFeatures::allows(static::class) && (CallRequest::open()->exists());
     }
 
     public function table(Table $table): Table

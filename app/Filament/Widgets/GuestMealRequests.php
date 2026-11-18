@@ -7,6 +7,7 @@ use App\Models\GuestMeal;
 use App\Models\Order;
 use App\Models\Post;
 use App\Services\Regular\GuestMeals;
+use App\Support\AdminFeatures;
 use App\Support\PhoneNumber;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -29,7 +30,7 @@ class GuestMealRequests extends TableWidget
 
     public static function canView(): bool
     {
-        return GuestMeals::current()->exists();
+        return AdminFeatures::allows(static::class) && (GuestMeals::current()->exists());
     }
 
     public function table(Table $table): Table

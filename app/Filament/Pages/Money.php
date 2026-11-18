@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Support\FeatureGate;
 use App\Models\Kitchen;
 use App\Models\Settlement;
 use App\Models\User;
@@ -19,6 +20,8 @@ use UnitEnum;
 /** F28: who holds cash, whom Dawat owes, who still has to pay. */
 class Money extends Page
 {
+    use FeatureGate;
+
     protected string $view = 'filament.pages.money';
 
     protected static ?string $slug = 'money';

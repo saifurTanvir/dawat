@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Tags;
 
 use App\Enums\TagType;
 use App\Filament\Resources\Tags\Pages\ManageTags;
+use App\Filament\Support\FeatureGate;
 use App\Models\Tag;
 use BackedEnum;
 use Filament\Actions\EditAction;
@@ -21,6 +22,8 @@ use UnitEnum;
 
 class TagResource extends Resource
 {
+    use FeatureGate;
+
     protected static ?string $model = Tag::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;

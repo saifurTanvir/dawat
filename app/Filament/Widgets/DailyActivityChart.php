@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\ContactEvent;
 use App\Models\Post;
+use App\Support\AdminFeatures;
 use App\Support\DhakaTime;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Carbon;
@@ -11,6 +12,12 @@ use Illuminate\Support\Carbon;
 /** F23: posts and buyer contacts per Dhaka day. */
 class DailyActivityChart extends ChartWidget
 {
+    /** F69: admins, and staff with this part's feature. */
+    public static function canView(): bool
+    {
+        return AdminFeatures::allows(static::class);
+    }
+
     protected static ?int $sort = 2;
 
     protected int|string|array $columnSpan = 'full';

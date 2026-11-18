@@ -10,6 +10,7 @@ use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Filament\Resources\Users\Pages\ViewUser;
 use App\Filament\Resources\Users\Schemas\UserInfolist;
 use App\Filament\Resources\Users\Tables\UsersTable;
+use App\Filament\Support\FeatureGate;
 use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -21,6 +22,8 @@ use UnitEnum;
 
 class UserResource extends Resource
 {
+    use FeatureGate;
+
     protected static ?string $model = User::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;

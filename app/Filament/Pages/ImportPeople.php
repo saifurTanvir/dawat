@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Support\FeatureGate;
 use App\Models\PeopleImport;
 use App\Models\PeopleImportRow;
 use App\Services\Import\PeopleImporter;
@@ -24,6 +25,8 @@ use UnitEnum;
  */
 class ImportPeople extends Page
 {
+    use FeatureGate;
+
     protected string $view = 'filament.pages.import-people';
 
     protected static ?string $slug = 'import-people';

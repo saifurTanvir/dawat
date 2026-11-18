@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Enums\KitchenStatus;
+use App\Filament\Support\FeatureGate;
 use App\Models\Kitchen;
 use App\Models\PinLink;
 use App\Services\Geo\Zones;
@@ -16,6 +17,8 @@ use UnitEnum;
 /** F67: 1 km zones over every area — cooks, customers, shahidars in each. */
 class ZoneMap extends Page
 {
+    use FeatureGate;
+
     protected string $view = 'filament.pages.zone-map';
 
     protected static ?string $slug = 'zones';

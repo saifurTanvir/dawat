@@ -6,6 +6,7 @@ use App\Filament\Support\Links;
 use App\Models\MealChoice;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Regular\TodayMenu;
+use App\Support\AdminFeatures;
 use App\Support\PhoneNumber;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
@@ -27,7 +28,7 @@ class MealRequests extends TableWidget
 
     public static function canView(): bool
     {
-        return self::query()->exists();
+        return AdminFeatures::allows(static::class) && (self::query()->exists());
     }
 
     private static function query(): Builder

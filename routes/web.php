@@ -37,9 +37,9 @@ Route::get('/admin-tools/login-qr', function (Request $request) {
     return response()->view('admin.login-qr', ['url' => $url, 'svg' => QrImage::svg($url)])->header('Cache-Control', 'no-store');
 })->name('admin.login-qr');
 
-// F62: admins look up a home pin from an address or a map link (the panel's location box).
+// F62: admins look up a home pin from an address or a map link (the panel's location box). F69: staff too.
 Route::get('/admin-tools/geocode', function (Request $request, Geocoder $geocoder) {
-    abort_unless($request->user()?->hasRole('admin'), 403);
+    abort_unless($request->user()?->isTeam(), 403);
     $q = (string) $request->validate(['q' => ['required', 'string', 'min:3', 'max:500']])['q'];
 
     return response()->json(['data' => $geocoder->search($q)]);

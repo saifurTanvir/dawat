@@ -32,6 +32,19 @@ class Remark extends Model
         return $this->belongsTo(User::class, 'done_by');
     }
 
+    /** Follow-ups not closed yet, due or not. */
+    public function scopeOpen(Builder $query): Builder
+    {
+        return $query->whereNotNull('follow_up_on')->whereNull('done_at');
+    }
+
+    /** F69: closes this follow-up, with what happened. */
+    public function close(?User $by, ?string $note): void
+    {
+        $note = trim((string) $note);
+        $this->forceFill(['done_at' => now(), 'done_by' => $by?->id, 'done_note' => $note === '' ? null : mb_substr($note, 0, 500)])->save();
+    }
+
     /** Follow-ups due today or earlier and not done. */
     public function scopeDue(Builder $query): Builder
     {
