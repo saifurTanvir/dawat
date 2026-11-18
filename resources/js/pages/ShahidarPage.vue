@@ -10,6 +10,11 @@
         <template v-else>
             <p v-if="notice" class="mt-4 rounded-xl bg-leaf-soft p-3" role="status">{{ notice }}</p>
 
+            <!-- F67: which box is this? Scan its sticker, hand it over from there -->
+            <button v-if="day.orders.length" type="button" class="btn-quiet mt-4 w-full border-2 border-leaf font-semibold text-leaf" :disabled="busy" @click="openFind">
+                <span aria-hidden="true" class="mr-1">📷</span>বক্স স্ক্যান করুন — কোন বক্স কার
+            </button>
+
             <p v-if="day.cash_held_paisa" class="mt-4 rounded-xl bg-plate p-3">
                 হাতে জমা টাকা <strong>{{ taka(day.cash_held_paisa) }}</strong> · দাওয়াত টিমকে বুঝিয়ে দিন
             </p>
@@ -179,6 +184,12 @@
                     <CallButtons :phone="o.customer.phone" :contact="o.customer.contact" />
                 </div>
 
+                <div v-if="handing === o.id && o.sticker" class="mt-3">
+                    <!-- F67: scan this box's own sticker; another box's sticker is caught here -->
+                    <button type="button" class="btn-primary" :disabled="busy" @click="openDoorScan(o)"><span aria-hidden="true" class="mr-1">📷</span>বক্সের স্টিকার স্ক্যান করে দিন</button>
+                    <p class="mt-1 text-xs text-muted">ভুল বক্স হলে এখানেই ধরা পড়বে। অথবা নিচে গ্রাহকের কোড দিন।</p>
+                </div>
+                <p v-if="handing === o.id && scanAlert" class="mt-3 rounded-xl border-2 border-chili bg-chili/10 p-3 font-semibold text-chili" role="alert">{{ scanAlert }}</p>
                 <form v-if="handing === o.id" class="mt-3" @submit.prevent="deliver(o, code)">
                     <label :for="`code-${o.id}`" class="mb-1 block text-sm font-semibold">গ্রাহকের SMS-এর ৪ অঙ্কের কোড</label>
                     <div class="flex gap-2">
@@ -217,6 +228,38 @@
         </template>
 
         <StickerScanner v-if="scanning" allow-skip @close="scanning = null" @found="finishPickup" />
+        <StickerScanner v-if="doorScan" title="এই বক্সের স্টিকার স্ক্যান করুন" @close="doorScan = null" @found="finishDoorScan" />
+        <StickerScanner v-if="finding" title="কোন বক্স? স্টিকার স্ক্যান করুন" @close="finding = false" @found="finishFind" />
+
+        <!-- F67: the scanned box, handed over from here -->
+        <div v-if="found" class="fixed inset-0 z-40 flex items-end justify-center bg-ink/50 p-3" role="dialog" aria-modal="true" aria-labelledby="found-title" @click.self="closeFound">
+            <div class="w-full max-w-lg rounded-[var(--radius-plate)] bg-plate p-5">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="text-sm text-muted">স্টিকার {{ found.sticker }} · {{ found.meal_slot_label }}</p>
+                        <h2 id="found-title" class="text-lg font-semibold">বক্স {{ found.code }} · {{ found.customer.name }}</h2>
+                        <p class="text-sm">{{ found.customer.address }}</p>
+                        <p v-if="found.customer.note" class="text-sm text-muted">{{ found.customer.note }}</p>
+                        <p class="mt-1 text-sm">
+                            {{ bn(found.plates) }} প্লেট · {{ found.kitchen.name }} ·
+                            <template v-if="found.pays_by_bill"><strong>বিলে যোগ হবে — টাকা নেবেন না</strong></template>
+                            <template v-else>নেবেন <strong>{{ taka(found.total_paisa) }}</strong></template>
+                        </p>
+                    </div>
+                    <CallButtons :phone="found.customer.phone" :contact="found.customer.contact" />
+                </div>
+                <p v-if="scanAlert" class="mt-3 rounded-xl border-2 border-chili bg-chili/10 p-3 font-semibold text-chili" role="alert">{{ scanAlert }}</p>
+                <template v-if="found.status === 'picked_up'">
+                    <label v-if="!found.pays_by_bill" class="mt-3 flex items-center gap-2 text-sm">
+                        <input v-model="cash" type="checkbox" class="size-5 accent-leaf" />
+                        {{ taka(found.total_paisa) }} নগদ পেয়েছি
+                    </label>
+                    <button type="button" class="btn-primary mt-3" :disabled="busy" @click="deliverScanned(found, foundSticker)">দিয়েছি</button>
+                </template>
+                <p v-else class="mt-3 rounded-lg bg-steel px-3 py-2 text-sm">{{ found.status === 'booked' ? 'এই বক্স এখনো পিকআপ হয়নি।' : found.status_label }}</p>
+                <button type="button" class="btn-quiet mt-2 w-full" @click="closeFound">বন্ধ</button>
+            </div>
+        </div>
     </section>
 </template>
 
@@ -446,6 +489,81 @@ function openHand(order) {
     handing.value = order.id;
     code.value = '';
     cash.value = true;
+    scanAlert.value = '';
+}
+
+// F67: scanning at the door
+const doorScan = ref(null); // order being handed over by scanning its sticker
+const finding = ref(false);
+const found = ref(null); // a box found by its sticker
+const foundSticker = ref('');
+const scanAlert = ref(''); // a wrong box, in red
+
+function buzz() {
+    try {
+        navigator.vibrate?.([200, 100, 200]);
+    } catch {
+        /* no vibration */
+    }
+}
+
+function openDoorScan(order) {
+    scanAlert.value = '';
+    doorScan.value = order;
+}
+
+async function finishDoorScan(sticker) {
+    const order = doorScan.value;
+    doorScan.value = null;
+    await deliverScanned(order, sticker);
+}
+
+/** Hands a box over with its own sticker; a wrong box comes back as a red alert. */
+async function deliverScanned(order, sticker) {
+    busy.value = true;
+    scanAlert.value = '';
+    try {
+        const { data } = await api.post(`/shahidar/orders/${order.id}/deliver`, { sticker, cash_received: cash.value });
+        const i = day.value.orders.findIndex((o) => o.id === order.id);
+        if (i >= 0) day.value.orders.splice(i, 1, data.data);
+        notice.value = `বক্স ${order.code}: ${data.message}`;
+        handing.value = null;
+        found.value = null;
+        refreshCash();
+    } catch (e) {
+        scanAlert.value = errorMessage(e);
+        buzz();
+    } finally {
+        busy.value = false;
+    }
+}
+
+function openFind() {
+    scanAlert.value = '';
+    finding.value = true;
+}
+
+async function finishFind(sticker) {
+    finding.value = false;
+    if (!sticker) return;
+    busy.value = true;
+    try {
+        const { data } = await api.get(`/shahidar/stickers/${encodeURIComponent(sticker)}`);
+        found.value = data.data;
+        foundSticker.value = sticker;
+        cash.value = true;
+        scanAlert.value = '';
+    } catch (e) {
+        notice.value = errorMessage(e);
+        buzz();
+    } finally {
+        busy.value = false;
+    }
+}
+
+function closeFound() {
+    found.value = null;
+    scanAlert.value = '';
 }
 
 async function deliver(order, c) {

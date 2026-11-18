@@ -134,6 +134,7 @@ class BoxReviews
         return match ($o->confirm_method) {
             'cook_tap' => 'গৃহিণী নিজে দিয়েছেন',
             Delivery::BY_CUSTOMER_SCAN => 'আপনি স্টিকার স্ক্যান করেছেন',
+            Delivery::BY_CUSTOMER_CODE => 'আপনি কোড দিয়ে নিশ্চিত করেছেন',
             Delivery::BY_SHAHIDAR_CODE, Delivery::BY_SHAHIDAR_TAP => 'শাহিদার '.($o->shahidar?->name ?? ''),
             default => $o->shahidar ? 'শাহিদার '.$o->shahidar->name : null,
         };

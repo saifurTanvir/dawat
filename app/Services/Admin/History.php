@@ -133,7 +133,8 @@ class History
         if ($o->delivered_at) {
             $add($o->delivered_at, 'পৌঁছেছে', BoxReviews::deliveredBy($o)
                 .match ($o->confirm_method) {
-                    'shahidar_code' => ' · গ্রাহকের কোড দিয়ে', 'shahidar_tap' => ' · কোড ছাড়া (যাচাই বাকি)', default => ''
+                    'shahidar_code' => ' · গ্রাহকের কোড দিয়ে', 'shahidar_tap' => ' · কোড ছাড়া (যাচাই বাকি)',
+                    'shahidar_scan' => ' · দরজায় বক্সের স্টিকার স্ক্যান', 'customer_code' => ' · গ্রাহক স্টিকারের পাতায় কোড দিয়ে', default => ''
                 });
         }
         if ($o->status === OrderStatus::Failed) {
