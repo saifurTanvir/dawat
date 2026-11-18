@@ -4,6 +4,7 @@ namespace App\Filament\Actions;
 
 use App\Enums\CallRequestStatus;
 use App\Models\CallRequest;
+use App\Models\Order;
 use App\Support\DhakaTime;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Placeholder;
@@ -11,8 +12,10 @@ use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 /** F66: the buttons on every row of the call list — mobile call, WhatsApp, notes, done. */
 final class CallRequestActions
@@ -76,6 +79,34 @@ final class CallRequestActions
             $r->done_at = null;
             $r->done_by = null;
         }
+    }
+
+    /**
+     * The "কেন" cell: one short line in the list; a tap opens the whole
+     * reason with the remarks so far.
+     */
+    public static function reasonColumn(int $chars = 40): TextColumn
+    {
+        return TextColumn::make('reason')->label('কেন')
+            ->formatStateUsing(fn (?string $state) => Str::limit((string) $state, $chars))
+            ->description(fn (CallRequest $r) => ($n = count($r->notes ?? [])) ? 'রিমার্কস '.Order::banglaDigits($n).'টা · পুরোটা দেখুন' : 'পুরোটা দেখুন')
+            ->color('gray')
+            ->action(self::reason());
+    }
+
+    public static function reason(): Action
+    {
+        return Action::make('reason')
+            ->modalHeading(fn (CallRequest $r) => 'কেন — '.($r->name ?: ($r->user?->name ?: $r->phone)))
+            ->modalWidth('lg')
+            ->schema(fn (CallRequest $r) => [
+                Placeholder::make('full')->hiddenLabel()->content(fn () => new HtmlString('<div style="white-space:pre-line;line-height:1.6">'.e($r->reason).'</div>')),
+                Placeholder::make('history')->label('রিমার্কস')
+                    ->content(fn () => self::history($r))
+                    ->visible(fn () => ! empty($r->notes)),
+            ])
+            ->modalSubmitAction(false)
+            ->modalCancelActionLabel('বন্ধ');
     }
 
     public static function history(CallRequest $r): HtmlString

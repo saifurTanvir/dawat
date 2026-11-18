@@ -84,4 +84,21 @@ class CallListTest extends TestCase
         $this->actingAs(User::factory()->create());
         $this->get('/admin/call-list')->assertForbidden();
     }
+
+    public function test_a_long_reason_is_one_short_line_and_opens_whole(): void
+    {
+        $long = 'খাবার দেওয়ার আগে আপনার সাথে ফোনে কথা বলতে চান, কিছু প্রশ্ন আছে। WhatsApp এ দুবার কল করেছিলেন, কাল সকালে আবার ফোন দিতে বলেছেন।';
+        $r = CallRequest::create(['phone' => '01713259733', 'name' => 'রেহানা', 'reason' => $long]);
+        $r->addNote('ফোন ধরেননি', $this->admin);
+        $r->save();
+
+        Livewire::test(CallList::class)
+            ->assertDontSee('কাল সকালে আবার ফোন দিতে বলেছেন')
+            ->assertSee('রিমার্কস ১টা · পুরোটা দেখুন')
+            ->assertTableActionVisible('reason', $r)
+            ->callTableAction('reason', $r)
+            ->assertHasNoTableActionErrors();
+
+        Livewire::test(ManageCallRequests::class)->assertDontSee('কাল সকালে আবার ফোন দিতে বলেছেন')->assertTableActionVisible('reason', $r);
+    }
 }
