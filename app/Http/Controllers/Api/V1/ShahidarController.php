@@ -11,6 +11,7 @@ use App\Models\MealChoice;
 use App\Models\Order;
 use App\Models\Pairing;
 use App\Models\Post;
+use App\Models\Sticker;
 use App\Models\User;
 use App\Services\Images\UnreadablePhotoException;
 use App\Services\Money\CookFees;
@@ -98,16 +99,39 @@ class ShahidarController extends Controller
         $this->mine($request, $order);
         $data = $request->validate([
             'code' => ['nullable', 'digits:4'],
+            // F67: the box's own sticker, scanned at the door.
+            'sticker' => ['nullable', 'string', 'max:200'],
             'cash_received' => ['sometimes', 'boolean'],
         ], ['code.digits' => 'কোড ৪ অঙ্কের।']);
 
-        $order = $this->delivery->deliverByShahidar($order, $request->user(), $data['code'] ?? null);
+        $order = $this->delivery->deliverByShahidar($order, $request->user(), $data['code'] ?? null, $data['sticker'] ?? null);
         // F39: weekly/monthly customers pay on their bill, not at the door.
         if ($request->boolean('cash_received', true) && ! $order->customer?->paysByBill()) {
             $order = $this->money->markPaid($order, $request->user());
         }
 
         return $this->done($order, 'পৌঁছে দেওয়া হয়েছে।');
+    }
+
+    /**
+     * GET /api/v1/shahidar/stickers/{code} — F67: "বক্স স্ক্যান করুন": which
+     * of my boxes this is (customer, address, money), to hand it over from there.
+     */
+    public function scan(Request $request, string $code): JsonResponse
+    {
+        $normal = Sticker::normalize($code);
+        $sticker = $normal ? Sticker::with('order')->where('code', $normal)->first() : null;
+        if (! $sticker) {
+            return response()->json(['message' => 'এই স্টিকার চেনা যাচ্ছে না। আবার স্ক্যান করুন বা নম্বরটা লিখুন।'], 422);
+        }
+        if (! $sticker->order) {
+            return response()->json(['message' => 'এই স্টিকারটা ফাঁকা — এখনো কোনো বক্সে লাগানো হয়নি। পিকআপের সময় তালিকার "পিকআপ" থেকে লাগান।'], 422);
+        }
+        if ($sticker->order->shahidar_id !== $request->user()->id) {
+            return response()->json(['message' => 'এই বক্স আপনার তালিকায় নেই। দাওয়াত টিমকে জানান।'], 422);
+        }
+
+        return $this->done($sticker->order, 'বক্স '.$sticker->order->code().' পাওয়া গেছে।');
     }
 
     /** POST — cash taken later, e.g. after the customer scanned the box. */

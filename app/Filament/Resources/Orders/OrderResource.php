@@ -12,6 +12,7 @@ use App\Filament\Support\Links;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\Orders\BookingPlanner;
+use App\Services\Orders\Delivery;
 use App\Services\Reviews\BoxReviews;
 use App\Support\Roles;
 use BackedEnum;
@@ -97,12 +98,7 @@ class OrderResource extends Resource
                 TextColumn::make('status')->label('অবস্থা')->badge()
                     ->description(fn (Order $record) => $record->cancel_reason ?? $record->failure_reason),
                 TextColumn::make('confirm_method')->label('নিশ্চিত')->placeholder('—')
-                    ->formatStateUsing(fn (?string $state) => match ($state) {
-                        'customer_scan' => 'গ্রাহক স্ক্যান',
-                        'shahidar_code' => 'কোড দিয়ে',
-                        'shahidar_tap' => 'যাচাই বাকি',
-                        default => $state,
-                    })
+                    ->formatStateUsing(fn (?string $state) => Delivery::METHODS[$state] ?? $state)
                     ->badge()->color(fn (?string $state) => $state === 'shahidar_tap' ? 'warning' : 'success'),
             ])
             ->filters([

@@ -32,7 +32,11 @@ class StickerController extends Controller
             default => 'other',
         };
         if ($role === 'other') {
-            return response()->json(['data' => ['state' => 'other']]);
+            // F67: whoever holds the box may confirm with the SMS code; nothing about it is shown.
+            return response()->json(['data' => [
+                'state' => 'other',
+                'can_confirm_with_code' => $order->status === OrderStatus::PickedUp && $order->code_failures < Delivery::MAX_CODE_FAILURES,
+            ]]);
         }
 
         return response()->json(['data' => [
@@ -58,6 +62,18 @@ class StickerController extends Controller
         abort_unless($order && $order->recipient()->id === $request->user()->id, 404);
 
         $delivery->receivedByCustomer($order, $request->user());
+
+        return response()->json(['message' => 'ধন্যবাদ! খাবার পেয়েছেন, লিখে রাখা হলো।']);
+    }
+
+    /** POST /api/v1/stickers/{code}/confirm {code} — F67: "খাবার পেয়েছি" with the SMS code, no sign-in. */
+    public function confirm(Request $request, string $code, Delivery $delivery): JsonResponse
+    {
+        $data = $request->validate(['code' => ['required', 'digits:4']], ['code.*' => 'SMS-এর ৪ অঙ্কের কোডটা লিখুন।']);
+        $order = $this->find($code)?->order;
+        abort_unless($order, 404);
+
+        $delivery->receivedWithCode($order, $data['code']);
 
         return response()->json(['message' => 'ধন্যবাদ! খাবার পেয়েছেন, লিখে রাখা হলো।']);
     }

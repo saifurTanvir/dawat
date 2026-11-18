@@ -154,10 +154,10 @@ class DeliveryTest extends TestCase
         Sticker::create(['code' => 'JKMNPQRS', 'batch' => 't']);
         $this->asShahidar()->postJson("/api/v1/shahidar/orders/{$order->id}/pickup", ['sticker' => 'ABCDEFGH'])->assertOk();
 
-        // A stranger, signed in or not, learns nothing.
+        // A stranger, signed in or not, learns nothing — only that the SMS code can confirm it (F67).
         $this->app['auth']->forgetGuards();
-        $this->getJson('/api/v1/stickers/ABCDEFGH')->assertOk()->assertExactJson(['data' => ['state' => 'other']]);
-        $this->actingAs(User::factory()->create(), 'sanctum')->getJson('/api/v1/stickers/abcd-efgh')->assertExactJson(['data' => ['state' => 'other']]);
+        $this->getJson('/api/v1/stickers/ABCDEFGH')->assertOk()->assertExactJson(['data' => ['state' => 'other', 'can_confirm_with_code' => true]]);
+        $this->actingAs(User::factory()->create(), 'sanctum')->getJson('/api/v1/stickers/abcd-efgh')->assertExactJson(['data' => ['state' => 'other', 'can_confirm_with_code' => true]]);
         $this->app['auth']->forgetGuards();
         $this->getJson('/api/v1/stickers/JKMNPQRS')->assertExactJson(['data' => ['state' => 'blank']]);
 

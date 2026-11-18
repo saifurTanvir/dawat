@@ -66,6 +66,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
     // F27: scanning a box sticker (sign-in optional; strangers see nothing personal)
     Route::get('/stickers/{code}', [StickerController::class, 'show'])->middleware('throttle:feed')->name('stickers.show');
+    // F67: the customer confirms with their SMS code, no sign-in.
+    Route::post('/stickers/{code}/confirm', [StickerController::class, 'confirm'])->middleware('throttle:otp')->name('stickers.confirm');
 
     // F1: phone + OTP sign-in
     Route::middleware('throttle:otp')->prefix('auth')->name('auth.')->group(function () {
@@ -155,6 +157,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::middleware('can:work-as-shahidar')->prefix('shahidar')->name('shahidar.')->group(function () {
             Route::get('/today', [ShahidarController::class, 'today'])->name('today');
             Route::post('/orders/{order}/pickup', [ShahidarController::class, 'pickup'])->name('orders.pickup');
+            Route::get('/stickers/{code}', [ShahidarController::class, 'scan'])->name('stickers.scan');
             Route::post('/orders/{order}/deliver', [ShahidarController::class, 'deliver'])->middleware('throttle:otp')->name('orders.deliver');
             Route::post('/orders/{order}/fail', [ShahidarController::class, 'fail'])->name('orders.fail');
             Route::post('/orders/{order}/paid', [ShahidarController::class, 'paid'])->name('orders.paid');
