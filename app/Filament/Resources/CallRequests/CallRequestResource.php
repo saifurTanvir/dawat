@@ -79,10 +79,10 @@ class CallRequestResource extends Resource
                     ->description(fn (CallRequest $r) => $r->phone.' · '.(CallRequest::SOURCES[$r->source] ?? $r->source))
                     ->url(fn (CallRequest $r) => $r->user ? Links::person($r->user) : null)
                     ->searchable(['name', 'phone']),
-                TextColumn::make('reason')->label('কেন')->wrap()->limit(120),
+                CallRequestActions::reasonColumn(),
                 TextColumn::make('latest_note')->label('শেষ রিমার্কস')->placeholder('—')->wrap()
                     ->state(fn (CallRequest $r) => $r->latestNote())
-                    ->formatStateUsing(fn (?string $state) => $state ? Str::limit($state, 80) : null),
+                    ->formatStateUsing(fn (?string $state) => $state ? Str::limit($state, 50) : null),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
                 TextColumn::make('created_at')->label('কবে')->since()->sortable(),
             ])
