@@ -17,6 +17,7 @@ use App\Models\Pairing;
 use App\Models\Post;
 use App\Services\Otp\OtpPurpose;
 use App\Services\Push\Push;
+use App\Services\Regular\OfficeDrops;
 use App\Support\DhakaTime;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
@@ -336,6 +337,11 @@ class BookingPlanner
                     throw $e;
                 }
             }
+        }
+
+        // F68: an office employee's box goes in the office's drop.
+        if ($pairing->customer->company_id) {
+            app(OfficeDrops::class)->attach($order->setRelation('customer', $pairing->customer));
         }
 
         // F37: always queued: a free push goes out; the SMS only when ORDER_SMS_ENABLED.

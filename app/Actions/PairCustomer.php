@@ -47,7 +47,11 @@ class PairCustomer
             }
             $sameCook = $current && $current->kitchen_id === $kitchen->id;
             // F55: one cook, one customer. The kitchen row is locked above, so two admins cannot both take her.
-            $taken = $sameCook ? null : $kitchen->pairings()->with('customer.user')->first();
+            // F68: employees of one office may share a cook — the office counts as one customer.
+            $taken = $sameCook ? null : $kitchen->pairings()->with('customer.user')
+                ->when($customer->company_id, fn ($query) => $query->whereHas('customer', fn ($c) => $c->where(
+                    fn ($w) => $w->whereNull('company_id')->orWhere('company_id', '!=', $customer->company_id))))
+                ->first();
             if ($taken) {
                 $who = $taken->customer?->user?->name ?: 'আরেকজন গ্রাহক';
                 throw ValidationException::withMessages(['kitchen_id' => "এই গৃহিণী আগে থেকেই {$who}-এর সাথে জোড়া। একজন গৃহিণী একজন গ্রাহকের সাথেই জোড়া হতে পারেন।"]);

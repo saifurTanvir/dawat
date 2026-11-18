@@ -20,6 +20,7 @@ use App\Services\Orders\Delivery;
 use App\Services\Orders\Settlements;
 use App\Services\Posts\PlateSplit;
 use App\Services\Posts\PostForCook;
+use App\Services\Regular\OfficeDrops;
 use App\Services\Regular\TodayMenu;
 use App\Support\ContactHours;
 use App\Support\DhakaTime;
@@ -83,6 +84,8 @@ class ShahidarController extends Controller
             'meal_requests' => TodayMenu::requestsToday($me)->map(fn (MealChoice $c) => self::mealRequest($c))->values(),
             // F64: guest plates my customers asked for.
             'guest_meals' => GuestMealController::shahidarRows($me->id),
+            // F68: office drops — their boxes are shown here, not one by one.
+            'office_drops' => app(OfficeDrops::class)->forShahidar($me)->values(),
         ]]);
     }
 
@@ -123,6 +126,9 @@ class ShahidarController extends Controller
         $sticker = $normal ? Sticker::with('order')->where('code', $normal)->first() : null;
         if (! $sticker) {
             return response()->json(['message' => 'এই স্টিকার চেনা যাচ্ছে না। আবার স্ক্যান করুন বা নম্বরটা লিখুন।'], 422);
+        }
+        if ($sticker->office_drop_id) {
+            return response()->json(['message' => 'এটা অফিস ড্রপের ব্যাগের স্টিকার — তালিকার "অফিস ড্রপ" থেকে বুঝিয়ে দিন।'], 422);
         }
         if (! $sticker->order) {
             return response()->json(['message' => 'এই স্টিকারটা ফাঁকা — এখনো কোনো বক্সে লাগানো হয়নি। পিকআপের সময় তালিকার "পিকআপ" থেকে লাগান।'], 422);
@@ -312,6 +318,7 @@ class ShahidarController extends Controller
             'kind' => $o->kind,
             'confirm_method' => $o->confirm_method,
             'sticker' => $o->sticker?->displayCode(),
+            'office_drop_id' => $o->office_drop_id,
             'kitchen' => [
                 'id' => $o->kitchen_id,
                 'name' => $o->kitchen->display_name,

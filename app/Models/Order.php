@@ -130,4 +130,10 @@ class Order extends Model
     {
         return strtr((string) $value, ['0' => '০', '1' => '১', '2' => '২', '3' => '৩', '4' => '৪', '5' => '৫', '6' => '৬', '7' => '৭', '8' => '৮', '9' => '৯']);
     }
+
+    /** F68: the office drop this box travels in. */
+    public function officeDrop(): BelongsTo
+    {
+        return $this->belongsTo(OfficeDrop::class);
+    }
 }

@@ -46,9 +46,15 @@ class PairingSuggester
             ->where('status', KitchenStatus::Approved)
             // Their current cook stays listed even if she has others from before F55.
             ->where(fn ($query) => $query
-                ->whereDoesntHave('pairings', fn ($query) => $query->where('customer_id', '!=', $customer->id))
+                ->whereDoesntHave('pairings', fn ($query) => $query->where('customer_id', '!=', $customer->id)
+                    // F68: a cook already feeding the same office stays free for its employees.
+                    ->when($customer->company_id, fn ($query) => $query->whereHas('customer', fn ($c) => $c->where(
+                        fn ($w) => $w->whereNull('company_id')->orWhere('company_id', '!=', $customer->company_id)))))
                 ->when($currentId, fn ($query) => $query->orWhereKey($currentId)))
             ->with('area')
+            ->withCount(['pairings as office_load' => fn ($query) => $customer->company_id
+                ? $query->whereHas('customer', fn ($c) => $c->where('company_id', $customer->company_id))
+                : $query->whereRaw('1 = 0')])
             ->get()
             ->map(fn (Kitchen $kitchen) => [
                 'kitchen' => $kitchen,
@@ -56,6 +62,8 @@ class PairingSuggester
             ])
             // Nearest first; cooks without a pin go last, same-area ones before others.
             ->sortBy(fn (array $row) => [
+                // F68: an office's own cooks first, so its lunch comes from few kitchens.
+                $row['kitchen']->office_load > 0 ? 0 : 1,
                 $row['distance_m'] === null ? 1 : 0,
                 $row['distance_m'] ?? ($row['kitchen']->area_id === $customer->area_id ? 0 : 1),
                 $row['kitchen']->display_name,

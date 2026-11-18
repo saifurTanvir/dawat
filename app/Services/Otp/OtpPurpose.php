@@ -19,6 +19,8 @@ enum OtpPurpose: string
     case OrderDeclined = 'order_declined';
     /** F26: the paired cook is not cooking this meal today. */
     case CookOff = 'cook_off';
+    /** F68: today's office drop; $code is told to the shahidar at handover. */
+    case OfficeDrop = 'office_drop';
 
     /**
      * The SMS text, in Bangla.
@@ -72,6 +74,12 @@ enum OtpPurpose: string
                 'দাওয়াত: দুঃখিত, %s আজ বক্স %s দিতে পারছেন না। অর্ডারটা বাতিল হয়েছে।',
                 $context['kitchen'] ?? 'গৃহিণী',
                 $context['box'] ?? '',
+            ),
+            self::OfficeDrop => sprintf(
+                'দাওয়াত: আজ %s %s-এর খাবার আসছে। শাহিদার পৌঁছালে সব বক্স বুঝে নিয়ে তাঁকে এই কোড বলবেন: %s',
+                $context['slot'] ?? '',
+                $context['company'] ?? 'অফিস',
+                $code,
             ),
             self::CookOff => sprintf(
                 'দাওয়াত: আজ %s %s-এর রান্না নেই। আপনার শাহিদার যোগাযোগ করবেন।',

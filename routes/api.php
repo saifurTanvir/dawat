@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\V1\RegularController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\ShahidarApplicationController;
 use App\Http\Controllers\Api\V1\ShahidarController;
+use App\Http\Controllers\Api\V1\ShahidarDropController;
 use App\Http\Controllers\Api\V1\ShahidarKitchenController;
 use App\Http\Controllers\Api\V1\StickerController;
 use App\Http\Controllers\Api\V1\TagController;
@@ -158,6 +159,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('/today', [ShahidarController::class, 'today'])->name('today');
             Route::post('/orders/{order}/pickup', [ShahidarController::class, 'pickup'])->name('orders.pickup');
             Route::get('/stickers/{code}', [ShahidarController::class, 'scan'])->name('stickers.scan');
+            // F68
+            Route::post('/drops/{drop}/pickup', [ShahidarDropController::class, 'pickup'])->name('drops.pickup');
+            Route::post('/drops/{drop}/deliver', [ShahidarDropController::class, 'deliver'])->middleware('throttle:otp')->name('drops.deliver');
             Route::post('/orders/{order}/deliver', [ShahidarController::class, 'deliver'])->middleware('throttle:otp')->name('orders.deliver');
             Route::post('/orders/{order}/fail', [ShahidarController::class, 'fail'])->name('orders.fail');
             Route::post('/orders/{order}/paid', [ShahidarController::class, 'paid'])->name('orders.paid');

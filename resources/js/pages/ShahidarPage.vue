@@ -134,6 +134,9 @@
                 </div>
             </div>
 
+            <!-- F68: office drops — a cook's boxes picked up together, the office takes them all at once -->
+            <OfficeDropCard v-for="d in day.office_drops || []" :key="`drop-${d.id}`" :drop="d" @updated="onDrop" @notice="notice = $event" />
+
             <!-- Pickups, cook by cook -->
             <h2 class="mt-6 text-lg font-semibold">পিকআপ</h2>
             <p v-if="!pickups.length" class="mt-1 text-muted">এখন তোলার মতো কিছু নেই।</p>
@@ -268,6 +271,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import CookShare from '@/components/CookShare.vue';
 import CallButtons from '@/components/CallButtons.vue';
 import ShahidarGuestMeals from '@/components/ShahidarGuestMeals.vue';
+import OfficeDropCard from '@/components/OfficeDropCard.vue';
 import PlateSplitBar from '@/components/PlateSplitBar.vue';
 import PushToggle from '@/components/PushToggle.vue';
 import StickerScanner from '@/components/StickerScanner.vue';
@@ -366,9 +370,11 @@ function isNew(o) {
 }
 const newCount = computed(() => active.value.filter(isNew).length);
 
+// F68: an office's boxes are handled together in its drop card, not one by one.
+const ownOrders = computed(() => day.value.orders.filter((o) => !o.office_drop_id));
 const pickups = computed(() => {
     const groups = new Map();
-    const booked = day.value.orders.filter((x) => x.status === 'booked' && inSlot(x))
+    const booked = ownOrders.value.filter((x) => x.status === 'booked' && inSlot(x))
         .sort((a, b) => SLOT_ORDER.indexOf(a.meal_slot) - SLOT_ORDER.indexOf(b.meal_slot));
     for (const o of booked) {
         const key = `${o.meal_slot}-${o.kitchen.id}`;
@@ -380,10 +386,10 @@ const pickups = computed(() => {
     // Ready kitchens first: that food is waiting.
     return [...groups.values()].sort((a, b) => Number(Boolean(b.ready)) - Number(Boolean(a.ready)));
 });
-const pickupCount = computed(() => day.value.orders.filter((o) => o.status === 'booked' && inSlot(o)).length);
-const onTheWay = computed(() => day.value.orders.filter((o) => o.status === 'picked_up' && inSlot(o)));
+const pickupCount = computed(() => ownOrders.value.filter((o) => o.status === 'booked' && inSlot(o)).length);
+const onTheWay = computed(() => ownOrders.value.filter((o) => o.status === 'picked_up' && inSlot(o)));
 const asking = computed(() => day.value.orders.filter((o) => o.status === 'asking' && inSlot(o)));
-const finished = computed(() => day.value.orders.filter((o) => !['asking', 'booked', 'picked_up'].includes(o.status)));
+const finished = computed(() => ownOrders.value.filter((o) => !['asking', 'booked', 'picked_up'].includes(o.status)));
 
 const loadedAt = ref(null);
 let timer = null;
@@ -425,6 +431,21 @@ onBeforeUnmount(() => {
     clearInterval(timer);
     document.removeEventListener('visibilitychange', refreshIfVisible);
 });
+
+// F68
+async function onDrop(data) {
+    notice.value = data.message;
+    const i = (day.value.office_drops || []).findIndex((d) => d.id === data.data?.id);
+    if (i >= 0) day.value.office_drops.splice(i, 1, data.data);
+    refreshCash();
+    // The drop's boxes changed status in the plain list too.
+    try {
+        const { data: fresh } = await api.get('/shahidar/today');
+        day.value.orders = fresh.data.orders;
+    } catch {
+        /* the next refresh brings them */
+    }
+}
 
 // F64
 function onGuest(data) {
