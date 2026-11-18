@@ -1,6 +1,7 @@
 {{-- F31: links that let search engines (and people) reach every public page. --}}
 <footer class="mt-14 border-t border-rule pt-6 pb-10 text-sm text-muted">
-    <p class="font-semibold text-ink">যেসব এলাকায় দাওয়াত আছে</p>
+    <p class="font-semibold text-ink">দাওয়াত এখন সব জায়গায়</p>
+    <p class="mt-1">ঢাকার ভিতরে-বাইরে যেকোনো এলাকা থেকে যোগ দিতে পারেন। কয়েকটা এলাকার পাতা:</p>
     <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1">
         @foreach ($areas as $a)
             <li><a href="{{ url('/area/'.$a->slug) }}" class="text-leaf underline-offset-2 hover:underline">{{ $a->name }}</a></li>

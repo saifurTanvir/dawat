@@ -141,7 +141,8 @@
         <!-- F31: plain links (full page loads) to the public pages search engines index. -->
         <footer class="mt-10 border-t border-rule pt-6 text-sm text-muted">
             <template v-if="areas.length">
-                <p class="font-semibold text-ink">যেসব এলাকায় দাওয়াত আছে</p>
+                <p class="font-semibold text-ink">দাওয়াত এখন সব জায়গায়</p>
+                <p class="mt-1">ঢাকার ভিতরে-বাইরে যেকোনো এলাকা থেকে যোগ দিতে পারেন। কয়েকটা এলাকার পাতা:</p>
                 <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1">
                     <li v-for="a in areas" :key="a.slug">
                         <a :href="`/area/${a.slug}`" class="text-leaf underline-offset-2 hover:underline">{{ a.name }}</a>
