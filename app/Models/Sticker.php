@@ -57,4 +57,10 @@ class Sticker extends Model
     {
         return substr($this->code, 0, 4).' '.substr($this->code, 4);
     }
+
+    /** F68: a bag sticker of an office drop. */
+    public function officeDrop(): BelongsTo
+    {
+        return $this->belongsTo(OfficeDrop::class);
+    }
 }

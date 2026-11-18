@@ -40,6 +40,10 @@ class Delivery
         self::BY_SHAHIDAR_SCAN => 'শাহিদার স্ক্যান',
         self::BY_SHAHIDAR_TAP => 'যাচাই বাকি',
         'cook_tap' => 'গৃহিণী নিজে',
+        // F68
+        'office_code' => 'অফিসের কোড',
+        'office_scan' => 'অফিস ব্যাগ স্ক্যান',
+        'office_tap' => 'অফিস, যাচাই বাকি',
     ];
 
     /** Wrong codes on the public sticker page before it stops taking codes. */
@@ -154,6 +158,17 @@ class Delivery
             }
             throw $e;
         }
+    }
+
+    /** F68: one box of an office drop handed over with the rest. */
+    public function deliverInDrop(Order $order, User $by, string $method): Order
+    {
+        return DB::transaction(function () use ($order, $by, $method) {
+            $order = $this->lock($order);
+            $this->expect($order, OrderStatus::PickedUp, 'আগে পিকআপ চিহ্নিত করুন।');
+
+            return $this->markDelivered($order, $by, $method);
+        });
     }
 
     /** By the customer, after scanning the sticker on their box. */

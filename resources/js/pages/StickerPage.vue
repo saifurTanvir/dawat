@@ -16,6 +16,19 @@
             <RouterLink v-if="info.state === 'shahidar'" to="/shahidar" class="btn-quiet -ml-4 mt-2">আজকের তালিকায় যান</RouterLink>
         </div>
 
+        <!-- F68: an office drop's bag: its contact person takes the whole drop -->
+        <div v-else-if="info?.state === 'office_contact'" class="mt-4 rounded-[var(--radius-plate)] bg-plate p-5">
+            <p class="text-sm text-muted">অফিস ড্রপ · {{ info.drop.meal_slot_label }}</p>
+            <p class="mt-1 text-lg font-semibold">{{ info.drop.company }}</p>
+            <p class="text-muted">{{ bn(info.drop.boxes) }}টা বক্স · {{ bn(info.drop.plates) }} প্লেট · পৌঁছেছে {{ bn(info.drop.delivered) }}টা</p>
+            <button v-if="info.drop.can_confirm && !done" type="button" class="btn-primary mt-4" :disabled="busy" @click="confirm">{{ bn(info.drop.picked) }}টা বক্স বুঝে পেয়েছি</button>
+            <p v-if="message" class="mt-3 rounded-lg bg-leaf-soft p-3" role="status">{{ message }}</p>
+        </div>
+        <div v-else-if="info?.state === 'office'" class="mt-4 rounded-[var(--radius-plate)] bg-plate p-5">
+            <p>এটা দাওয়াতের একটা অফিসের খাবারের ব্যাগ।</p>
+            <p v-if="!auth.isSignedIn" class="mt-3 text-muted">আপনি অফিসের দায়িত্বপ্রাপ্ত লোক হলে নিজের নম্বর দিয়ে ঢুকে আবার স্ক্যান করুন।</p>
+            <RouterLink v-if="!auth.isSignedIn" :to="{ name: 'login', query: { next: route.fullPath } }" class="btn-primary mt-4">ঢুকুন</RouterLink>
+        </div>
         <!-- F67: whoever holds the box confirms with the SMS code; nothing about the box is shown first -->
         <div v-else-if="info?.can_confirm_with_code" class="mt-4 rounded-[var(--radius-plate)] bg-plate p-5">
             <template v-if="!done">

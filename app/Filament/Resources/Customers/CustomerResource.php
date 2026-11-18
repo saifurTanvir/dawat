@@ -18,6 +18,7 @@ use App\Filament\Support\LocationField;
 use App\Filament\Support\PhoneField;
 use App\Models\Area;
 use App\Models\Bill;
+use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Kitchen;
 use App\Models\Order;
@@ -93,6 +94,11 @@ class CustomerResource extends Resource
             Select::make('area_id')->label('এলাকা')
                 ->options(fn () => Area::active()->orderBy('sort_order')->pluck('name', 'id'))
                 ->required(),
+            // F68: an office employee — their box goes in the office's drop.
+            Select::make('company_id')->label('অফিস (কর্মী হলে)')
+                ->options(fn () => Company::where('is_active', true)->orderBy('name')->pluck('name', 'id'))
+                ->searchable()->placeholder('অফিস নয়')
+                ->helperText('অফিস বাছলে এই গ্রাহকের বক্স অফিসের বাকিদের সাথে একসাথে যাবে, অফিসের দায়িত্বপ্রাপ্ত লোক বুঝে নেবেন।'),
             Textarea::make('address')->label('ডেলিভারির ঠিকানা')->required()->maxLength(255)->rows(2)
                 ->helperText('বাসা, রোড, ফ্ল্যাট, চেনার মতো কিছু। শুধু অ্যাডমিন আর এই গ্রাহকের শাহিদার দেখবেন।'),
             CheckboxList::make('meal_slots')->label('কোন বেলা')->options(MealSlot::options())->required()->columns(4),
@@ -141,6 +147,7 @@ class CustomerResource extends Resource
     {
         return [
             'area_id' => $data['area_id'],
+            'company_id' => filled($data['company_id'] ?? null) ? (int) $data['company_id'] : null,
             'address' => trim($data['address']),
             'note' => filled($data['note'] ?? null) ? trim($data['note']) : null,
             'meal_slots' => array_values($data['meal_slots']),
@@ -418,12 +425,12 @@ class CustomerResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['user', 'area', 'pairing.kitchen', 'pairing.shahidar']))
+            ->modifyQueryUsing(fn ($query) => $query->with(['user', 'area', 'company', 'pairing.kitchen', 'pairing.shahidar']))
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('user.name')->label('নাম')->searchable()->weight('semibold'),
                 TextColumn::make('user.phone')->label('ফোন')->searchable(),
-                TextColumn::make('area.name')->label('এলাকা'),
+                TextColumn::make('area.name')->label('এলাকা')->description(fn (Customer $record) => $record->company?->name),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
                 TextColumn::make('pairing.kitchen.display_name')->label('গৃহিণী')->placeholder('—'),
                 TextColumn::make('pairing.shahidar.name')->label('শাহিদার')->placeholder('—'),
@@ -436,6 +443,7 @@ class CustomerResource extends Resource
             ->filters([
                 SelectFilter::make('status')->label('অবস্থা')->options(CustomerStatus::class),
                 SelectFilter::make('area_id')->label('এলাকা')->relationship('area', 'name'),
+                SelectFilter::make('company_id')->label('অফিস')->relationship('company', 'name'),
                 SelectFilter::make('billing')->label('টাকা দেন')->options(Customer::BILLING_LABELS),
             ])
             ->recordActions([

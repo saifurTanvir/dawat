@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
+use App\Models\OfficeDrop;
 use App\Models\Sticker;
+use App\Models\User;
 use App\Services\Orders\Delivery;
+use App\Services\Regular\OfficeDrops;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,6 +24,11 @@ class StickerController extends Controller
         $sticker = $this->find($code);
         $order = $sticker?->order;
         $user = auth('sanctum')->user();
+
+        // F68: an office drop's bag — its contact person confirms the whole drop.
+        if ($sticker?->officeDrop) {
+            return response()->json(['data' => $this->bag($sticker->officeDrop, $user)]);
+        }
 
         if (! $order) {
             return response()->json(['data' => ['state' => 'blank']]);
@@ -55,10 +63,40 @@ class StickerController extends Controller
         ]]);
     }
 
-    /** POST /api/v1/stickers/{code}/received — the customer confirms. */
+    /** What scanning an office bag shows: the drop to its contact, nothing to others. */
+    private function bag(OfficeDrop $drop, ?User $user): array
+    {
+        $drop->loadMissing('company');
+        if (! $user || $drop->company->contact_user_id !== $user->id) {
+            return ['state' => 'office'];
+        }
+        $boxes = $drop->orders()->whereNotIn('status', [OrderStatus::Cancelled])->get();
+
+        return [
+            'state' => 'office_contact',
+            'drop' => [
+                'company' => $drop->company->name,
+                'meal_slot_label' => $drop->meal_slot->label(),
+                'boxes' => $boxes->count(),
+                'plates' => $boxes->sum('plates'),
+                'picked' => $boxes->where('status', OrderStatus::PickedUp)->count(),
+                'delivered' => $boxes->where('status', OrderStatus::Delivered)->count(),
+                'can_confirm' => $boxes->where('status', OrderStatus::PickedUp)->isNotEmpty(),
+            ],
+        ];
+    }
+
+    /** POST /api/v1/stickers/{code}/received — the customer confirms (F68: or the office takes the drop). */
     public function received(Request $request, string $code, Delivery $delivery): JsonResponse
     {
-        $order = $this->find($code)?->order;
+        $sticker = $this->find($code);
+        if ($sticker?->officeDrop) {
+            abort_unless($sticker->officeDrop->company?->contact_user_id === $request->user()->id, 404);
+            $n = app(OfficeDrops::class)->deliver($sticker->officeDrop, $request->user(), null, false, true);
+
+            return response()->json(['message' => "ধন্যবাদ! {$n}টা বক্স বুঝে পেয়েছেন, লিখে রাখা হলো।"]);
+        }
+        $order = $sticker?->order;
         abort_unless($order && $order->recipient()->id === $request->user()->id, 404);
 
         $delivery->receivedByCustomer($order, $request->user());
@@ -82,6 +120,6 @@ class StickerController extends Controller
     {
         $code = Sticker::normalize($code);
 
-        return $code ? Sticker::with(['order.customer.user', 'order.buyer', 'order.kitchen'])->where('code', $code)->first() : null;
+        return $code ? Sticker::with(['order.customer.user', 'order.buyer', 'order.kitchen', 'officeDrop.company'])->where('code', $code)->first() : null;
     }
 }

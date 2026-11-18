@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 /** A regular customer (F25) with a standing booking (F26). */
 /** F55: `location` is the home pin, for admins only; set it directly, never mass-assign. */
 #[Hidden(['location'])]
-#[Fillable(['user_id', 'area_id', 'address', 'note', 'status', 'meal_slots', 'plates', 'max_price_paisa', 'weekdays', 'source', 'billing'])]
+#[Fillable(['user_id', 'area_id', 'company_id', 'address', 'note', 'status', 'meal_slots', 'plates', 'max_price_paisa', 'weekdays', 'source', 'billing'])]
 class Customer extends Model
 {
     /** @use HasFactory<CustomerFactory> */
@@ -126,5 +126,11 @@ class Customer extends Model
         $limit = $this->max_price_paisa ? ' · প্লেট সর্বোচ্চ ৳'.Order::banglaDigits(intdiv($this->max_price_paisa, 100)) : '';
 
         return "{$slots} · {$plates} প্লেট · {$dayText}{$limit}";
+    }
+
+    /** F68: the office this customer eats with, if any. */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 }
