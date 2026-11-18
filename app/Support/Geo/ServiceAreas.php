@@ -147,6 +147,7 @@ final class ServiceAreas
         ['naria', 'নড়িয়া (শরীয়তপুর)', 23.3003, 90.4120, 3000],
         ['joydebpur', 'জয়দেবপুর (গাজীপুর)', 23.9999, 90.4203, 3000],
         ['sreepur', 'শ্রীপুর (গাজীপুর)', 24.2011, 90.4843, 3000],
+        ['daganbhuiyan', 'দাগনভূঞা (ফেনী)', 22.9250, 91.3110, 3000],
     ];
 
     /** Every Dawat area, in the order they are listed. */
