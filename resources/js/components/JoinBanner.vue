@@ -33,7 +33,7 @@
 
                     <h2 id="join-title" class="mt-3 text-center font-serif text-2xl font-bold">দাওয়াতে যোগ দিন</h2>
                     <p class="mt-1 text-center text-muted">
-                        আমরা এখন ঢাকা শহরের সব এলাকায়।
+                        আমরা এখন সব জায়গায় — ঢাকার ভিতরে-বাইরে যেকোনো এলাকা থেকে যোগ দিতে পারেন।
                     </p>
 
                     <ul class="mt-5 space-y-3">

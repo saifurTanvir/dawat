@@ -89,7 +89,7 @@ final class Seo
             'logo' => asset('icons/icon-512.png'),
             'description' => self::of(config('dawat.seo.region')).' গৃহিণীদের ঘরে রান্না খাবার, অ্যাপে অর্ডার আর বাসায় পৌঁছে দেওয়া।',
             'telephone' => self::phoneIntl(),
-            'areaServed' => self::areas()->map(fn (Area $a) => ['@type' => 'Place', 'name' => "{$a->name}, ঢাকা"])->values()->all(),
+            'areaServed' => self::areas()->map(fn (Area $a) => ['@type' => 'Place', 'name' => $a->name])->values()->all(),
             'sameAs' => array_values(array_filter([config('dawat.contact.facebook_url')])),
         ]);
 
