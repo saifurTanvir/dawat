@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Filament\Actions\LoginHelpActions;
 use App\Filament\Support\Links;
 use App\Models\SmsLog;
+use App\Support\AdminFeatures;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
@@ -21,7 +22,7 @@ class SmsProblems extends TableWidget
 
     public static function canView(): bool
     {
-        return self::problems()->exists();
+        return AdminFeatures::allows(static::class) && (self::problems()->exists());
     }
 
     private static function problems(): Builder

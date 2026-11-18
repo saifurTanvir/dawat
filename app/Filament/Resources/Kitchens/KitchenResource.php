@@ -14,6 +14,7 @@ use App\Filament\Resources\Kitchens\RelationManagers\ReviewsRelationManager;
 use App\Filament\Resources\Kitchens\Schemas\KitchenForm;
 use App\Filament\Resources\Kitchens\Schemas\KitchenInfolist;
 use App\Filament\Resources\Kitchens\Tables\KitchensTable;
+use App\Filament\Support\FeatureGate;
 use App\Models\Kitchen;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -25,6 +26,8 @@ use UnitEnum;
 
 class KitchenResource extends Resource
 {
+    use FeatureGate;
+
     protected static ?string $model = Kitchen::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHome;

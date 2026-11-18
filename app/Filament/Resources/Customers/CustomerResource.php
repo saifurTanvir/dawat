@@ -14,6 +14,7 @@ use App\Filament\RelationManagers\CustomerReviewsRelationManager;
 use App\Filament\Resources\Bills\BillResource;
 use App\Filament\Resources\Customers\Pages\ListCustomers;
 use App\Filament\Resources\Customers\Pages\ViewCustomer;
+use App\Filament\Support\FeatureGate;
 use App\Filament\Support\LocationField;
 use App\Filament\Support\PhoneField;
 use App\Models\Area;
@@ -63,6 +64,8 @@ use UnitEnum;
 /** F25: regular customers, their standing booking and who feeds and delivers to them. */
 class CustomerResource extends Resource
 {
+    use FeatureGate;
+
     protected static ?string $model = Customer::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;

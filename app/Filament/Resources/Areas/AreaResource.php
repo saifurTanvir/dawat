@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Areas;
 
 use App\Filament\Resources\Areas\Pages\ManageAreas;
+use App\Filament\Support\FeatureGate;
 use App\Filament\Support\FeeFields;
 use App\Models\Area;
 use App\Support\Geo\GeoPoint;
@@ -23,6 +24,8 @@ use UnitEnum;
 
 class AreaResource extends Resource
 {
+    use FeatureGate;
+
     protected static ?string $model = Area::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;

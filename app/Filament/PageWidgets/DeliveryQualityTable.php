@@ -5,6 +5,7 @@ namespace App\Filament\PageWidgets;
 use App\Enums\OrderStatus;
 use App\Models\User;
 use App\Services\Orders\Delivery;
+use App\Support\AdminFeatures;
 use App\Support\DhakaTime;
 use App\Support\Roles;
 use Filament\Tables\Columns\TextColumn;
@@ -20,6 +21,12 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class DeliveryQualityTable extends TableWidget
 {
+    /** F69: admins, and staff with this part's feature. */
+    public static function canView(): bool
+    {
+        return AdminFeatures::allows(static::class);
+    }
+
     protected int|string|array $columnSpan = 'full';
 
     protected static ?string $heading = 'শাহিদার ধরে পিকআপ ও ডেলিভারি';

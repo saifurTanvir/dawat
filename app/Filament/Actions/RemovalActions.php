@@ -108,6 +108,7 @@ final class RemovalActions
     public static function deleteCustomer(): Action
     {
         return Action::make('deleteCustomer')
+            ->authorize(fn () => auth()->user()?->isAdmin() ?? false)
             ->label('গ্রাহক মুছুন')
             ->icon(Heroicon::OutlinedTrash)
             ->color('danger')
@@ -134,6 +135,7 @@ final class RemovalActions
     public static function deleteKitchen(): Action
     {
         return Action::make('deleteKitchen')
+            ->authorize(fn () => auth()->user()?->isAdmin() ?? false)
             ->label('রান্নাঘর মুছুন')
             ->icon(Heroicon::OutlinedTrash)
             ->color('danger')
@@ -159,6 +161,7 @@ final class RemovalActions
     public static function removeShahidar(): Action
     {
         return Action::make('removeRole')
+            ->authorize(fn () => auth()->user()?->isAdmin() ?? false)
             ->label('শাহিদার থেকে বাদ')
             ->icon(Heroicon::OutlinedUserMinus)
             ->color('danger')
@@ -183,6 +186,7 @@ final class RemovalActions
     public static function deleteOrder(): Action
     {
         return Action::make('deleteOrder')
+            ->authorize(fn () => auth()->user()?->isAdmin() ?? false)
             ->label('বক্স মুছুন')
             ->icon(Heroicon::OutlinedTrash)
             ->color('danger')
@@ -203,6 +207,7 @@ final class RemovalActions
     public static function deletePost(?string $redirect = null): Action
     {
         return Action::make('deletePost')
+            ->authorize(fn () => auth()->user()?->isAdmin() ?? false)
             ->label('পোস্ট মুছুন')
             ->icon(Heroicon::OutlinedTrash)
             ->color('danger')
@@ -223,6 +228,7 @@ final class RemovalActions
     public static function deleteUser(): Action
     {
         return Action::make('deleteUser')
+            ->authorize(fn () => auth()->user()?->isAdmin() ?? false)
             ->label('অ্যাকাউন্ট মুছুন')
             ->icon(Heroicon::OutlinedTrash)
             ->color('danger')

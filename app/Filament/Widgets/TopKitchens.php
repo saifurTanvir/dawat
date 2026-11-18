@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Filament\Resources\Kitchens\KitchenResource;
 use App\Models\Kitchen;
+use App\Support\AdminFeatures;
 use App\Support\DhakaTime;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -13,6 +14,12 @@ use Illuminate\Database\Eloquent\Builder;
 /** F23: which cooks buyers reach most this week. */
 class TopKitchens extends TableWidget
 {
+    /** F69: admins, and staff with this part's feature. */
+    public static function canView(): bool
+    {
+        return AdminFeatures::allows(static::class);
+    }
+
     protected static ?int $sort = 3;
 
     protected static ?string $heading = 'এই সপ্তাহের জনপ্রিয় রান্নাঘর';

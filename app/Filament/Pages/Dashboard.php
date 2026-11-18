@@ -10,6 +10,7 @@ class Dashboard extends BaseDashboard
 {
     protected function getHeaderActions(): array
     {
-        return QuickAddActions::all();
+        // F69: the quick-add buttons belong to "নতুন মানুষ যোগ".
+        return auth()->user()?->canUseFeature('import') ? QuickAddActions::all() : [];
     }
 }

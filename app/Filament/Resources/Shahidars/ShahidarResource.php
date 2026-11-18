@@ -12,6 +12,7 @@ use App\Filament\RelationManagers\ShahidarReviewsRelationManager;
 use App\Filament\RelationManagers\ShahidarSettlementsRelationManager;
 use App\Filament\Resources\Shahidars\Pages\ManageShahidars;
 use App\Filament\Resources\Shahidars\Pages\ViewShahidar;
+use App\Filament\Support\FeatureGate;
 use App\Filament\Support\PhoneField;
 use App\Models\Area;
 use App\Models\User;
@@ -36,6 +37,8 @@ use UnitEnum;
 /** F24: trusted local runners and the areas (zones) they serve. */
 class ShahidarResource extends Resource
 {
+    use FeatureGate;
+
     protected static ?string $model = User::class;
 
     protected static ?string $slug = 'shahidars';

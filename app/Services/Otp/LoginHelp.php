@@ -31,8 +31,8 @@ class LoginHelp
         if ($user->wasRecentlyCreated) {
             $user->assignRole(Roles::BUYER);
         }
-        if ($user->hasRole(Roles::ADMIN)) {
-            throw ValidationException::withMessages(['phone' => 'অ্যাডমিন অ্যাকাউন্টের জন্য এটা করা যায় না।']);
+        if ($user->isTeam()) {
+            throw ValidationException::withMessages(['phone' => 'অ্যাডমিন বা স্টাফ অ্যাকাউন্টের জন্য এটা করা যায় না।']);
         }
 
         return $user;
@@ -92,7 +92,7 @@ class LoginHelp
             }
             $link->forceFill(['used_at' => now()])->save();
             $user = $link->user;
-            if (! $user || $user->hasRole(Roles::ADMIN)) {
+            if (! $user || $user->isTeam()) {
                 return null;
             }
             self::markVerified($user, 'link', $link->created_by);

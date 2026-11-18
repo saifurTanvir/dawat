@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\UserStatus;
+use App\Support\AdminFeatures;
 use App\Support\Roles;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
@@ -163,7 +164,26 @@ class User extends Authenticatable implements FilamentUser, HasName
     /** Only active admins may open /admin. */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $panel->getId() === 'admin' && $this->isAdmin() && ! $this->isBlocked();
+        return $panel->getId() === 'admin' && $this->isTeam() && ! $this->isBlocked();
+    }
+
+    /** F69: has a staff role an admin made (any role beyond admin, cook, buyer, shahidar). */
+    public function isStaff(): bool
+    {
+        return $this->roles->contains(fn ($role) => ! in_array($role->name, Roles::all(), true));
+    }
+
+    /** F69: Dawat's own people: admins and staff. */
+    public function isTeam(): bool
+    {
+        return $this->isAdmin() || $this->isStaff();
+    }
+
+    /** F69: may use this part of the admin panel (see AdminFeatures). */
+    public function canUseFeature(string $key): bool
+    {
+        return $this->isAdmin()
+            || $this->getAllPermissions()->contains('name', AdminFeatures::PREFIX.$key);
     }
 
     public function getFilamentName(): string

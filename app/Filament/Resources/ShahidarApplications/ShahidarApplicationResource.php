@@ -6,6 +6,7 @@ use App\Enums\ShahidarApplicationStatus as Status;
 use App\Filament\Resources\ShahidarApplications\Pages\ListShahidarApplications;
 use App\Filament\Resources\ShahidarApplications\Pages\ViewShahidarApplication;
 use App\Filament\Resources\Shahidars\ShahidarResource;
+use App\Filament\Support\FeatureGate;
 use App\Models\Area;
 use App\Models\Order;
 use App\Models\ShahidarApplication;
@@ -33,6 +34,8 @@ use UnitEnum;
 /** F53: people who applied on the website to work as a shahidar. */
 class ShahidarApplicationResource extends Resource
 {
+    use FeatureGate;
+
     protected static ?string $model = ShahidarApplication::class;
 
     protected static ?string $slug = 'shahidar-applications';

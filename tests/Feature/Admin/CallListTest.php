@@ -101,4 +101,22 @@ class CallListTest extends TestCase
 
         Livewire::test(ManageCallRequests::class)->assertDontSee('কাল সকালে আবার ফোন দিতে বলেছেন')->assertTableActionVisible('reason', $r);
     }
+
+    public function test_a_remark_with_the_close_tick_takes_it_off_the_list(): void
+    {
+        $r = CallRequest::create(['phone' => '01713259733', 'reason' => 'আগে কথা বলতে চান']);
+
+        Livewire::test(CallList::class)
+            ->callTableAction('note', $r, ['body' => 'কথা হয়েছে, শুক্রবার থেকে দেবেন', 'status' => 'pending', 'close' => true])
+            ->assertHasNoTableActionErrors();
+        $r->refresh();
+        $this->assertSame(CallRequestStatus::Done, $r->status);
+        $this->assertSame('কথা হয়েছে, শুক্রবার থেকে দেবেন', $r->latestNote());
+        $this->assertFalse(CallList::canView());
+
+        $other = CallRequest::create(['phone' => '01742891024', 'reason' => 'রান্না করতে চান']);
+        Livewire::test(CallList::class)->callTableAction('done', $other, ['body' => 'নিয়মিত পারবেন না'])->assertHasNoTableActionErrors();
+        $this->assertSame(CallRequestStatus::Done, $other->fresh()->status);
+        $this->assertSame('নিয়মিত পারবেন না', $other->fresh()->latestNote());
+    }
 }

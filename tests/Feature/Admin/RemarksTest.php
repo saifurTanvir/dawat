@@ -53,7 +53,7 @@ class RemarksTest extends TestCase
 
         Livewire::test(FollowUps::class)
             ->assertCanSeeTableRecords([$remark])
-            ->callTableAction('done', $remark);
+            ->callTableAction('close', $remark);
         $this->assertNotNull($remark->fresh()->done_at);
         $this->assertFalse(FollowUps::canView());
     }

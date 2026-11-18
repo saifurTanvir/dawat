@@ -5,9 +5,9 @@ namespace App\Filament\Widgets;
 use App\Filament\Actions\RemarkActions;
 use App\Filament\Support\Links;
 use App\Models\Remark;
+use App\Support\AdminFeatures;
 use App\Support\PhoneNumber;
 use Filament\Actions\Action;
-use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -24,7 +24,7 @@ class FollowUps extends TableWidget
 
     public static function canView(): bool
     {
-        return Remark::query()->due()->exists();
+        return AdminFeatures::allows(static::class) && (Remark::query()->due()->exists());
     }
 
     public function table(Table $table): Table
@@ -45,12 +45,8 @@ class FollowUps extends TableWidget
             ->recordActions([
                 Action::make('call')->label('কল')->icon(Heroicon::OutlinedPhone)->color('gray')
                     ->url(fn (Remark $r) => 'tel:+'.PhoneNumber::international($r->user->phone)),
-                RemarkActions::add(fn (Remark $r) => $r->user, 'addRemark'),
-                Action::make('done')->label('হয়ে গেছে')->icon(Heroicon::OutlinedCheck)->color('success')
-                    ->action(function (Remark $r) {
-                        $r->forceFill(['done_at' => now(), 'done_by' => auth()->id()])->save();
-                        Notification::make()->title('ফলো-আপ হয়ে গেছে')->success()->send();
-                    }),
+                RemarkActions::add(fn (Remark $r) => $r->user, 'addRemark', closeByDefault: true),
+                RemarkActions::close(),
             ]);
     }
 }
