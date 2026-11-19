@@ -104,7 +104,7 @@ class ManageMessengerThreads extends ManageRecords
 
                         return;
                     }
-                    Graph::savePageToken($data['token'], auth()->user());
+                    Graph::savePageToken($check['token'], auth()->user());
                     Notification::make()->title('টোকেন রাখা হলো — পেজ: '.$check['name'])->success()->send();
                 }),
             Action::make('setup')

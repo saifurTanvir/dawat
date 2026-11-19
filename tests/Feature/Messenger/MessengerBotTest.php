@@ -200,9 +200,13 @@ class MessengerBotTest extends TestCase
     public function test_an_admin_can_save_a_new_page_token_from_the_panel(): void
     {
         Http::swap(new HttpFactory);
-        Http::fake(['graph.test/me?*' => Http::sequence()
-            ->push(['error' => ['message' => 'Invalid OAuth access token']], 400)
-            ->push(['id' => 'PAGE', 'name' => 'দাওয়াত'])]);
+        Http::fake([
+            'graph.test/me/accounts*' => Http::response(['data' => [['id' => Graph::PAGE_ID, 'name' => 'দাওয়াত', 'access_token' => 'page-of-user']]]),
+            'graph.test/me?*' => Http::sequence()
+                ->push(['error' => ['message' => 'Invalid OAuth access token']], 400)
+                ->push(['id' => Graph::PAGE_ID, 'name' => 'দাওয়াত', 'metadata' => ['type' => 'page']])
+                ->push(['id' => 'USER1', 'name' => 'Saifur', 'metadata' => ['type' => 'user']]),
+        ]);
         $this->actingAs(User::role(Roles::ADMIN)->first());
 
         Livewire::test(ManageMessengerThreads::class)->callAction('token', ['token' => 'bad']);
