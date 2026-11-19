@@ -37,7 +37,7 @@ class Backfill
         $waiting = 0;
         $url = $graph.'/me/conversations';
         $query = [
-            'platform' => 'messenger', 'limit' => 50, 'access_token' => $token,
+            'platform' => 'messenger', 'limit' => 25, 'access_token' => $token,
             'fields' => 'updated_time,participants,messages.limit(15){id,message,from,created_time,attachments}',
         ];
 
@@ -67,9 +67,12 @@ class Backfill
             if ($old) {
                 break;
             }
-            // The "next" link already carries every parameter.
-            $url = $r->json('paging.next');
-            $query = [];
+            // Page on with our own query and Meta's cursor (its "next" link can lose the app).
+            $after = $r->json('paging.cursors.after');
+            if (! $after || ! $r->json('paging.next')) {
+                break;
+            }
+            $query['after'] = $after;
         }
 
         return ['added' => $added, 'waiting' => $waiting, 'error' => null];
