@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\GuestMealController;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Services\Orders\BookingPlanner;
+use App\Services\Orders\BoxLabels;
 use App\Services\Regular\TodayMenu;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -54,6 +55,8 @@ class RegularResource extends JsonResource
                 'status' => $o->status->value,
                 'status_label' => $o->cancelled_by === 'cook' ? 'আজ রান্না নেই' : $o->status->label(),
                 'can_skip' => in_array($o->status, [OrderStatus::Booked, OrderStatus::Asking], true),
+                // F79: an office box's place at the office.
+                'spot' => BoxLabels::spot($o),
                 // F30: today's price is above the limit; "নেব" until ask_until.
                 'can_accept' => $o->status === OrderStatus::Asking,
                 'ask_until' => $o->ask_until?->toIso8601String(),

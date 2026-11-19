@@ -61,8 +61,15 @@ class Delivery
                 if (! $sticker) {
                     throw ValidationException::withMessages(['sticker' => 'এই স্টিকার চেনা যাচ্ছে না। আবার স্ক্যান করুন বা নম্বরটা লিখুন।']);
                 }
-                if ($sticker->order_id !== null) {
-                    throw ValidationException::withMessages(['sticker' => 'এই স্টিকার অন্য বক্সে লাগানো হয়েছে। নতুন একটা নিন।']);
+                // F79: a sticker printed with this box's name is the right one; another box's is a mix-up.
+                if ($sticker->order_id !== null && $sticker->order_id !== $order->id) {
+                    $theirs = $sticker->order?->recipient()?->name;
+                    throw ValidationException::withMessages(['sticker' => $sticker->printed_at && $theirs
+                        ? "⚠️ ভুল স্টিকার! এটা {$theirs}-এর বক্সের ({$sticker->order->code()})। ".($order->recipient()->name ?: 'এই গ্রাহক').'-এর নামের স্টিকারটা লাগান।'
+                        : 'এই স্টিকার অন্য বক্সে লাগানো হয়েছে। নতুন একটা নিন।']);
+                }
+                if ($sticker->order_id === null && ($own = Sticker::where('order_id', $order->id)->first())) {
+                    throw ValidationException::withMessages(['sticker' => 'এই বক্সের নাম লেখা স্টিকার আছে ('.$own->displayCode().') — সেটাই লাগিয়ে স্ক্যান করুন।']);
                 }
                 $sticker->forceFill(['order_id' => $order->id, 'bound_at' => now(), 'bound_by' => $shahidar->id])->save();
             }
@@ -71,7 +78,8 @@ class Delivery
 
             // F45: the customer learns the food is on its way.
             Push::toUser($order->recipient(), "আপনার {$order->meal_slot->label()}র খাবার পথে",
-                'শাহিদার '.($shahidar->name ?: '').' খাবার নিয়ে আসছেন · বক্স '.$order->code().'। ডেলিভারি কোড হাতের কাছে রাখুন।',
+                'শাহিদার '.($shahidar->name ?: '').' খাবার নিয়ে আসছেন · বক্স '.$order->code().'।'
+                    .($order->drop_row ? ' অফিসে আপনার বক্স থাকবে '.BoxLabels::spot($order).'-এ।' : ' ডেলিভারি কোড হাতের কাছে রাখুন।'),
                 $order->isOneOff() ? '/orders' : '/regular', 'order-'.$order->id);
 
             return $order;

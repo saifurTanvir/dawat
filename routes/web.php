@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Web\BillController;
+use App\Http\Controllers\Web\BoxLabelController;
 use App\Http\Controllers\Web\OpsHeartbeatController;
 use App\Http\Controllers\Web\PinController;
 use App\Http\Controllers\Web\SeoController;
@@ -54,6 +55,9 @@ Route::get('/admin-tools/geocode', function (Request $request, Geocoder $geocode
 Route::post('/admin-tools/heartbeat', [OpsHeartbeatController::class, 'store'])
     ->middleware('throttle:120,1')->name('admin.heartbeat');
 
+// F79: a shahidar's named box stickers, from a signed link in the app.
+Route::get('/print/stickers/{batch}', BoxLabelController::class)->where('batch', '[a-z0-9-]+')->middleware('signed:relative')->name('stickers.print');
+
 // F39: a customer's bill, from a link.
 Route::get('/bill/{token}', [BillController::class, 'show'])->where('token', '[A-Za-z0-9]{40}')->name('bill.show');
 
@@ -66,5 +70,5 @@ Route::get('/pin/{token}/search', [PinController::class, 'search'])->where('toke
 Route::get('/p/{id}', [SpaController::class, 'post'])->name('spa.post');
 
 Route::get('/{any?}', SpaController::class)
-    ->where('any', '^(?!(api|admin|livewire|filament|storage|build|up|pin)(/|$)).*$')
+    ->where('any', '^(?!(api|admin|livewire|filament|storage|build|up|pin|print)(/|$)).*$')
     ->name('spa');

@@ -10,8 +10,10 @@ use App\Models\Order;
 use App\Models\Sticker;
 use App\Models\User;
 use App\Services\Orders\BookingPlanner;
+use App\Services\Orders\BoxLabels;
 use App\Services\Orders\Delivery;
 use App\Services\Orders\Settlements;
+use App\Services\Push\Push;
 use App\Support\ContactHours;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -108,8 +110,13 @@ class OfficeDrops
             if ($orders->isEmpty()) {
                 throw ValidationException::withMessages(['order' => 'এই অফিসের কোনো বক্স এখন পথে নেই। আগে পিকআপ করুন।']);
             }
+            $company = $drop->company;
             foreach ($orders as $order) {
                 $order = $this->delivery->deliverInDrop($order, $by, $method);
+                // F79: where in the office their box is.
+                Push::toUser($order->recipient(), 'খাবার অফিসে পৌঁছেছে',
+                    ($order->drop_row ? 'আপনার বক্স: '.BoxLabels::spot($order).' · ' : '').'বক্স '.$order->code().' · '.$company?->name.($company?->drop_note ? ' ('.$company->drop_note.')' : ''),
+                    '/regular', 'spot-'.$order->id);
                 if ($cashReceived && ! $byContact && ! $order->customer?->paysByBill()) {
                     app(Settlements::class)->markPaid($order, $by);
                 }
@@ -172,6 +179,7 @@ class OfficeDrops
                     'id' => $o->id,
                     'code' => $o->code(),
                     'name' => $o->customer?->user?->name ?: 'কর্মী',
+                    'spot' => BoxLabels::spot($o),
                     'plates' => $o->plates,
                     'status' => $o->status->value,
                     'status_label' => $o->status->label(),
