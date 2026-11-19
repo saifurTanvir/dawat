@@ -217,6 +217,22 @@ class MessengerBotTest extends TestCase
         $this->assertStringNotContainsString('new-token', json_encode(AppSetting::find('messenger')->value));
     }
 
+    public function test_answer_now_answers_waiting_chats_and_the_queued_job_does_not_repeat_it(): void
+    {
+        Queue::fake();
+        $this->hook([$this->text('PN', 'join korte chai', 'mid.n1')]);
+        $t = MessengerThread::where('psid', 'PN')->firstOrFail();
+        $t->forceFill(['last_in_at' => now()->subMinutes(5)])->save();
+        $this->fake([]);
+        $this->actingAs(User::role(Roles::ADMIN)->first());
+
+        Livewire::test(ManageMessengerThreads::class)->callAction('answerNow');
+        $this->assertSame(['dhonnobad apu 😊'], $this->sent());
+
+        (new AnswerMessenger($t->id, (int) $t->messages()->where('direction', 'in')->max('id')))->handle(app(Agent::class));
+        $this->assertSame(['dhonnobad apu 😊'], $this->sent());
+    }
+
     public function test_she_is_told_about_her_existing_kitchen_only_once(): void
     {
         $old = Kitchen::factory()->approved()->create(['area_id' => $this->area->id]);

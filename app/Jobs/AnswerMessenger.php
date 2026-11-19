@@ -32,6 +32,13 @@ class AnswerMessenger implements ShouldQueue
             return; // a newer message will be answered by its own job
         }
 
-        Cache::lock("messenger-answer:{$thread->id}", 120)->block(30, fn () => $agent->answer($thread->fresh()));
+        Cache::lock("messenger-answer:{$thread->id}", 120)->block(30, function () use ($agent, $thread) {
+            $fresh = $thread->fresh();
+            // Already answered meanwhile (from the panel's "answer now"): do not answer twice.
+            if ($fresh->last_out_at && $fresh->last_in_at && $fresh->last_out_at->gte($fresh->last_in_at)) {
+                return;
+            }
+            $agent->answer($fresh);
+        });
     }
 }
