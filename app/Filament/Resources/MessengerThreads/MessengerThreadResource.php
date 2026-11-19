@@ -62,8 +62,9 @@ class MessengerThreadResource extends Resource
             ->defaultSort('last_in_at', 'desc')
             ->poll('30s')
             ->columns([
-                TextColumn::make('name')->label('মানুষ')->weight('semibold')->searchable()->placeholder('নাম জানা নেই')
-                    ->description(fn (MessengerThread $t) => collect([$t->fact('name'), $t->fact('phone')])->filter()->implode(' · ') ?: null),
+                TextColumn::make('name')->label('মানুষ')->weight('semibold')->searchable()
+                    ->state(fn (MessengerThread $t) => $t->name ?: ($t->fact('name') ?: 'নাম জানা নেই'))
+                    ->description(fn (MessengerThread $t) => collect([$t->name ? $t->fact('name') : null, $t->fact('phone')])->filter()->implode(' · ') ?: null),
                 TextColumn::make('lastMessage.text')->label('শেষ মেসেজ')->wrap()->limit(90)->grow()
                     ->formatStateUsing(fn ($state, MessengerThread $t) => ($t->lastMessage?->direction === 'out' ? 'আমরা: ' : '').Str::limit((string) $state, 90))
                     ->placeholder('—'),
