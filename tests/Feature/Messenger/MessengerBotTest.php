@@ -332,7 +332,7 @@ class MessengerBotTest extends TestCase
             ->callTableAction('chat', $t, ['reply' => 'ji apu, shahidar cash e diye jan'])->assertHasNoTableActionErrors()
             ->callAction('toggle');
         $this->assertSame(['ji apu, shahidar cash e diye jan'], $this->sent());
-        $this->assertFalse($t->fresh()->botMayAnswer()); // paused after a person answered
+        $this->assertTrue($t->fresh()->botMayAnswer()); // the bot keeps answering her next messages
         $this->assertFalse(Graph::botOn());
     }
 
