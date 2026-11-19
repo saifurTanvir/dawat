@@ -103,4 +103,20 @@ class PinLinkTest extends TestCase
             ->callAction('pinLinks')->assertHasNoActionErrors();
         $this->assertSame(1, PinLink::count());
     }
+
+    public function test_renew_kills_the_old_link_and_makes_a_new_one(): void
+    {
+        $old = PinLink::forKitchen($this->kitchen);
+        $new = PinLink::renewForKitchen($this->kitchen);
+
+        $this->assertNotSame($old->id, $new->id);
+        $this->assertTrue($old->fresh()->isExpired());
+        $this->postJson(route('pin.store', $old->token), [...$this->near(100), 'mode' => 'home', 'accuracy' => 25])->assertStatus(422);
+        $this->assertNull($this->kitchen->fresh()->location);
+        $this->assertSame($new->id, PinLink::forKitchen($this->kitchen)->id);
+
+        $this->actingAs(User::factory()->admin()->create());
+        Livewire::test(ViewKitchen::class, ['record' => $this->kitchen->getRouteKey()])->callAction('renewPinLink')->assertHasNoActionErrors();
+        $this->assertTrue($new->fresh()->isExpired());
+    }
 }
