@@ -115,10 +115,14 @@ jobs:
         # the server. Only keys that are set are written; values never reach the log.
         env:
           GOOGLE_MAPS_KEY: ${{ secrets.GOOGLE_MAPS_KEY }}
+          MESSENGER_PAGE_TOKEN: ${{ secrets.MESSENGER_PAGE_TOKEN }}
+          MESSENGER_APP_SECRET: ${{ secrets.MESSENGER_APP_SECRET }}
+          MESSENGER_APP_ID: ${{ secrets.MESSENGER_APP_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           SSH="ssh -i ~/.ssh/deploy_key -p $DEPLOY_PORT -o BatchMode=yes"
           lines=""
-          for name in GOOGLE_MAPS_KEY; do
+          for name in GOOGLE_MAPS_KEY MESSENGER_PAGE_TOKEN MESSENGER_APP_SECRET MESSENGER_APP_ID ANTHROPIC_API_KEY; do
             value="${!name}"
             if [ -n "$value" ]; then
               case "$value" in *[!A-Za-z0-9_.:/+=-]*) echo "::error::$name has characters that are not allowed"; exit 1 ;; esac

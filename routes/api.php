@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\MessengerWebhookController;
 use App\Http\Controllers\Api\V1\AiController;
 use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
@@ -42,6 +43,10 @@ use Illuminate\Support\Facades\Route;
 | Every client (the PWA today, a native app later) talks to these routes.
 | Breaking changes go to a new /api/v2 group instead of changing v1.
 */
+
+// F80: Meta's Messenger webhook (https://dawat.cloud/api/webhooks/messenger).
+Route::get('/webhooks/messenger', [MessengerWebhookController::class, 'verify'])->middleware('throttle:30,1')->name('webhooks.messenger.verify');
+Route::post('/webhooks/messenger', [MessengerWebhookController::class, 'receive'])->middleware('throttle:600,1')->name('webhooks.messenger');
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::get('/ping', fn () => ['ok' => true, 'app' => config('app.name')])->name('ping');
