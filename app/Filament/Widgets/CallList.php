@@ -40,7 +40,8 @@ class CallList extends TableWidget
                     ->description(fn (CallRequest $r) => $r->phone),
                 CallRequestActions::reasonColumn(),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
+                CallRequestActions::talksColumn(),
             ])
-            ->recordActions([...CallRequestActions::row(), CallRequestActions::done()]);
+            ->recordActions(CallRequestActions::row());
     }
 }
