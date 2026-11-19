@@ -27,6 +27,9 @@ final class Zones
     private const M_PER_DEG_LAT = 111320.0;
 
     /** Ring positions at these bearings, clockwise from north. */
+    /** F77: a zone launches (customers + shahidar search) at this many plates a day. */
+    public const PLATES_GOAL = 80;
+
     private const DIRECTIONS = [0 => 'উত্তর', 60 => 'উত্তর-পূর্ব', 120 => 'দক্ষিণ-পূর্ব', 180 => 'দক্ষিণ', 240 => 'দক্ষিণ-পশ্চিম', 300 => 'উত্তর-পশ্চিম'];
 
     /**
@@ -102,14 +105,22 @@ final class Zones
      */
     public function report(): array
     {
-        $zones = $this->zones()->map(fn (array $z) => $z + ['cooks' => 0, 'pending' => 0, 'customers' => 0])->keyBy('key');
+        $zones = $this->zones()->map(fn (array $z) => $z + ['cooks' => 0, 'pending' => 0, 'customers' => 0, 'plates' => 0])->keyBy('key');
         $unpinned = [];
-        $totals = ['cooks' => 0, 'pending' => 0, 'customers' => 0, 'outside' => 0, 'no_area' => 0];
+        $totals = ['cooks' => 0, 'pending' => 0, 'customers' => 0, 'plates' => 0, 'outside' => 0, 'no_area' => 0, 'plates_unknown' => 0];
 
-        $kitchens = Kitchen::query()->whereIn('status', [KitchenStatus::Approved, KitchenStatus::Pending])->get(['id', 'area_id', 'location', 'status']);
+        $kitchens = Kitchen::query()->whereIn('status', [KitchenStatus::Approved, KitchenStatus::Pending])->get(['id', 'area_id', 'location', 'status', 'daily_plates']);
         foreach ($kitchens as $k) {
             $field = $k->status === KitchenStatus::Approved ? 'cooks' : 'pending';
             $this->place($zones, $unpinned, $totals, $k->location, $k->area_id, $field);
+            // F77: plates count only when she is approved, pinned and told us 1 or 2.
+            if ($k->status === KitchenStatus::Approved && $k->location) {
+                if ($k->daily_plates) {
+                    $this->place($zones, $unpinned, $totals, $k->location, $k->area_id, 'plates', (int) $k->daily_plates);
+                } else {
+                    $totals['plates_unknown']++;
+                }
+            }
         }
         $customers = Customer::query()->where('status', '!=', CustomerStatus::Stopped)->get(['id', 'area_id', 'location']);
         foreach ($customers as $c) {
@@ -119,7 +130,7 @@ final class Zones
         $shahidars = Area::query()->where('is_active', true)->withCount('shahidars')->pluck('shahidars_count', 'id');
 
         $areas = $zones->groupBy('area_id')->map(function (Collection $zs, int $areaId) use ($unpinned, $shahidars) {
-            $loose = $unpinned[$areaId] ?? ['cooks' => 0, 'pending' => 0, 'customers' => 0];
+            $loose = ($unpinned[$areaId] ?? []) + ['cooks' => 0, 'pending' => 0, 'customers' => 0, 'plates' => 0];
 
             return [
                 'id' => $areaId,
@@ -130,21 +141,23 @@ final class Zones
                 'cooks' => $zs->sum('cooks') + $loose['cooks'],
                 'pending' => $zs->sum('pending') + $loose['pending'],
                 'customers' => $zs->sum('customers') + $loose['customers'],
+                'plates' => $zs->sum('plates'),
             ];
         })->sortByDesc(fn ($a) => [$a['cooks'] + $a['pending'], $a['customers']])->values();
 
         $totals['zones'] = $zones->count();
         $totals['zones_with_cooks'] = $zones->filter(fn ($z) => $z['cooks'] > 0)->count();
         $totals['zones_ready'] = $zones->filter(fn ($z) => $z['cooks'] >= 3)->count();
+        $totals['zones_80'] = $zones->filter(fn ($z) => $z['plates'] >= self::PLATES_GOAL)->count();
         $totals['shahidars'] = (int) DB::table('area_shahidar')->join('areas', 'areas.id', '=', 'area_shahidar.area_id')->where('areas.is_active', true)->distinct()->count('area_shahidar.user_id');
 
         return ['areas' => $areas, 'totals' => $totals];
     }
 
     /** Nearest zone for a pin; else the area's "no pin" line; else counted as outside. */
-    private function place(Collection $zones, array &$unpinned, array &$totals, ?GeoPoint $at, ?int $areaId, string $field): void
+    private function place(Collection $zones, array &$unpinned, array &$totals, ?GeoPoint $at, ?int $areaId, string $field, int $by = 1): void
     {
-        $totals[$field]++;
+        $totals[$field] += $by;
         if ($at) {
             $best = null;
             $bestD = INF;
@@ -155,7 +168,7 @@ final class Zones
                 }
             }
             if ($best !== null && $bestD <= self::RADIUS_M * 1.5) {
-                $zones->put($best, array_merge($zones[$best], [$field => $zones[$best][$field] + 1]));
+                $zones->put($best, array_merge($zones[$best], [$field => $zones[$best][$field] + $by]));
 
                 return;
             }
@@ -164,8 +177,8 @@ final class Zones
             return;
         }
         if ($areaId) {
-            $unpinned[$areaId] ??= ['cooks' => 0, 'pending' => 0, 'customers' => 0];
-            $unpinned[$areaId][$field]++;
+            $unpinned[$areaId] ??= ['cooks' => 0, 'pending' => 0, 'customers' => 0, 'plates' => 0];
+            $unpinned[$areaId][$field] += $by;
 
             return;
         }
