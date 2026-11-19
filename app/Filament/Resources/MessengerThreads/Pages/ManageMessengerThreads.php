@@ -98,6 +98,17 @@ class ManageMessengerThreads extends ManageRecords
                     }
                     Notification::make()->title("{$n}টা চ্যাটে উত্তর গেল")->success()->send();
                 }),
+            Action::make('linkExisting')
+                ->visible(fn () => $admin() && Graph::configured())
+                ->label('আগের রান্নাঘর মিলিয়ে দিন')
+                ->icon(Heroicon::OutlinedLink)
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalDescription('"মানুষ লাগবে"-তে যাঁদের নম্বরে আগে থেকেই রান্নাঘর আছে, চ্যাটটা সেই রান্নাঘরের সাথে জুড়ে দেবে আর তাঁকে জানাবে; পিন না থাকলে তাঁর নিজের লোকেশন লিংক পাঠাবে।')
+                ->action(function () {
+                    $n = app(Agent::class)->linkExisting();
+                    Notification::make()->title("{$n}টা চ্যাট রান্নাঘরের সাথে জোড়া হলো")->success()->send();
+                }),
             Action::make('backfill')
                 ->visible(fn () => $admin() && Graph::configured())
                 ->label('আগের চ্যাট আনুন')

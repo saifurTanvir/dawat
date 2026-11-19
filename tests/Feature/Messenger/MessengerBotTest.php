@@ -233,6 +233,24 @@ class MessengerBotTest extends TestCase
         $this->assertSame(['dhonnobad apu 😊'], $this->sent());
     }
 
+    public function test_flagged_chats_are_joined_to_the_kitchen_their_number_already_has(): void
+    {
+        $old = Kitchen::factory()->approved()->create(['area_id' => $this->area->id]);
+        $this->hook([$this->text('PL', 'hi', 'mid.l1')]);
+        $this->fake(['name' => 'Sima', 'phone' => $old->user->phone, 'area_id' => $this->area->id, 'cook' => true]);
+        $this->answer('PL');
+        $this->fake([]);
+
+        $n = app(Agent::class)->linkExisting();
+
+        $t = MessengerThread::where('psid', 'PL')->firstOrFail();
+        $this->assertSame(1, $n);
+        $this->assertSame($old->id, $t->kitchen_id);
+        $this->assertFalse($t->needs_human);
+        $this->assertSame($old->location ? 0 : 1, collect($this->sent())->filter(fn ($x) => str_contains($x, '/pin/'))->count());
+        $this->assertSame(0, app(Agent::class)->linkExisting());
+    }
+
     public function test_she_is_told_about_her_existing_kitchen_only_once(): void
     {
         $old = Kitchen::factory()->approved()->create(['area_id' => $this->area->id]);

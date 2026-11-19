@@ -181,6 +181,40 @@ class Agent
         ];
     }
 
+    /**
+     * Chats flagged because the number she gave already has a kitchen: join
+     * the chat to that kitchen (same number, so it is hers) and tell her once,
+     * with her own location link if her pin is still missing.
+     *
+     * @return int chats joined
+     */
+    public function linkExisting(): int
+    {
+        $n = 0;
+        $threads = MessengerThread::query()->whereNull('kitchen_id')->where('needs_human', true)->get()
+            ->filter(fn (MessengerThread $t) => filled($t->fact('phone')));
+        foreach ($threads as $t) {
+            $kitchen = User::where('phone', $t->fact('phone'))->first()?->kitchen;
+            // A page or business writing for someone else is left for a person.
+            if (! $kitchen || preg_match('/\b(bites?|food|foods|kitchen|shop|store|business|restaurant|catering)\b/i', (string) $t->name)) {
+                continue;
+            }
+            $t->forceFill(['kitchen_id' => $kitchen->id, 'needs_human' => false, 'human_reason' => null])->save();
+            $messages = ['apu, mile dekhlam ✅ ei number e apnar rannaghor "'.$kitchen->display_name.'" age thekei ache — notun kore kichu korte hobe na 😊'];
+            if (! $kitchen->location) {
+                $messages[] = 'shudhu basar location ta baki — basay boshe ei link khulun, location keu dekhbe na: '.PinLink::forKitchen($kitchen)->url();
+                $messages[] = 'link e na hole ekhane 📎 → Location pathan';
+            }
+            if (! $kitchen->daily_plates) {
+                $messages[] = 'ar: dine shorbochcho 2 plate — apni 1 plate dite parben na 2?';
+            }
+            $this->send($t, $messages);
+            $n++;
+        }
+
+        return $n;
+    }
+
     /** Coordinates from a location they shared in the chat, if the newest messages have one. */
     private function sharedLocation(MessengerThread $thread): ?GeoPoint
     {
