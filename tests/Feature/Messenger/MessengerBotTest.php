@@ -5,6 +5,7 @@ namespace Tests\Feature\Messenger;
 use App\Enums\KitchenStatus;
 use App\Filament\Resources\MessengerThreads\Pages\ManageMessengerThreads;
 use App\Jobs\AnswerMessenger;
+use App\Models\AppSetting;
 use App\Models\Area;
 use App\Models\CallRequest;
 use App\Models\Kitchen;
@@ -14,6 +15,7 @@ use App\Models\User;
 use App\Services\Messenger\Agent;
 use App\Services\Messenger\Backfill;
 use App\Services\Messenger\Graph;
+use App\Support\Roles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\Request;
@@ -193,6 +195,22 @@ class MessengerBotTest extends TestCase
         $this->assertFalse(MessengerThread::query()->answerable()->where('psid', 'NEW2')->exists());
         $this->assertSame(0, MessengerThread::where('psid', 'KNOWN')->firstOrFail()->messages()->count());
         $this->assertFalse(MessengerThread::where('psid', 'OLD')->exists());
+    }
+
+    public function test_an_admin_can_save_a_new_page_token_from_the_panel(): void
+    {
+        Http::swap(new HttpFactory);
+        Http::fake(['graph.test/me?*' => Http::sequence()
+            ->push(['error' => ['message' => 'Invalid OAuth access token']], 400)
+            ->push(['id' => 'PAGE', 'name' => 'দাওয়াত'])]);
+        $this->actingAs(User::role(Roles::ADMIN)->first());
+
+        Livewire::test(ManageMessengerThreads::class)->callAction('token', ['token' => 'bad']);
+        $this->assertSame('page-token', Graph::pageToken());
+
+        Livewire::test(ManageMessengerThreads::class)->callAction('token', ['token' => ' new-token ']);
+        $this->assertSame('new-token', Graph::pageToken());
+        $this->assertStringNotContainsString('new-token', json_encode(AppSetting::find('messenger')->value));
     }
 
     public function test_she_is_told_about_her_existing_kitchen_only_once(): void
