@@ -60,8 +60,11 @@ class MessengerWebhookController extends Controller
             }
             $this->save($thread, 'out', 'page', $message);
             // Someone typed on the page itself (not Meta's instant auto-reply): let them talk, the bot waits.
-            $instant = $thread->last_in_at && $thread->last_in_at->gt(now()->subSeconds(15));
-            $thread->forceFill(['last_out_at' => now()] + ($instant ? [] : ['paused_until' => now()->addHours(MessengerThread::PAUSE_HOURS)]))->save();
+            // No message from them yet, or a reply within seconds of theirs = Meta's automatic greeting, not a person.
+            $instant = ! $thread->last_in_at || $thread->last_in_at->gt(now()->subSeconds(15));
+            if (! $instant) {
+                $thread->forceFill(['last_out_at' => now(), 'paused_until' => now()->addHours(MessengerThread::PAUSE_HOURS)])->save();
+            }
 
             return;
         }

@@ -242,4 +242,20 @@ class MessengerBotTest extends TestCase
         $this->assertSame(1, $beat->pending);
         $this->assertTrue($beat->problem);
     }
+
+    public function test_metas_instant_greeting_does_not_pause_the_bot_and_admins_can_answer_the_backlog(): void
+    {
+        Queue::fake();
+        $this->fake([]);
+        // The greeting can arrive before their first message reaches us.
+        $this->hook([['sender' => ['id' => 'PAGE'], 'recipient' => ['id' => 'P9'], 'message' => ['mid' => 'mid.greet', 'is_echo' => true, 'text' => 'আসসালামু আলাইকুম! দাওয়াতে স্বাগতম']]]);
+        $this->assertTrue(MessengerThread::where('psid', 'P9')->firstOrFail()->botMayAnswer());
+
+        $this->hook([$this->text('P9', 'kivabe join korbo', 'mid.i')]);
+        MessengerThread::where('psid', 'P9')->update(['last_in_at' => now()->subMinutes(10)]);
+        Queue::fake();
+        $this->actingAs(User::role('admin')->first(), 'web');
+        Livewire::test(ManageMessengerThreads::class)->callAction('answerWaiting');
+        Queue::assertPushed(AnswerMessenger::class, 1);
+    }
 }

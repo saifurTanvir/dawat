@@ -64,6 +64,13 @@ class MessengerThread extends Model
             ->where(fn ($q) => $q->whereNull('last_out_at')->orWhereColumn('last_out_at', '<', 'last_in_at'));
     }
 
+    /** Waiting, still inside Meta's 24-hour reply window, and the bot may answer. */
+    public function scopeAnswerable(Builder $query): Builder
+    {
+        return $query->waiting()->where('last_in_at', '>', now()->subHours(23))->where('bot_off', false)
+            ->where(fn ($q) => $q->whereNull('paused_until')->orWhere('paused_until', '<', now()));
+    }
+
     public function botMayAnswer(): bool
     {
         return ! $this->bot_off && ! ($this->paused_until?->isFuture());

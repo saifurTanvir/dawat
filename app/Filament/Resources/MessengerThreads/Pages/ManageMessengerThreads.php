@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\MessengerThreads\Pages;
 
 use App\Filament\Resources\MessengerThreads\MessengerThreadResource;
+use App\Jobs\AnswerMessenger;
+use App\Models\MessengerThread;
 use App\Services\Messenger\Brain;
 use App\Services\Messenger\Graph;
 use Filament\Actions\Action;
@@ -48,6 +50,20 @@ class ManageMessengerThreads extends ManageRecords
                     $on = ! Graph::botOn();
                     Graph::setBot($on, auth()->user());
                     Notification::make()->title($on ? 'বট চালু হয়েছে' : 'বট বন্ধ হয়েছে')->success()->send();
+                }),
+            Action::make('answerWaiting')
+                ->visible(fn () => $admin() && Graph::botOn())
+                ->label(fn () => 'অপেক্ষার '.MessengerThread::query()->answerable()->count().'টা চ্যাটে উত্তর দিন')
+                ->icon(Heroicon::OutlinedPaperAirplane)
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalDescription('গত ২৪ ঘণ্টায় যাঁদের শেষ মেসেজের উত্তর যায়নি (বট বা মানুষ কেউ দেননি), বট তাঁদের উত্তর দেবে। ২৪ ঘণ্টার পুরনো চ্যাটে Meta আর পাঠাতে দেয় না।')
+                ->action(function () {
+                    $n = 0;
+                    foreach (MessengerThread::query()->answerable()->get() as $t) {
+                        AnswerMessenger::dispatch($t->id, (int) $t->messages()->where('direction', 'in')->max('id'))->delay(now()->addSeconds(2 * $n++));
+                    }
+                    Notification::make()->title("{$n}টা চ্যাটে উত্তর যাচ্ছে")->success()->send();
                 }),
             Action::make('setup')
                 ->visible($admin)
