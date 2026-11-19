@@ -97,6 +97,11 @@ class MessengerThreadResource extends Resource
                 Action::make('seen')->label('দেখেছি')->icon(Heroicon::OutlinedCheck)->color('success')
                     ->visible(fn (MessengerThread $t) => $t->needs_human)
                     ->action(fn (MessengerThread $t) => $t->forceFill(['needs_human' => false, 'human_reason' => null])->save()),
+                // Meta will not deliver to some chats (e.g. #551, a comment with no inbox): close them by hand.
+                Action::make('close')->label('বন্ধ করুন')->icon(Heroicon::OutlinedXCircle)->color('gray')
+                    ->visible(fn (MessengerThread $t) => filled($t->send_error) && MessengerThread::query()->waiting()->whereKey($t->id)->exists())
+                    ->requiresConfirmation()->modalDescription('Meta এই চ্যাটে মেসেজ পৌঁছাতে দিচ্ছে না। চ্যাটটা "উত্তর বাকি" থেকে সরিয়ে রাখবে।')
+                    ->action(fn (MessengerThread $t) => $t->forceFill(['last_out_at' => now(), 'needs_human' => false, 'human_reason' => null])->save()),
                 Action::make('bot')->label(fn (MessengerThread $t) => $t->botMayAnswer() ? 'বট বন্ধ' : 'বট চালু')
                     ->icon(Heroicon::OutlinedCpuChip)->color('gray')
                     ->action(fn (MessengerThread $t) => $t->botMayAnswer()
