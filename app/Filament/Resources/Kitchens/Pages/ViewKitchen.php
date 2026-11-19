@@ -27,6 +27,7 @@ class ViewKitchen extends ViewRecord
             ViewAsAction::make(fn ($record) => $record->user, 'গৃহিণীর অ্যাপ দেখুন'),
             LoginHelpActions::group(fn ($record) => $record->user),
             PinLinkActions::make(), // F68
+            PinLinkActions::renew(), // F76
             RemarkActions::add(fn ($record) => $record->user),
             ActionGroup::make([
                 ActForCookActions::menuNotice(),

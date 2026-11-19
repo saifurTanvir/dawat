@@ -40,6 +40,14 @@ class PinLink extends Model
             ]);
     }
 
+    /** F76: kills every still-open link of this kitchen and makes a fresh one (for a link sent to the wrong person). */
+    public static function renewForKitchen(Kitchen $kitchen, ?User $by = null): self
+    {
+        self::query()->where('kitchen_id', $kitchen->id)->where('expires_at', '>', now())->update(['expires_at' => now()->subSecond()]);
+
+        return self::forKitchen($kitchen, $by);
+    }
+
     public function kitchen(): BelongsTo
     {
         return $this->belongsTo(Kitchen::class);
