@@ -49,4 +49,12 @@ class OpsStatusTest extends TestCase
 
         $this->postJson('/admin-tools/heartbeat', ['channel' => 'sms'])->assertUnprocessable();
     }
+
+    public function test_dashboard_shows_the_summary_to_admins(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+        OpsHeartbeat::create(['channel' => 'messenger', 'sent' => 5, 'pending' => 3]);
+
+        $this->get('/admin')->assertOk()->assertSee('বিস্তারিত দেখুন')->assertSee('চলছে');
+    }
 }

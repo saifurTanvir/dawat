@@ -39,22 +39,7 @@ class OpsStatus extends Page
     {
         $today = DhakaTime::startOfDay();
 
-        $channels = collect(OpsHeartbeat::CHANNELS)->map(function (string $label, string $key) use ($today) {
-            $last = OpsHeartbeat::query()->where('channel', $key)->latest('id')->first();
-            $state = match (true) {
-                $last === null => 'none',
-                $last->created_at->lt(now()->subMinutes(OpsHeartbeat::STALE_MINUTES)) => 'stopped',
-                $last->problem => 'problem',
-                default => 'ok',
-            };
-
-            return [
-                'label' => $label,
-                'state' => $state,
-                'last' => $last,
-                'sentToday' => (int) OpsHeartbeat::query()->where('channel', $key)->where('created_at', '>=', $today)->sum('sent'),
-            ];
-        });
+        $channels = OpsHeartbeat::summary();
 
         $approved = Kitchen::query()->where('status', KitchenStatus::Approved);
 
