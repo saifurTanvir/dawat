@@ -15,24 +15,27 @@
         .label::before, .label::after { content: ''; position: absolute; left: 2mm; right: 2mm; border-top: 0.25mm dashed #000; }
         .label::before { top: 33.33mm; }
         .label::after { top: 66.67mm; }
-        /* Box QR | who and where | call QR in its own frame. The name leads; the two QRs sit at
-           opposite ends so they are never confused. */
-        .sticker { height: 33.33mm; box-sizing: border-box; padding: 1.8mm 2.2mm; display: grid; grid-template-columns: 20mm 1fr 13.5mm; gap: 2mm; align-items: center; overflow: hidden; font-family: 'Noto Sans Bengali', sans-serif; }
-        .boxqr svg { width: 20mm; height: 20mm; display: block; shape-rendering: crispEdges; }
-        .code { font: 700 6.5pt/1.2 ui-monospace, 'DejaVu Sans Mono', monospace; text-align: center; margin-top: .4mm; }
-        .brand { font: 700 6.5pt/1.2 'Noto Serif Bengali', serif; text-align: center; }
-        .mid { min-width: 0; overflow: hidden; align-self: stretch; display: flex; flex-direction: column; justify-content: center; }
-        .name { font: 700 12pt/1.15 'Noto Serif Bengali', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .tags { display: flex; align-items: center; gap: 1.2mm; margin-top: .7mm; min-width: 0; }
-        .tag { flex: none; font: 700 8pt/1 'Noto Serif Bengali', serif; padding: .7mm 1.4mm; border-radius: 1mm; white-space: nowrap; }
+        /* Width in fifths: the box QR (handover scan) takes the left 2/5. The right 3/5 has the
+           name with the meal or office spot on top, a rule under it, then the address (2/3)
+           and the call QR (1/3). */
+        .sticker { height: 33.33mm; box-sizing: border-box; padding: 1.6mm 2mm; display: grid; grid-template-columns: 2fr 3fr; overflow: hidden; font-family: 'Noto Sans Bengali', sans-serif; }
+        .boxqr { display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: .3mm solid #000; padding-right: 1.5mm; }
+        .boxqr svg { width: 24.5mm; height: 24.5mm; display: block; shape-rendering: crispEdges; }
+        .code { font: 700 6pt/1.1 ui-monospace, 'DejaVu Sans Mono', monospace; text-align: center; margin-top: .3mm; white-space: nowrap; }
+        .right { display: grid; grid-template-rows: auto 1fr; min-width: 0; padding-left: 2mm; }
+        .head { display: flex; align-items: center; justify-content: space-between; gap: 1.2mm; padding-bottom: 1mm; border-bottom: .3mm solid #000; min-width: 0; }
+        .name { font: 700 11.5pt/1.15 'Noto Serif Bengali', serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+        .tag { flex: none; font: 700 7.5pt/1 'Noto Serif Bengali', serif; padding: .7mm 1.2mm; border-radius: 1mm; white-space: nowrap; }
         .tag-office { background: #000; color: #fff; }
         .tag-meal { border: .3mm solid #000; }
-        .phone { font: 700 8.5pt/1.2 ui-monospace, 'DejaVu Sans Mono', monospace; white-space: nowrap; margin-top: .6mm; }
-        .addr { font-size: 7pt; line-height: 1.25; margin-top: .4mm; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .body { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5mm; padding-top: 1.1mm; min-height: 0; }
+        .info { min-width: 0; overflow: hidden; }
+        .phone { font: 700 8pt/1.2 ui-monospace, 'DejaVu Sans Mono', monospace; white-space: nowrap; }
+        .addr { font-size: 7pt; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
         .addr b { font-weight: 700; }
-        .call { border: .3mm solid #000; border-radius: 1.4mm; padding: .8mm .8mm .5mm; text-align: center; }
-        .call svg { width: 11.5mm; height: 11.5mm; display: block; margin: 0 auto; shape-rendering: crispEdges; }
-        .call small { display: block; font: 700 6pt/1.15 'Noto Sans Bengali', sans-serif; margin-top: .3mm; }
+        .call { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .call svg { width: 12.5mm; height: 12.5mm; display: block; shape-rendering: crispEdges; }
+        .call small { display: block; font: 700 5.6pt/1.1 ui-monospace, 'DejaVu Sans Mono', monospace; margin-top: .3mm; white-space: nowrap; letter-spacing: -.02em; }
         @media screen {
             body { background: #e8ece9; }
             .pages { display: flex; flex-wrap: wrap; gap: 6mm; justify-content: center; padding: 0 4mm 10mm; }
@@ -54,7 +57,7 @@
                 <li>প্রতি লেবেলে ৩টা স্টিকার — দাগ ধরে কেটে নিন।</li>
                 <li>গৃহিণীর বাসায় যে বক্স যার, তার নামের স্টিকার লাগিয়ে অ্যাপে "পিকআপ" চেপে স্ক্যান করুন। অন্যের স্টিকার হলে অ্যাপ সাথে সাথে বলবে।</li>
                 <li>অফিসের বক্সে কালো ঘরে "সারি · কলাম" — অফিসে বক্সগুলো সেভাবে সাজিয়ে রাখুন (সারি ১ সামনে, কলাম ১ বাঁ থেকে)। প্রত্যেক কর্মী নোটিফিকেশনে নিজের সারি-কলাম পাবেন।</li>
-                <li>বড় QR বক্সের (পিকআপ আর ডেলিভারিতে স্ক্যান)। ডানের ফ্রেমের ছোট QR শুধু কল করার — স্ক্যান করলে সরাসরি গ্রাহককে ফোন হয়।</li>
+                <li>বাঁয়ের বড় QR বক্সের (পিকআপ আর ডেলিভারিতে স্ক্যান)। ডান কোণের ছোট QR (নিচে মোবাইল নম্বর) শুধু কল করার — স্ক্যান করলে সরাসরি গ্রাহককে ফোন হয়।</li>
             </ol>
         </details>
     </div>
@@ -65,24 +68,26 @@
                     <div class="sticker">
                         <div class="boxqr">
                             {!! $l['qr'] !!}
-                            <div class="code">{{ $l['code'] }}</div>
-                            <div class="brand">দাওয়াত · {{ $l['box'] }}</div>
+                            <div class="code">{{ $l['code'] }} · {{ $l['box'] }}</div>
                         </div>
-                        <div class="mid">
-                            <div class="name">{{ $l['name'] }}</div>
-                            <div class="tags">
+                        <div class="right">
+                            <div class="head">
+                                <div class="name">{{ $l['name'] }}</div>
                                 @if ($l['spot'])
                                     <span class="tag tag-office">সারি {{ $l['spot']['row'] }} · কলাম {{ $l['spot']['col'] }}</span>
                                 @else
                                     <span class="tag tag-meal">{{ $l['meal'] }}</span>
                                 @endif
                             </div>
-                            <div class="phone">{{ $l['phone'] }}</div>
-                            <div class="addr">@if ($l['company'])<b>{{ $l['company'] }}</b> · @endif{{ $l['address'] }}</div>
+                            <div class="body">
+                                <div class="info">
+                                    <div class="addr">@if ($l['company'])<b>{{ $l['company'] }}</b> · @endif{{ $l['address'] }}</div>
+                                </div>
+                                @if ($l['call'])
+                                    <div class="call">{!! $l['call'] !!}<small>{{ $l['phone'] }}</small></div>
+                                @endif
+                            </div>
                         </div>
-                        @if ($l['call'])
-                            <div class="call">{!! $l['call'] !!}<small>স্ক্যান = কল</small></div>
-                        @endif
                     </div>
                 @endforeach
             </section>

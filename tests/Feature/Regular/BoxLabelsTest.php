@@ -83,7 +83,7 @@ class BoxLabelsTest extends TestCase
         // The sheet: signed link only.
         $url = $res->json('data.url');
         $this->get($url)->assertOk()->assertSee('রহিম উদ্দিন')->assertSee('01711112222')->assertSee('বাড়ি ১২, রোড ৫')
-            ->assertSee('size: 75mm 100mm', false)->assertSee('স্ক্যান = কল')->assertSee('দুপুর');
+            ->assertSee('size: 75mm 100mm', false)->assertSee('দুপুর');
         $this->get(strtok($url, '?'))->assertForbidden();
     }
 
