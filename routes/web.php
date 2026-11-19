@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Web\BillController;
+use App\Http\Controllers\Web\OpsHeartbeatController;
 use App\Http\Controllers\Web\PinController;
 use App\Http\Controllers\Web\SeoController;
 use App\Http\Controllers\Web\SpaController;
@@ -48,6 +49,10 @@ Route::get('/admin-tools/geocode', function (Request $request, Geocoder $geocode
 
     return response()->json(['data' => $geocoder->search($q)]);
 })->middleware('throttle:60,1')->name('admin.geocode');
+
+// F78: the reply loops check in (admin's own browser); the status page shows it.
+Route::post('/admin-tools/heartbeat', [OpsHeartbeatController::class, 'store'])
+    ->middleware('throttle:120,1')->name('admin.heartbeat');
 
 // F39: a customer's bill, from a link.
 Route::get('/bill/{token}', [BillController::class, 'show'])->where('token', '[A-Za-z0-9]{40}')->name('bill.show');
