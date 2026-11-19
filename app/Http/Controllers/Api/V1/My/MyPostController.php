@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\My;
 
+use App\Enums\ContactType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OwnPostResource;
 use App\Models\Post;
@@ -20,8 +21,15 @@ class MyPostController extends Controller
         abort_unless($kitchen, 404, 'আপনি এখনো রাঁধুনি হিসেবে নিবন্ধন করেননি।');
 
         $posts = $kitchen->posts()
-            ->with(['images', 'tags', 'orders'])
+            ->with(['images', 'tags', 'orders', 'kitchen.user'])
             ->withCount('contactEvents')
+            // What the taps were — a call or WhatsApp tap only opens the buyer's own phone.
+            ->withCount([
+                'contactEvents as call_taps' => fn ($q) => $q->where('type', ContactType::Call),
+                'contactEvents as message_taps' => fn ($q) => $q->where('type', ContactType::Message),
+                'contactEvents as share_taps' => fn ($q) => $q->where('type', ContactType::Share),
+                'contactEvents as comment_taps' => fn ($q) => $q->where('type', ContactType::Comment),
+            ])
             ->where('created_at', '>=', now()->subDays(7))
             ->latest('id')
             ->paginate(20);

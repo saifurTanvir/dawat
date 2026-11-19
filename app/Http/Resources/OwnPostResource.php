@@ -44,6 +44,14 @@ class OwnPostResource extends JsonResource
             'tags' => TagResource::collection($this->whenLoaded('tags')),
             'share_image_url' => $this->shareImageUrl(),
             'contact_counts' => $this->when(isset($this->contact_events_count), fn () => $this->contact_events_count),
+            'contacts' => $this->when(isset($this->call_taps), fn () => [
+                'call' => (int) $this->call_taps,
+                'message' => (int) $this->message_taps,
+                'share' => (int) $this->share_taps,
+                'comment' => (int) $this->comment_taps,
+            ]),
+            // Where buyers' calls and WhatsApp go, when it is not the cook's own number.
+            'contact_phone' => $this->relationLoaded('kitchen') && $this->kitchen->contact_phone && $this->kitchen->contact_phone !== $this->kitchen->user?->phone ? $this->kitchen->contact_phone : null,
         ];
     }
 }

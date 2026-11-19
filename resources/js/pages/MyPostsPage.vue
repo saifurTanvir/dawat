@@ -37,8 +37,10 @@
                         <p class="mt-1 text-sm">
                             <span class="rounded-full px-2 py-0.5" :class="statusClass(post)">{{ statusText(post) }}</span>
                             <span v-if="post.source_label" class="rounded-full bg-turmeric-soft px-2 py-0.5">{{ post.source_label }}</span>
-                            <span v-if="post.contact_counts" class="ml-2 text-muted">{{ bn(post.contact_counts) }} বার যোগাযোগ</span>
                         </p>
+                        <!-- Buttons buyers pressed. A call or WhatsApp tap opens the buyer's own phone; they may not finish. -->
+                        <p v-if="tapLine(post)" class="mt-1 text-sm text-muted">{{ tapLine(post) }}</p>
+                        <p v-if="post.contact_phone && (post.contacts?.call || post.contacts?.message)" class="text-xs text-chili">ক্রেতাদের কল/WhatsApp যায় {{ post.contact_phone }} নম্বরে</p>
                     </div>
                 </div>
 
@@ -101,6 +103,18 @@ const rowError = reactive({});
 
 function isOpen(post) {
     return ['live', 'sold_out'].includes(post.status) && new Date(post.available_until) > new Date();
+}
+
+/** "ফোন বাটন ২ বার · WhatsApp ১ · শেয়ার ১" — taps, not calls that reached the cook. */
+function tapLine(post) {
+    const c = post.contacts;
+    if (!c) return post.contact_counts ? `${bn(post.contact_counts)} বার বাটন চাপা হয়েছে` : '';
+    const parts = [];
+    if (c.call) parts.push(`ফোন বাটন ${bn(c.call)} বার`);
+    if (c.message) parts.push(`WhatsApp বাটন ${bn(c.message)} বার`);
+    if (c.comment) parts.push(`কমেন্ট ${bn(c.comment)}`);
+    if (c.share) parts.push(`শেয়ার ${bn(c.share)}`);
+    return parts.join(' · ');
 }
 
 function statusText(post) {
