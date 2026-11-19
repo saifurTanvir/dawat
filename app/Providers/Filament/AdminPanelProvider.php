@@ -31,6 +31,8 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             // F58: microphone buttons for Bangla voice typing in the quick-add forms.
             ->renderHook(PanelsRenderHook::BODY_END, fn () => view('filament.voice-input'))
+            // F71: "you are seeing the panel as a staff member — back to admin"
+            ->renderHook(PanelsRenderHook::BODY_START, fn () => view('filament.staff-view-bar'))
             // F62: map + address search for the home-location box.
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('filament.location-assets'))
             ->login()
