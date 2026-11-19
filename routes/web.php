@@ -66,6 +66,12 @@ Route::get('/pin/{token}', [PinController::class, 'show'])->where('token', '[A-Z
 Route::post('/pin/{token}', [PinController::class, 'store'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:20,1')->name('pin.store');
 Route::get('/pin/{token}/search', [PinController::class, 'search'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:20,1')->name('pin.search');
 
+// F81: privacy policy (and how to delete your data), linked from the Meta app.
+Route::get('/privacy', fn () => view('legal.privacy', ['meta' => [
+    'title' => 'গোপনীয়তা নীতি · দাওয়াত', 'description' => 'দাওয়াত কোন তথ্য রাখে, কেন রাখে, আর কীভাবে মুছে দিতে বলবেন।',
+    'url' => url('/privacy'), 'canonical' => url('/privacy'), 'image' => null,
+]]))->name('privacy');
+
 // Shared post links get Open Graph tags so chat apps show the share card.
 Route::get('/p/{id}', [SpaController::class, 'post'])->name('spa.post');
 
