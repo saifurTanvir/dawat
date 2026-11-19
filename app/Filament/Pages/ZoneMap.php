@@ -33,6 +33,8 @@ class ZoneMap extends Page
 
     protected static ?int $navigationSort = 4;
 
+    protected ?string $subheading = 'কোন জায়গায় কতজন গৃহিণী, গ্রাহক আর দিনে কত প্লেট আছে — ১ কিমির বৃত্ত ধরে। একটা বৃত্তে ৩+ গৃহিণী হলে সেখানে অফিস/কর্পোরেট নেওয়া যায়।';
+
     /** Show only zones/areas that have someone in them. */
     public bool $onlyBusy = true;
 
@@ -60,7 +62,7 @@ class ZoneMap extends Page
                 ->map(fn (Kitchen $k) => ['kitchen' => $k, 'link' => PinLink::forKitchen($k, auth()->user())])
             : collect();
 
-        return ['pinless' => $pinless, 'areas' => $areas, 'totals' => $report['totals'], 'mapData' => $map, 'radius' => Zones::RADIUS_M];
+        return ['onlyBusy' => $this->onlyBusy, 'pinless' => $pinless, 'areas' => $areas, 'totals' => $report['totals'], 'mapData' => $map, 'radius' => Zones::RADIUS_M];
     }
 
     protected function getHeaderActions(): array

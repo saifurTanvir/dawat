@@ -89,6 +89,9 @@ class ZoneMapTest extends TestCase
 
         $this->actingAs(User::factory()->admin()->create());
         Livewire::test(ZoneMap::class)->assertOk()->assertSee('পরীক্ষা কেন্দ্র')->assertSee('আরও গৃহিণী লাগবে')
+            // Phones get cards; empty zones fold into one line until "সব এলাকা দেখুন".
+            ->assertSeeHtml('class="dz-cards"')->assertSee('৬টা জোনে এখনো কেউ নেই')->assertDontSee('পরীক্ষা উত্তর')
+            ->callAction('toggle')->assertSee('পরীক্ষা উত্তর')->assertDontSee('জোনে এখনো কেউ নেই')
             ->callAction('csv')->assertHasNoActionErrors();
         $this->get('/admin/zones')->assertOk();
 
