@@ -12,6 +12,7 @@ use App\Models\MessengerThread;
 use App\Models\OpsHeartbeat;
 use App\Models\User;
 use App\Services\Messenger\Agent;
+use App\Services\Messenger\Backfill;
 use App\Services\Messenger\Graph;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Factory as HttpFactory;
@@ -156,6 +157,42 @@ class MessengerBotTest extends TestCase
         $this->assertTrue($t->needs_human);
         $this->assertFalse(collect($this->sent())->contains(fn ($x) => str_contains($x, '/pin/')));
         $this->assertTrue(collect($this->sent())->contains(fn ($x) => str_contains($x, 'age thekei Dawat e join kora ache')));
+    }
+
+    public function test_chats_from_before_the_webhook_are_brought_in_and_waiting_ones_found(): void
+    {
+        MessengerThread::create(['psid' => 'KNOWN', 'name' => 'Already']);
+        $t0 = now()->subHours(3);
+        Http::swap(new HttpFactory);
+        Http::fake([
+            'graph.test/me?*' => Http::response(['id' => 'PAGE']),
+            'graph.test/me/conversations*' => Http::response(['data' => [
+                ['updated_time' => $t0->toIso8601String(), 'participants' => ['data' => [['id' => 'NEW1', 'name' => 'Rina Akter'], ['id' => 'PAGE', 'name' => 'Dawat']]],
+                    'messages' => ['data' => [
+                        ['id' => 'm_3', 'message' => 'Rina, jatrabari', 'from' => ['id' => 'NEW1'], 'created_time' => $t0->copy()->addMinutes(5)->toIso8601String()],
+                        ['id' => 'm_2', 'message' => 'আসসালামু আলাইকুম! দাওয়াতে স্বাগতম', 'from' => ['id' => 'PAGE'], 'created_time' => $t0->copy()->addSeconds(3)->toIso8601String()],
+                        ['id' => 'm_1', 'message' => 'kivabe join korbo', 'from' => ['id' => 'NEW1'], 'created_time' => $t0->toIso8601String()],
+                    ]]],
+                ['updated_time' => $t0->toIso8601String(), 'participants' => ['data' => [['id' => 'NEW2', 'name' => 'Sima'], ['id' => 'PAGE']]],
+                    'messages' => ['data' => [
+                        ['id' => 'm_5', 'message' => 'nam ar elaka likhe din', 'from' => ['id' => 'PAGE'], 'created_time' => $t0->copy()->addHour()->toIso8601String()],
+                        ['id' => 'm_4', 'message' => 'hi', 'from' => ['id' => 'NEW2'], 'created_time' => $t0->toIso8601String()],
+                    ]]],
+                ['updated_time' => $t0->toIso8601String(), 'participants' => ['data' => [['id' => 'KNOWN'], ['id' => 'PAGE']]], 'messages' => ['data' => [['id' => 'm_9', 'message' => 'x', 'from' => ['id' => 'KNOWN'], 'created_time' => $t0->toIso8601String()]]]],
+                ['updated_time' => now()->subDays(2)->toIso8601String(), 'participants' => ['data' => [['id' => 'OLD'], ['id' => 'PAGE']]], 'messages' => ['data' => []]],
+            ]]),
+        ]);
+
+        $r = app(Backfill::class)->run();
+
+        $this->assertSame(['added' => 2, 'waiting' => 1, 'error' => null], $r);
+        $new1 = MessengerThread::where('psid', 'NEW1')->firstOrFail();
+        $this->assertSame('Rina Akter', $new1->name);
+        $this->assertSame(['kivabe join korbo', 'আসসালামু আলাইকুম! দাওয়াতে স্বাগতম', 'Rina, jatrabari'], $new1->messages()->orderBy('id')->pluck('text')->all());
+        $this->assertTrue(MessengerThread::query()->answerable()->whereKey($new1->id)->exists()); // the greeting is not an answer
+        $this->assertFalse(MessengerThread::query()->answerable()->where('psid', 'NEW2')->exists());
+        $this->assertSame(0, MessengerThread::where('psid', 'KNOWN')->firstOrFail()->messages()->count());
+        $this->assertFalse(MessengerThread::where('psid', 'OLD')->exists());
     }
 
     public function test_she_is_told_about_her_existing_kitchen_only_once(): void
