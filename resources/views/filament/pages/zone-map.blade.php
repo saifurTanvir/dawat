@@ -11,8 +11,24 @@
         .dz-stat b { display: block; font-size: 1.5rem; }
         .dz-badge { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: .75rem; font-weight: 600; }
         .dz-ready { background: #dcfce7; color: #166534; } .dz-some { background: #fef3c7; color: #92400e; } .dz-none { background: #f3f4f6; color: #6b7280; }
-        .dz-map { height: 28rem; width: 100%; border-radius: .75rem; overflow: hidden; border: 1px solid rgb(229 231 235); }
+        .dz-map { height: 28rem; width: 100%; border-radius: .75rem; overflow: hidden; border: 1px solid rgb(229 231 235); position: relative; z-index: 0; isolation: isolate; } /* the map stays under the panel's top bar */
         .dark .dz-stat, .dark .dz-map { border-color: rgba(255,255,255,.1); }
+        /* Phones: each zone is a small card instead of a 7-column table. */
+        .dz-cards { display: none; }
+        .dz-card { border-top: 1px solid rgb(229 231 235); padding: .75rem 0; }
+        .dz-card:first-child { border-top: 0; padding-top: 0; }
+        .dark .dz-card, .dark .dz tbody tr { border-color: rgba(255,255,255,.1); }
+        .dz-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; }
+        .dz-nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: .25rem; margin-top: .5rem; text-align: center; }
+        .dz-nums div { border-radius: .5rem; background: rgba(156,163,175,.12); padding: .35rem .25rem; }
+        .dz-nums b { display: block; font-size: 1.05rem; }
+        .dz-nums span { font-size: .7rem; color: rgb(107 114 128); }
+        @media (max-width: 640px) {
+            .dz-wide { display: none; }
+            .dz-cards { display: block; }
+            .dz-map { height: 20rem; }
+            .dz-stat b { font-size: 1.25rem; }
+        }
     </style>
 
     <div class="dz-stats">
@@ -29,7 +45,21 @@
             @if ($pinless->isEmpty())
                 <p class="text-sm text-gray-500">সবার লোকেশন আছে।</p>
             @else
-                <table class="dz w-full text-sm" data-pin-links>
+                <div class="dz-cards">
+                    @foreach ($pinless as $row)
+                        <div class="dz-card">
+                            <div class="dz-card-head">
+                                <div>
+                                    <div class="font-medium">{{ $row['kitchen']->display_name }}</div>
+                                    <div class="muted">{{ $row['kitchen']->user?->name }} · {{ $row['kitchen']->user?->phone }} · {{ $row['kitchen']->area?->name ?? '—' }}</div>
+                                    @if ($row['link']->submitted_at)<div class="muted">পিন দিয়েছেন — যাচাই বাকি</div>@endif
+                                </div>
+                                @if ($row['kitchen']->user?->phone)<a href="https://wa.me/{{ \App\Support\PhoneNumber::international($row['kitchen']->user->phone) }}?text={{ rawurlencode($row['link']->message()) }}" target="_blank" rel="noopener" class="dz-badge dz-ready">WhatsApp</a>@endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                <table class="dz dz-wide w-full text-sm" data-pin-links>
                     <thead><tr class="text-gray-500"><th>রান্নাঘর</th><th>মোবাইল</th><th>এলাকা</th><th>লিংক</th><th></th></tr></thead>
                     <tbody>
                         @foreach ($pinless as $row)
@@ -61,11 +91,46 @@
     @endif
 
     @foreach ($areas as $a)
+        @php($shown = $onlyBusy ? collect($a['zones'])->filter(fn ($z) => $z['cooks'] + $z['pending'] + $z['customers'] > 0)->values() : collect($a['zones']))
+        @php($hidden = count($a['zones']) - $shown->count())
         <x-filament::section :heading="$a['name']" :description="'গৃহিণী '.$bn($a['cooks']).' (অপেক্ষায় '.$bn($a['pending']).') · প্লেট '.$bn($a['plates']).' · গ্রাহক '.$bn($a['customers']).' · এলাকার শাহিদার '.$bn($a['shahidars'])" collapsible :collapsed="$a['cooks'] + $a['pending'] + $a['customers'] === 0">
-            <table class="dz w-full text-sm">
+            <div class="dz-cards">
+                @foreach ($shown as $z)
+                    <div class="dz-card">
+                        <div class="dz-card-head">
+                            <div>
+                                <div class="font-medium">{{ $z['name'] }}</div>
+                                <a class="muted" href="https://www.google.com/maps?q={{ $z['center']->lat }},{{ $z['center']->lng }}" target="_blank" rel="noopener">ম্যাপে দেখুন</a>
+                            </div>
+                            @if ($z['cooks'] >= 3) <span class="dz-badge dz-ready">কর্পোরেট রিচ করা যায়</span>
+                            @elseif ($z['cooks'] > 0) <span class="dz-badge dz-some">আরও গৃহিণী লাগবে</span>
+                            @else <span class="dz-badge dz-none">গৃহিণী নেই</span> @endif
+                        </div>
+                        <div class="dz-nums">
+                            <div><b>{{ $bn($z['cooks']) }}</b><span>গৃহিণী</span></div>
+                            <div><b>{{ $bn($z['pending']) }}</b><span>অপেক্ষায়</span></div>
+                            <div><b @if ($z['plates'] >= \App\Services\Geo\Zones::PLATES_GOAL) style="color:#16a34a" @endif>{{ $bn($z['plates']) }}<small class="muted">/৮০</small></b><span>দিনে প্লেট</span></div>
+                            <div><b>{{ $bn($z['customers']) }}</b><span>গ্রাহক</span></div>
+                        </div>
+                    </div>
+                @endforeach
+                @if ($a['unpinned']['cooks'] + $a['unpinned']['pending'] + $a['unpinned']['customers'] > 0)
+                    <div class="dz-card">
+                        <div class="font-medium">পিন ছাড়া</div>
+                        <div class="muted">বাসার লোকেশন দেননি — কোন জোনে বলা যাচ্ছে না, প্লেটও গোনা হয় না</div>
+                        <div class="dz-nums">
+                            <div><b>{{ $bn($a['unpinned']['cooks']) }}</b><span>গৃহিণী</span></div>
+                            <div><b>{{ $bn($a['unpinned']['pending']) }}</b><span>অপেক্ষায়</span></div>
+                            <div><b>—</b><span>দিনে প্লেট</span></div>
+                            <div><b>{{ $bn($a['unpinned']['customers']) }}</b><span>গ্রাহক</span></div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+            <table class="dz dz-wide w-full text-sm">
                 <thead><tr class="text-gray-500"><th>জোন</th><th>মূল ঠিকানা</th><th class="r">গৃহিণী</th><th class="r">অপেক্ষায়</th><th class="r">দিনে প্লেট / ৮০</th><th class="r">গ্রাহক</th><th>অবস্থা</th></tr></thead>
                 <tbody>
-                    @foreach ($a['zones'] as $z)
+                    @foreach ($shown as $z)
                         <tr>
                             <td class="font-medium">{{ $z['name'] }}<div class="muted"><a href="https://www.google.com/maps?q={{ $z['center']->lat }},{{ $z['center']->lng }}" target="_blank" rel="noopener">ম্যাপে দেখুন</a></div></td>
                             <td>{{ $a['name'] }}</td>
@@ -93,6 +158,9 @@
                     @endif
                 </tbody>
             </table>
+            @if ($hidden > 0)
+                <p class="muted" style="margin-top:.5rem">আর {{ $bn($hidden) }}টা জোনে এখনো কেউ নেই — "সব এলাকা দেখুন" চাপলে সেগুলোও দেখাবে।</p>
+            @endif
         </x-filament::section>
     @endforeach
 
