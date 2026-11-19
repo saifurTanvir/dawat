@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MessengerThreads\Pages;
 use App\Filament\Resources\MessengerThreads\MessengerThreadResource;
 use App\Jobs\AnswerMessenger;
 use App\Models\MessengerThread;
+use App\Services\Messenger\Agent;
 use App\Services\Messenger\Backfill;
 use App\Services\Messenger\Brain;
 use App\Services\Messenger\Graph;
@@ -66,6 +67,36 @@ class ManageMessengerThreads extends ManageRecords
                         AnswerMessenger::dispatch($t->id, (int) $t->messages()->where('direction', 'in')->max('id'))->delay(now()->addSeconds(2 * $n++));
                     }
                     Notification::make()->title("{$n}টা চ্যাটে উত্তর যাচ্ছে")->success()->send();
+                }),
+            Action::make('answerNow')
+                ->visible(fn () => $admin() && Graph::botOn() && MessengerThread::query()->answerable()->exists())
+                ->label('এখনই ৫টার উত্তর দিন')
+                ->icon(Heroicon::OutlinedBolt)
+                ->color('gray')
+                ->action(function () {
+                    // Answers here, in this request, beside the queue — so a big backlog clears faster.
+                    set_time_limit(120);
+                    $n = 0;
+                    foreach (MessengerThread::query()->answerable()->orderBy('last_in_at')->limit(15)->get() as $t) {
+                        if ($n >= 5) {
+                            break;
+                        }
+                        $lock = Cache::lock("messenger-answer:{$t->id}", 120);
+                        if (! $lock->get()) {
+                            continue; // the queue is on it
+                        }
+                        try {
+                            $fresh = $t->fresh();
+                            if ($fresh->last_out_at && $fresh->last_out_at->gte($fresh->last_in_at)) {
+                                continue;
+                            }
+                            app(Agent::class)->answer($fresh);
+                            $n++;
+                        } finally {
+                            $lock->release();
+                        }
+                    }
+                    Notification::make()->title("{$n}টা চ্যাটে উত্তর গেল")->success()->send();
                 }),
             Action::make('backfill')
                 ->visible(fn () => $admin() && Graph::configured())
