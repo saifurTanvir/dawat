@@ -165,7 +165,7 @@ class Agent
             return null;
         }
 
-        $area = Area::find($facts['area_id'])?->name;
+        $area = $facts['area_text'] ?? Area::find($facts['area_id'])?->slug;
         $extra[] = 'basay boshe ei link khulun, location keu dekhbe na: '.PinLink::forKitchen($kitchen)->url();
         $extra[] = 'link e na hole ekhane 📎 → Location pathan';
         $extra[] = 'ar: dine shorbochcho 2 plate — apni 1 plate dite parben na 2?';
