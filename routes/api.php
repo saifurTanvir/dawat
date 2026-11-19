@@ -158,6 +158,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::middleware('can:work-as-shahidar')->prefix('shahidar')->name('shahidar.')->group(function () {
             Route::get('/today', [ShahidarController::class, 'today'])->name('today');
             Route::post('/orders/{order}/pickup', [ShahidarController::class, 'pickup'])->name('orders.pickup');
+            // F79: named stickers printed before leaving (before {code}, so "printed" isn't read as a code)
+            Route::post('/stickers/print', [ShahidarController::class, 'printStickers'])->middleware('throttle:comments')->name('stickers.print');
+            Route::get('/stickers/printed', [ShahidarController::class, 'printedStickers'])->name('stickers.printed');
             Route::get('/stickers/{code}', [ShahidarController::class, 'scan'])->name('stickers.scan');
             // F68
             Route::post('/drops/{drop}/pickup', [ShahidarDropController::class, 'pickup'])->name('drops.pickup');

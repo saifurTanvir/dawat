@@ -10,6 +10,9 @@
         <template v-else>
             <p v-if="notice" class="mt-4 rounded-xl bg-leaf-soft p-3" role="status">{{ notice }}</p>
 
+            <!-- F79: named stickers for today's boxes, printed before leaving -->
+            <BoxLabelPrint v-if="day.orders.length" :orders="day.orders" @printed="onPrinted" />
+
             <!-- F67: which box is this? Scan its sticker, hand it over from there -->
             <button v-if="day.orders.length" type="button" class="btn-quiet mt-4 w-full border-2 border-leaf font-semibold text-leaf" :disabled="busy" @click="openFind">
                 <span aria-hidden="true" class="mr-1">📷</span>বক্স স্ক্যান করুন — কোন বক্স কার
@@ -181,7 +184,7 @@
                             {{ bn(o.plates) }} প্লেট ·
                             <template v-if="o.pays_by_bill"><strong>বিলে যোগ হবে — টাকা নেবেন না</strong></template>
                             <template v-else>নেবেন <strong>{{ taka(o.total_paisa) }}</strong></template>
-                            <template v-if="o.sticker"> · স্টিকার {{ o.sticker }}</template>
+                            <template v-if="o.sticker"> · স্টিকার {{ o.sticker }}</template><template v-if="o.spot"> · <strong>{{ o.spot }}</strong></template>
                         </p>
                     </div>
                     <CallButtons :phone="o.customer.phone" :contact="o.customer.contact" />
@@ -271,6 +274,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import CookShare from '@/components/CookShare.vue';
 import CallButtons from '@/components/CallButtons.vue';
 import ShahidarGuestMeals from '@/components/ShahidarGuestMeals.vue';
+import BoxLabelPrint from '@/components/BoxLabelPrint.vue';
 import OfficeDropCard from '@/components/OfficeDropCard.vue';
 import PlateSplitBar from '@/components/PlateSplitBar.vue';
 import PushToggle from '@/components/PushToggle.vue';
@@ -431,6 +435,18 @@ onBeforeUnmount(() => {
     clearInterval(timer);
     document.removeEventListener('visibilitychange', refreshIfVisible);
 });
+
+// F79: the boxes now carry their sticker codes
+async function onPrinted(message) {
+    notice.value = message;
+    try {
+        const { data: fresh } = await api.get('/shahidar/today');
+        day.value.orders = fresh.data.orders;
+        day.value.office_drops = fresh.data.office_drops;
+    } catch {
+        /* the next refresh brings them */
+    }
+}
 
 // F68
 async function onDrop(data) {

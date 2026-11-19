@@ -50,6 +50,8 @@
                 <div v-for="o in booking.today" :key="o.id" class="mt-3 border-t border-rule pt-3 first:border-0 first:pt-0">
                     <p class="font-semibold">{{ o.meal_slot_label }}<template v-if="o.title"> · {{ o.title }}</template></p>
                     <p class="text-sm text-muted">বক্স {{ o.code }} · {{ bn(o.plates) }} প্লেট · {{ taka(o.total_paisa) }} · {{ o.status_label }}</p>
+                    <!-- F79: where the box sits at the office -->
+                    <p v-if="o.spot" class="mt-1 inline-block rounded-lg border-2 border-leaf px-3 py-1 font-semibold text-leaf">অফিসে আপনার বক্স: {{ o.spot }}</p>
                     <BoxSteps :order="o" />
                     <div v-if="o.can_accept" class="mt-2 rounded-lg bg-turmeric-soft p-3 text-sm">
                         <p>আজকের দাম আপনার সীমার বেশি। {{ clockText(o.ask_until) }}-এর মধ্যে না জানালে আজ আসবে না।</p>

@@ -32,7 +32,7 @@
             <details class="mt-1 text-sm">
                 <summary class="cursor-pointer text-muted">{{ bn(k.boxes.length) }}টা বক্স — কার কোনটা</summary>
                 <ul class="mt-1 space-y-0.5">
-                    <li v-for="b in k.boxes" :key="b.id">বক্স {{ b.code }} · {{ b.name }} · {{ bn(b.plates) }} প্লেট · <span class="text-muted">{{ b.status_label }}</span></li>
+                    <li v-for="b in k.boxes" :key="b.id"><strong v-if="b.spot">{{ b.spot }} · </strong>বক্স {{ b.code }} · {{ b.name }} · {{ bn(b.plates) }} প্লেট · <span class="text-muted">{{ b.status_label }}</span></li>
                 </ul>
             </details>
         </div>
@@ -41,6 +41,9 @@
         <!-- Handover: once, with the contact person's code -->
         <p v-if="drop.done" class="mt-3 rounded-lg bg-leaf-soft px-3 py-2 text-sm">সব বুঝিয়ে দেওয়া হয়েছে<template v-if="drop.method_label"> · {{ drop.method_label }}</template></p>
         <template v-else-if="drop.picked">
+            <p v-if="hasSpots" class="mt-3 rounded-lg bg-turmeric-soft px-3 py-2 text-sm">
+                বক্সগুলো স্টিকারের "সারি · কলাম" মিলিয়ে সাজিয়ে রাখুন — সারি ১ সামনে, কলাম ১ বাঁ থেকে। বুঝিয়ে দিলে প্রত্যেক কর্মী নিজের সারি-কলাম নোটিফিকেশনে পাবেন।
+            </p>
             <form v-if="handing" class="mt-3" @submit.prevent="deliver(code)">
                 <label :for="`dc-${drop.id}`" class="mb-1 block text-sm font-semibold">{{ drop.contact?.name || 'দায়িত্বপ্রাপ্ত লোক' }}-এর SMS-এর ৪ অঙ্কের কোড</label>
                 <div class="flex gap-2">
@@ -63,7 +66,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import CallButtons from '@/components/CallButtons.vue';
 import StickerScanner from '@/components/StickerScanner.vue';
 import { api, errorMessage } from '@/lib/api';
@@ -73,6 +76,7 @@ import { taka } from '@/lib/format';
 const props = defineProps({ drop: { type: Object, required: true } });
 const emit = defineEmits(['updated', 'notice']);
 
+const hasSpots = computed(() => props.drop.kitchens.some((k) => k.boxes.some((b) => b.spot)));
 const busy = ref(false);
 const error = ref('');
 const picking = ref(null); // kitchen whose boxes are being picked up

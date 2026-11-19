@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Services\Images\UnreadablePhotoException;
 use App\Services\Money\CookFees;
 use App\Services\Orders\BookingPlanner;
+use App\Services\Orders\BoxLabels;
 use App\Services\Orders\Delivery;
 use App\Services\Orders\Settlements;
 use App\Services\Posts\PlateSplit;
@@ -138,6 +139,26 @@ class ShahidarController extends Controller
         }
 
         return $this->done($sticker->order, 'বক্স '.$sticker->order->code().' পাওয়া গেছে।');
+    }
+
+    /** POST /api/v1/shahidar/stickers/print — F79: named stickers for today's boxes that have none. */
+    public function printStickers(Request $request, BoxLabels $labels): JsonResponse
+    {
+        $done = $labels->print($request->user());
+        if (! $done) {
+            return response()->json(['message' => 'আজকের সব বক্সের স্টিকার আগেই প্রিন্ট হয়েছে। নতুন বক্স এলে আবার চাপুন।'], 422);
+        }
+
+        return response()->json([
+            'data' => ['url' => BoxLabels::url($done['batch']), 'count' => $done['count'], 'printed' => $labels->today($request->user())],
+            'message' => Order::banglaDigits($done['count']).'টা বক্সের স্টিকার তৈরি — প্রিন্ট করুন।',
+        ]);
+    }
+
+    /** GET /api/v1/shahidar/stickers/printed — F79: today's sheets, to print again. */
+    public function printedStickers(Request $request, BoxLabels $labels): JsonResponse
+    {
+        return response()->json(['data' => $labels->today($request->user())]);
     }
 
     /** POST — cash taken later, e.g. after the customer scanned the box. */
@@ -319,6 +340,8 @@ class ShahidarController extends Controller
             'confirm_method' => $o->confirm_method,
             'sticker' => $o->sticker?->displayCode(),
             'office_drop_id' => $o->office_drop_id,
+            // F79: an office box's place at the office.
+            'spot' => BoxLabels::spot($o),
             'kitchen' => [
                 'id' => $o->kitchen_id,
                 'name' => $o->kitchen->display_name,
