@@ -109,6 +109,24 @@ class ManageMessengerThreads extends ManageRecords
                     $n = app(Agent::class)->linkExisting();
                     Notification::make()->title("{$n}টা চ্যাট রান্নাঘরের সাথে জোড়া হলো")->success()->send();
                 }),
+            Action::make('markSeen')
+                ->visible(fn () => $admin() && Graph::configured())
+                ->label('উত্তর দেওয়া চ্যাট "পড়া" করুন')
+                ->icon(Heroicon::OutlinedEye)
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalDescription('গত ২৪ ঘণ্টায় যেসব চ্যাটে শেষ মেসেজটা আমাদের, Business Suite-এ সেগুলো "পড়া" হয়ে যাবে।')
+                ->action(function () {
+                    set_time_limit(120);
+                    $graph = app(Graph::class);
+                    $n = 0;
+                    MessengerThread::query()->where('last_in_at', '>', now()->subDay())->whereColumn('last_out_at', '>=', 'last_in_at')
+                        ->each(function (MessengerThread $t) use ($graph, &$n) {
+                            $graph->markSeen($t->psid);
+                            $n++;
+                        });
+                    Notification::make()->title("{$n}টা চ্যাট পড়া হলো")->success()->send();
+                }),
             Action::make('backfill')
                 ->visible(fn () => $admin() && Graph::configured())
                 ->label('আগের চ্যাট আনুন')

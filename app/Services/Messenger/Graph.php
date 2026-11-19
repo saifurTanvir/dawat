@@ -131,6 +131,12 @@ class Graph
         return $this->post(['recipient' => ['id' => $psid], 'messaging_type' => 'RESPONSE', 'message' => ['text' => mb_substr($text, 0, 1900), 'metadata' => self::METADATA]]);
     }
 
+    /** Marks her chat as read on the page, so Business Suite does not keep it "unread" after we answer. */
+    public function markSeen(string $psid): void
+    {
+        $this->post(['recipient' => ['id' => $psid], 'sender_action' => 'mark_seen']);
+    }
+
     public function typing(string $psid): void
     {
         $this->post(['recipient' => ['id' => $psid], 'sender_action' => 'typing_on']);
