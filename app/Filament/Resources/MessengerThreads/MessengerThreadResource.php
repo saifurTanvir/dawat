@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MessengerThreads;
 use App\Filament\Resources\Kitchens\KitchenResource;
 use App\Filament\Resources\MessengerThreads\Pages\ManageMessengerThreads;
 use App\Filament\Support\FeatureGate;
+use App\Jobs\AnswerMessenger;
 use App\Models\MessengerThread;
 use App\Services\Messenger\Agent;
 use App\Services\Messenger\Graph;
@@ -87,6 +88,12 @@ class MessengerThreadResource extends Resource
             ->recordAction('chat')
             ->recordActions([
                 self::chat(),
+                Action::make('botAnswer')->label('বট দিয়ে উত্তর')->icon(Heroicon::OutlinedSparkles)->color('success')
+                    ->visible(fn (MessengerThread $t) => Graph::botOn() && MessengerThread::query()->answerable()->whereKey($t->id)->exists())
+                    ->action(function (MessengerThread $t) {
+                        AnswerMessenger::dispatch($t->id, (int) $t->messages()->where('direction', 'in')->max('id'));
+                        Notification::make()->title('বট উত্তর লিখছে — কয়েক সেকেন্ড পর "চ্যাট" খুলে দেখুন')->success()->send();
+                    }),
                 Action::make('seen')->label('দেখেছি')->icon(Heroicon::OutlinedCheck)->color('success')
                     ->visible(fn (MessengerThread $t) => $t->needs_human)
                     ->action(fn (MessengerThread $t) => $t->forceFill(['needs_human' => false, 'human_reason' => null])->save()),

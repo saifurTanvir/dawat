@@ -255,7 +255,8 @@ class MessengerBotTest extends TestCase
         MessengerThread::where('psid', 'P9')->update(['last_in_at' => now()->subMinutes(10)]);
         Queue::fake();
         $this->actingAs(User::role('admin')->first(), 'web');
-        Livewire::test(ManageMessengerThreads::class)->callAction('answerWaiting');
-        Queue::assertPushed(AnswerMessenger::class, 1);
+        Livewire::test(ManageMessengerThreads::class)->callAction('answerWaiting')
+            ->callTableAction('botAnswer', MessengerThread::where('psid', 'P9')->first());
+        Queue::assertPushed(AnswerMessenger::class, 2);
     }
 }
