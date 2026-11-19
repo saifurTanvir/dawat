@@ -4,7 +4,9 @@ namespace App\Services\Messenger;
 
 use App\Models\AppSetting;
 use App\Models\User;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -27,7 +29,41 @@ class Graph
 
     public static function configured(): bool
     {
-        return filled(config('services.messenger.page_token')) && filled(config('services.messenger.app_secret'));
+        return filled(self::pageToken()) && filled(config('services.messenger.app_secret'));
+    }
+
+    /** The page token an admin saved in the panel (kept encrypted), else the one in .env. */
+    public static function pageToken(): string
+    {
+        $saved = AppSetting::get('messenger')['page_token'] ?? null;
+        if (is_string($saved) && $saved !== '') {
+            try {
+                return Crypt::decryptString($saved);
+            } catch (DecryptException) {
+                // fall back to .env
+            }
+        }
+
+        return (string) config('services.messenger.page_token');
+    }
+
+    public static function savePageToken(string $token, ?User $by = null): void
+    {
+        AppSetting::put('messenger', [...AppSetting::get('messenger'), 'page_token' => Crypt::encryptString(trim($token))], $by);
+    }
+
+    /** @return array{ok: bool, name: ?string, error: ?string} what Meta says about a page token */
+    public static function checkToken(string $token): array
+    {
+        try {
+            $r = Http::timeout(10)->get(config('services.messenger.graph').'/me', ['fields' => 'id,name', 'access_token' => trim($token)]);
+        } catch (ConnectionException) {
+            return ['ok' => false, 'name' => null, 'error' => 'Meta-র সার্ভারে পৌঁছানো যায়নি'];
+        }
+
+        return $r->successful() && $r->json('id')
+            ? ['ok' => true, 'name' => $r->json('name'), 'error' => null]
+            : ['ok' => false, 'name' => null, 'error' => 'Meta: '.($r->json('error.message') ?: 'error '.$r->status())];
     }
 
     public static function verifyToken(): string
@@ -63,7 +99,7 @@ class Graph
     {
         try {
             $r = Http::timeout(8)->get(config('services.messenger.graph').'/'.$psid, [
-                'fields' => 'first_name,last_name', 'access_token' => config('services.messenger.page_token'),
+                'fields' => 'first_name,last_name', 'access_token' => self::pageToken(),
             ]);
         } catch (ConnectionException) {
             return null;
@@ -77,7 +113,7 @@ class Graph
     {
         try {
             $r = Http::timeout(10)->acceptJson()
-                ->post(config('services.messenger.graph').'/me/messages?access_token='.urlencode((string) config('services.messenger.page_token')), $payload);
+                ->post(config('services.messenger.graph').'/me/messages?access_token='.urlencode(self::pageToken()), $payload);
         } catch (ConnectionException) {
             return 'Meta-র সার্ভারে পৌঁছানো যায়নি';
         }

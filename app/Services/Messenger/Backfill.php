@@ -20,7 +20,7 @@ class Backfill
     public function run(int $hours = 23, int $maxPages = 20): array
     {
         $graph = rtrim((string) config('services.messenger.graph'), '/');
-        $token = (string) config('services.messenger.page_token');
+        $token = Graph::pageToken();
         $since = now()->subHours($hours);
 
         try {

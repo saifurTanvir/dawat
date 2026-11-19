@@ -9,6 +9,7 @@ use App\Services\Messenger\Backfill;
 use App\Services\Messenger\Brain;
 use App\Services\Messenger\Graph;
 use Filament\Actions\Action;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ViewField;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
@@ -87,6 +88,25 @@ class ManageMessengerThreads extends ManageRecords
                         ->{$r['error'] ? 'warning' : 'success'}()
                         ->send();
                 }),
+            Action::make('token')
+                ->visible($admin)
+                ->label('পেজ টোকেন বদলান')
+                ->icon(Heroicon::OutlinedKey)
+                ->color('gray')
+                ->modalDescription('Meta-র Graph API Explorer থেকে নেওয়া পেজের টোকেন এখানে দিন। সার্ভারে লুকিয়ে (এনক্রিপ্ট করে) রাখা হবে, কেউ দেখতে পাবে না।')
+                ->schema([
+                    TextInput::make('token')->label('পেজের টোকেন')->password()->required()->autocomplete('off'),
+                ])
+                ->action(function (array $data) {
+                    $check = Graph::checkToken($data['token']);
+                    if (! $check['ok']) {
+                        Notification::make()->title('টোকেন কাজ করছে না')->body($check['error'])->danger()->send();
+
+                        return;
+                    }
+                    Graph::savePageToken($data['token'], auth()->user());
+                    Notification::make()->title('টোকেন রাখা হলো — পেজ: '.$check['name'])->success()->send();
+                }),
             Action::make('setup')
                 ->visible($admin)
                 ->label('যুক্ত করার তথ্য')
@@ -100,7 +120,7 @@ class ManageMessengerThreads extends ManageRecords
                         'url' => route('webhooks.messenger'),
                         'verify' => Graph::verifyToken(),
                         'checks' => [
-                            'পেজের টোকেন (MESSENGER_PAGE_TOKEN)' => filled(config('services.messenger.page_token')),
+                            'পেজের টোকেন (MESSENGER_PAGE_TOKEN)' => filled(Graph::pageToken()),
                             'App secret (MESSENGER_APP_SECRET)' => filled(config('services.messenger.app_secret')),
                             'App ID (MESSENGER_APP_ID, ইচ্ছা হলে)' => filled(config('services.messenger.app_id')),
                             'AI-এর key (ANTHROPIC_API_KEY)' => Brain::available(),
