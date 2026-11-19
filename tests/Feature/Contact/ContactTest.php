@@ -5,11 +5,13 @@ namespace Tests\Feature\Contact;
 use App\Enums\ContactType;
 use App\Enums\KitchenStatus;
 use App\Enums\PostStatus;
+use App\Jobs\SendWebPush;
 use App\Models\ContactEvent;
 use App\Models\Post;
 use App\Models\QrCode;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class ContactTest extends TestCase
@@ -155,5 +157,42 @@ class ContactTest extends TestCase
         }
 
         $this->asBuyer()->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'message'])->assertTooManyRequests();
+    }
+
+    public function test_the_cook_hears_when_someone_taps_call_or_whatsapp_once_per_half_hour(): void
+    {
+        config(['services.webpush.public_key' => 'x', 'services.webpush.private_key' => 'y']);
+        Queue::fake();
+        $cook = $this->post->kitchen->user;
+
+        $this->asBuyer()->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'call'])->assertOk();
+        $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'call'])->assertOk();
+        $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'share'])->assertOk();
+
+        Queue::assertPushed(SendWebPush::class, 1);
+        Queue::assertPushed(SendWebPush::class,
+            fn ($job) => $job->userId === $cook->id && str_contains($job->title, 'ফোন') && str_contains($job->body, 'খিচুড়ি'));
+
+        $this->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'message'])->assertOk();
+        Queue::assertPushed(SendWebPush::class, 2);
+
+        // The cook's posts say what was tapped, not "contacted".
+        $this->actingAs($cook, 'sanctum')->getJson('/api/v1/my/posts')->assertOk()
+            ->assertJsonPath('data.0.contacts.call', 2)
+            ->assertJsonPath('data.0.contacts.message', 1)
+            ->assertJsonPath('data.0.contacts.share', 1)
+            ->assertJsonPath('data.0.contact_phone', null);
+    }
+
+    public function test_the_cook_is_told_when_calls_go_to_another_number(): void
+    {
+        config(['services.webpush.public_key' => 'x', 'services.webpush.private_key' => 'y']);
+        Queue::fake();
+        $this->post->kitchen->update(['contact_phone' => '01811223344']);
+
+        $this->asBuyer()->postJson("/api/v1/posts/{$this->post->id}/contact", ['type' => 'call'])->assertOk()
+            ->assertJsonPath('data.tel', 'tel:+8801811223344');
+        Queue::assertPushed(SendWebPush::class, fn ($job) => str_contains($job->body, '01811223344'));
+        $this->actingAs($this->post->kitchen->user, 'sanctum')->getJson('/api/v1/my/posts')->assertJsonPath('data.0.contact_phone', '01811223344');
     }
 }

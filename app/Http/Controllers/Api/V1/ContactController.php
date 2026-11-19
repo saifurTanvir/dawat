@@ -8,8 +8,10 @@ use App\Http\Requests\Contact\ContactRequest;
 use App\Models\ContactEvent;
 use App\Models\Post;
 use App\Models\QrCode;
+use App\Services\Push\Push;
 use App\Support\PhoneNumber;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 
 class ContactController extends Controller
 {
@@ -50,6 +52,19 @@ class ContactController extends Controller
         ]);
 
         $phone = $kitchen->publicContactPhone();
+
+        // The tap only opens the buyer's own phone, so tell the cook someone is about to call
+        // or message — once per post and person (or device) every 30 minutes.
+        if (in_array($type, [ContactType::Call, ContactType::Message], true)) {
+            $who = auth('sanctum')->id() ?? $request->ip();
+            if (Cache::add("contact-push:{$post->id}:{$type->value}:{$who}", 1, now()->addMinutes(30))) {
+                $how = $type === ContactType::Call ? 'ফোন' : 'WhatsApp-এ মেসেজ';
+                $to = $phone !== $kitchen->user->phone ? " (কল আসবে {$phone} নম্বরে)" : '';
+                Push::toUser($kitchen->user, "কেউ {$how} করতে চাইছেন",
+                    "\"{$post->title}\" দেখে একজন ক্রেতা {$how} বাটন চাপলেন{$to}। ফোন হাতের কাছে রাখুন।",
+                    '/cook/posts', "contact-{$post->id}");
+            }
+        }
 
         return response()->json(['data' => match ($type) {
             ContactType::Call => [
