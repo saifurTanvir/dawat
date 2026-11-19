@@ -11,7 +11,7 @@ use Illuminate\View\View;
 
 /**
  * F79: the printable sheet of named box stickers — 75 × 100 mm thermal
- * labels, two stickers each. Opened from a signed link in the shahidar's
+ * labels, three stickers each. Opened from a signed link in the shahidar's
  * app, so nobody else can see the names and phones on it.
  */
 class BoxLabelController extends Controller
@@ -46,6 +46,6 @@ class BoxLabelController extends Controller
             ];
         })->values();
 
-        return view('print.box-labels', ['batch' => $batch, 'labels' => $labels, 'pages' => $labels->chunk(2)]);
+        return view('print.box-labels', ['batch' => $batch, 'labels' => $labels, 'pages' => $labels->chunk(3)]);
     }
 }

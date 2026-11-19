@@ -83,7 +83,7 @@ class BoxLabelsTest extends TestCase
         // The sheet: signed link only.
         $url = $res->json('data.url');
         $this->get($url)->assertOk()->assertSee('রহিম উদ্দিন')->assertSee('01711112222')->assertSee('বাড়ি ১২, রোড ৫')
-            ->assertSee('size: 75mm 100mm', false)->assertSee('কল করতে স্ক্যান করুন')->assertSee('দুপুর');
+            ->assertSee('size: 75mm 100mm', false)->assertSee('স্ক্যান = কল')->assertSee('দুপুর');
         $this->get(strtok($url, '?'))->assertForbidden();
     }
 
@@ -132,7 +132,8 @@ class BoxLabelsTest extends TestCase
         $this->assertSame('সারি ২ · কলাম ২', $spots['বীথি']);
         $this->assertSame(7, $spots->unique()->count());
         $sheet = $this->actingAs($this->shahidar, 'sanctum')->getJson('/api/v1/shahidar/stickers/printed')->json('data.0.url');
-        $this->get($sheet)->assertOk()->assertSee('tag-office', false)->assertSee('সারি ১ · কলাম ১');
+        $html = $this->get($sheet)->assertOk()->assertSee('tag-office', false)->assertSee('সারি ১ · কলাম ১')->getContent();
+        $this->assertSame(3, substr_count($html, '<section class="label">')); // 7 stickers, three to a label
 
         $anis = Order::whereHas('customer.user', fn ($q) => $q->where('name', 'আনিস'))->firstOrFail();
         $this->actingAs($anis->customer->user, 'sanctum')->getJson('/api/v1/regular')->assertJsonPath('data.today.0.spot', 'সারি ১ · কলাম ১');
