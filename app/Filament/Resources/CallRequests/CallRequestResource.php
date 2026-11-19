@@ -9,6 +9,7 @@ use App\Filament\Support\FeatureGate;
 use App\Filament\Support\Links;
 use App\Filament\Support\PhoneField;
 use App\Models\CallRequest;
+use App\Services\Admin\CallOnboarding;
 use BackedEnum;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -17,10 +18,10 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Str;
 use UnitEnum;
 
 /**
@@ -83,9 +84,7 @@ class CallRequestResource extends Resource
                     ->url(fn (CallRequest $r) => $r->user ? Links::person($r->user) : null)
                     ->searchable(['name', 'phone']),
                 CallRequestActions::reasonColumn(),
-                TextColumn::make('latest_note')->label('শেষ রিমার্কস')->placeholder('—')->wrap()
-                    ->state(fn (CallRequest $r) => $r->latestNote())
-                    ->formatStateUsing(fn (?string $state) => $state ? Str::limit($state, 50) : null),
+                CallRequestActions::talksColumn(),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
                 TextColumn::make('created_at')->label('কবে')->since()->sortable(),
             ])
@@ -95,8 +94,11 @@ class CallRequestResource extends Resource
                         null, '' => $query,
                         default => $query->where('status', $data['value']),
                     }),
+                // F70
+                Filter::make('not_onboarded')->label('কথা হয়েছে, সিস্টেমে যোগ বাকি')
+                    ->query(fn (Builder $query) => $query->whereIn('id', CallOnboarding::pending()->select('id'))),
             ])
-            ->recordActions([...CallRequestActions::row(), CallRequestActions::done()]);
+            ->recordActions([...CallRequestActions::row(), CallRequestActions::onboard()->visible(fn (CallRequest $r) => CallOnboarding::pending()->whereKey($r->id)->exists())]);
     }
 
     public static function getPages(): array

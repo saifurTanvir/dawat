@@ -24,6 +24,7 @@ use App\Filament\Resources\Stickers\StickerResource;
 use App\Filament\Resources\Tags\TagResource;
 use App\Filament\Resources\Users\UserResource;
 use App\Filament\Widgets\CallList;
+use App\Filament\Widgets\CallOnboardingPending;
 use App\Filament\Widgets\DailyActivityChart;
 use App\Filament\Widgets\DawatStats;
 use App\Filament\Widgets\FollowUps;
@@ -61,6 +62,7 @@ final class AdminFeatures
     public const PARTS = [
         CallRequestResource::class => 'contacts',
         CallList::class => 'contacts',
+        CallOnboardingPending::class => 'contacts',
         FollowUps::class => 'contacts',
         KitchenResource::class => 'kitchens',
         PostResource::class => 'kitchens',

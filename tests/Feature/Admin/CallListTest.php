@@ -46,7 +46,7 @@ class CallListTest extends TestCase
         $this->assertSame('https://wa.me/88'.$phone, $r->whatsappUrl());
 
         $this->assertTrue(CallList::canView());
-        Livewire::test(CallList::class)->assertCanSeeTableRecords([$r])->assertSee('কিছু প্রশ্ন আছে');
+        Livewire::test(CallList::class)->assertCanSeeTableRecords([$r])->assertSee('খাবার দেওয়ার আগে'); // F70: the reason is a few words
     }
 
     public function test_notes_status_and_done(): void
@@ -62,9 +62,11 @@ class CallListTest extends TestCase
         $this->assertSame('ফোন ধরেননি', $r->latestNote());
         $this->assertTrue(CallList::canView());
 
+        // F70: the "কথা হয়েছে" button is gone; the remark's "কথা শেষ" tick closes it.
         Livewire::test(ManageCallRequests::class)
-            ->callTableAction('note', $r, ['body' => 'কথা হয়েছে, কাল থেকে দেবেন', 'status' => 'pending'])
-            ->callTableAction('done', $r);
+            ->assertTableActionDoesNotExist('done')
+            ->callTableAction('note', $r, ['body' => 'কথা হয়েছে, কাল থেকে দেবেন', 'status' => 'pending', 'close' => true, 'onboard_role' => 'skip'])
+            ->assertHasNoTableActionErrors();
         $r->refresh();
         $this->assertSame(CallRequestStatus::Done, $r->status);
         $this->assertSame($this->admin->id, $r->done_by);
@@ -94,7 +96,7 @@ class CallListTest extends TestCase
 
         Livewire::test(CallList::class)
             ->assertDontSee('কাল সকালে আবার ফোন দিতে বলেছেন')
-            ->assertSee('রিমার্কস ১টা · পুরোটা দেখুন')
+            ->assertSee('১ বার')
             ->assertTableActionVisible('reason', $r)
             ->callTableAction('reason', $r)
             ->assertHasNoTableActionErrors();
@@ -107,16 +109,11 @@ class CallListTest extends TestCase
         $r = CallRequest::create(['phone' => '01713259733', 'reason' => 'আগে কথা বলতে চান']);
 
         Livewire::test(CallList::class)
-            ->callTableAction('note', $r, ['body' => 'কথা হয়েছে, শুক্রবার থেকে দেবেন', 'status' => 'pending', 'close' => true])
+            ->callTableAction('note', $r, ['body' => 'কথা হয়েছে, শুক্রবার থেকে দেবেন', 'status' => 'pending', 'close' => true, 'onboard_role' => 'skip'])
             ->assertHasNoTableActionErrors();
         $r->refresh();
         $this->assertSame(CallRequestStatus::Done, $r->status);
         $this->assertSame('কথা হয়েছে, শুক্রবার থেকে দেবেন', $r->latestNote());
         $this->assertFalse(CallList::canView());
-
-        $other = CallRequest::create(['phone' => '01742891024', 'reason' => 'রান্না করতে চান']);
-        Livewire::test(CallList::class)->callTableAction('done', $other, ['body' => 'নিয়মিত পারবেন না'])->assertHasNoTableActionErrors();
-        $this->assertSame(CallRequestStatus::Done, $other->fresh()->status);
-        $this->assertSame('নিয়মিত পারবেন না', $other->fresh()->latestNote());
     }
 }
