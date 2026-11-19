@@ -155,6 +155,25 @@ class MessengerBotTest extends TestCase
         $this->assertNull($t->kitchen_id);
         $this->assertTrue($t->needs_human);
         $this->assertFalse(collect($this->sent())->contains(fn ($x) => str_contains($x, '/pin/')));
+        $this->assertTrue(collect($this->sent())->contains(fn ($x) => str_contains($x, 'age thekei Dawat e join kora ache')));
+    }
+
+    public function test_she_is_told_about_her_existing_kitchen_only_once(): void
+    {
+        $old = Kitchen::factory()->approved()->create(['area_id' => $this->area->id]);
+        $this->hook([$this->text('P9', 'hi', 'mid.x1')]);
+        $this->fake(['name' => 'Sima', 'phone' => $old->user->phone, 'area_id' => $this->area->id, 'cook' => true]);
+        $this->answer('P9');
+
+        // She writes again; the Brain still reads out the same facts.
+        $this->hook([$this->text('P9', 'check korsen?', 'mid.x2')]);
+        $this->fake(['name' => 'Sima', 'phone' => $old->user->phone, 'area_id' => $this->area->id, 'cook' => true, 'replies' => ['ji apu, team dekhche 😊']]);
+        $t = $this->answer('P9');
+
+        $sent = $this->sent();
+        $this->assertSame(['ji apu, team dekhche 😊'], $sent);
+        $this->assertSame(1, $t->messages()->where('text', 'like', '%age thekei Dawat e join kora ache%')->count());
+        $this->assertSame(1, Kitchen::count());
     }
 
     public function test_unknown_area_is_flagged_and_a_call_request_goes_on_the_call_list(): void

@@ -105,7 +105,9 @@ class Agent
             $this->flag($thread, $out['human_reason'] ?: 'বট বলছে একবার দেখুন');
         }
 
-        if (! $thread->kitchen_id && ($facts['cook'] ?? false) && filled($facts['name'] ?? null) && filled($facts['phone'] ?? null)) {
+        // A number that already has a kitchen is told so once; after that the Brain answers her normally.
+        $alreadyTold = ($facts['existing_kitchen_phone'] ?? null) === ($facts['phone'] ?? false);
+        if (! $thread->kitchen_id && ! $alreadyTold && ($facts['cook'] ?? false) && filled($facts['name'] ?? null) && filled($facts['phone'] ?? null)) {
             if (filled($facts['area_id'] ?? null)) {
                 return $this->addCook($thread, $extra) ?? $replies;
             }
@@ -139,8 +141,11 @@ class Agent
         $existing = User::where('phone', $facts['phone'])->first()?->kitchen;
         if ($existing) {
             $this->flag($thread, "এই নম্বরে ({$facts['phone']}) আগে থেকেই রান্নাঘর আছে: #{$existing->id} {$existing->display_name} — মিলিয়ে দেখুন");
+            // Remember it so the same two lines are not sent again on every message.
+            $thread->facts = [...$facts, 'existing_kitchen_phone' => $facts['phone']];
+            $thread->save();
 
-            return ['apu ei number e age thekei ekta Dawat rannaghor ache 🙂', 'amader team check kore apnake ekhanei janabe 🙏'];
+            return ['apu ei number diye apni age thekei Dawat e join kora ache ✅ notun kore add korte hobe na', 'amader team mile dekhe ekhanei janabe 🙏 ar kichu jante chaile likhun'];
         }
 
         try {
