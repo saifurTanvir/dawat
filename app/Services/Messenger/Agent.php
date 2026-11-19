@@ -41,6 +41,7 @@ class Agent
         if (! $thread->botMayAnswer()) {
             return 0;
         }
+        $this->graph->markSeen($thread->psid);
         $this->graph->typing($thread->psid);
 
         $extra = [];

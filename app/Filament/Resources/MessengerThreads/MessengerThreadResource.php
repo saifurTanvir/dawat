@@ -132,6 +132,7 @@ class MessengerThreadResource extends Resource
 
                     return;
                 }
+                app(Graph::class)->markSeen($t->psid);
                 if ($error = app(Graph::class)->send($t->psid, $text)) {
                     Notification::make()->title('পাঠানো যায়নি')->body($error)->danger()->send();
 
