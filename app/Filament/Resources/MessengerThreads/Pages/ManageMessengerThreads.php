@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MessengerThreads\Pages;
 use App\Filament\Resources\MessengerThreads\MessengerThreadResource;
 use App\Jobs\AnswerMessenger;
 use App\Models\MessengerThread;
+use App\Services\Messenger\Backfill;
 use App\Services\Messenger\Brain;
 use App\Services\Messenger\Graph;
 use Filament\Actions\Action;
@@ -64,6 +65,27 @@ class ManageMessengerThreads extends ManageRecords
                         AnswerMessenger::dispatch($t->id, (int) $t->messages()->where('direction', 'in')->max('id'))->delay(now()->addSeconds(2 * $n++));
                     }
                     Notification::make()->title("{$n}টা চ্যাটে উত্তর যাচ্ছে")->success()->send();
+                }),
+            Action::make('backfill')
+                ->visible(fn () => $admin() && Graph::configured())
+                ->label('আগের চ্যাট আনুন')
+                ->icon(Heroicon::OutlinedArrowDownTray)
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalDescription('বট চালুর আগের (গত ২৩ ঘণ্টার) যে চ্যাটগুলো এখানে নেই, Meta থেকে এনে রাখবে। যাঁদের উত্তর বাকি, বট চালু থাকলে তাঁদের উত্তর দেবে।')
+                ->action(function () {
+                    $r = app(Backfill::class)->run();
+                    $n = 0;
+                    if (Graph::botOn()) {
+                        foreach (MessengerThread::query()->answerable()->get() as $t) {
+                            AnswerMessenger::dispatch($t->id, (int) $t->messages()->where('direction', 'in')->max('id'))->delay(now()->addSeconds(3 * $n++));
+                        }
+                    }
+                    Notification::make()
+                        ->title("{$r['added']}টা আগের চ্যাট আনা হলো, {$r['waiting']}টার উত্তর বাকি ছিল".($n ? " — {$n}টায় উত্তর যাচ্ছে" : ''))
+                        ->body($r['error'])
+                        ->{$r['error'] ? 'warning' : 'success'}()
+                        ->send();
                 }),
             Action::make('setup')
                 ->visible($admin)
