@@ -119,7 +119,7 @@ class MessengerBotTest extends TestCase
     {
         Queue::fake();
         $this->hook([$this->text('P2', 'Rina, jatrabari, 01711-223344', 'mid.a')]);
-        $this->fake(['name' => 'Rina', 'phone' => '01711-223344', 'area_id' => $this->area->id, 'cook' => true]);
+        $this->fake(['name' => 'Rina', 'phone' => '01711-223344', 'area_id' => $this->area->id, 'area_text' => 'Jatrabari', 'cook' => true]);
 
         $t = $this->answer('P2');
 
@@ -129,7 +129,7 @@ class MessengerBotTest extends TestCase
         $this->assertSame('01711223344', $kitchen->user->phone);
         $this->assertSame($this->area->id, $kitchen->area_id);
         $texts = $this->sent();
-        $this->assertStringContainsString('যাত্রাবাড়ী e add kore approve kore dilam', $texts[0]);
+        $this->assertStringContainsString('Jatrabari e add kore approve kore dilam', $texts[0]);
         $this->assertTrue(collect($texts)->contains(fn ($x) => str_contains($x, '/pin/')));
         $this->assertTrue(collect($texts)->contains(fn ($x) => str_contains($x, '1 plate dite parben na 2')));
         $this->assertSame(count($texts), $t->messages()->where('by', 'bot')->count());
