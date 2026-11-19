@@ -19,6 +19,7 @@ class Backfill
     /** @return array{added: int, waiting: int, error: ?string} */
     public function run(int $hours = 23, int $maxPages = 20): array
     {
+        Graph::healToken();
         $graph = rtrim((string) config('services.messenger.graph'), '/');
         $token = Graph::pageToken();
         $since = now()->subHours($hours);

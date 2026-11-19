@@ -52,18 +52,60 @@ class Graph
         AppSetting::put('messenger', [...AppSetting::get('messenger'), 'page_token' => Crypt::encryptString(trim($token))], $by);
     }
 
-    /** @return array{ok: bool, name: ?string, error: ?string} what Meta says about a page token */
-    public static function checkToken(string $token): array
+    /**
+     * If the saved token is a user token, swap it for the page's own token.
+     * True when a different token was saved.
+     */
+    public static function healToken(): bool
     {
-        try {
-            $r = Http::timeout(10)->get(config('services.messenger.graph').'/me', ['fields' => 'id,name', 'access_token' => trim($token)]);
-        } catch (ConnectionException) {
-            return ['ok' => false, 'name' => null, 'error' => 'Meta-র সার্ভারে পৌঁছানো যায়নি'];
+        $current = self::pageToken();
+        if ($current === '') {
+            return false;
+        }
+        $check = self::checkToken($current);
+        if ($check['ok'] && $check['token'] && $check['token'] !== $current) {
+            self::savePageToken($check['token']);
+
+            return true;
         }
 
-        return $r->successful() && $r->json('id')
-            ? ['ok' => true, 'name' => $r->json('name'), 'error' => null]
-            : ['ok' => false, 'name' => null, 'error' => 'Meta: '.($r->json('error.message') ?: 'error '.$r->status())];
+        return false;
+    }
+
+    /** The Facebook page the bot answers for. */
+    public const PAGE_ID = '1482964881559150';
+
+    /**
+     * What Meta says about a token. A user token (Graph API Explorer's default)
+     * is swapped for the page's own token, so pasting either one works.
+     *
+     * @return array{ok: bool, name: ?string, error: ?string, token: ?string}
+     */
+    public static function checkToken(string $token): array
+    {
+        $token = trim($token);
+        $graph = config('services.messenger.graph');
+        $fail = fn (string $e) => ['ok' => false, 'name' => null, 'error' => $e, 'token' => null];
+        try {
+            $me = Http::timeout(10)->get($graph.'/me', ['fields' => 'id,name', 'metadata' => 1, 'access_token' => $token]);
+            if ($me->failed() || ! $me->json('id')) {
+                return $fail('Meta: '.($me->json('error.message') ?: 'error '.$me->status()));
+            }
+            if ($me->json('metadata.type') === 'page' || (string) $me->json('id') === self::PAGE_ID) {
+                return ['ok' => true, 'name' => $me->json('name'), 'error' => null, 'token' => $token];
+            }
+            // A user token: take this page's token from the pages the person manages.
+            $pages = Http::timeout(10)->get($graph.'/me/accounts', ['fields' => 'id,name,access_token', 'limit' => 100, 'access_token' => $token]);
+        } catch (ConnectionException) {
+            return $fail('Meta-র সার্ভারে পৌঁছানো যায়নি');
+        }
+        $page = collect($pages->json('data', []))->first(fn ($p) => (string) ($p['id'] ?? '') === self::PAGE_ID)
+            ?? (count($pages->json('data', [])) === 1 ? $pages->json('data.0') : null);
+        if (! $page || empty($page['access_token'])) {
+            return $fail('এটা পেজের টোকেন নয়, আর এই টোকেন দিয়ে দাওয়াত পেজটা পাওয়া গেল না। Explorer-এ "User or Page" থেকে দাওয়াত পেজ বেছে নিন।');
+        }
+
+        return ['ok' => true, 'name' => $page['name'] ?? null, 'error' => null, 'token' => $page['access_token']];
     }
 
     public static function verifyToken(): string
@@ -109,13 +151,16 @@ class Graph
         return $r->successful() && $name !== '' ? mb_substr($name, 0, 120) : null;
     }
 
-    private function post(array $payload): ?string
+    private function post(array $payload, bool $retried = false): ?string
     {
         try {
             $r = Http::timeout(10)->acceptJson()
                 ->post(config('services.messenger.graph').'/me/messages?access_token='.urlencode(self::pageToken()), $payload);
         } catch (ConnectionException) {
             return 'Meta-র সার্ভারে পৌঁছানো যায়নি';
+        }
+        if ($r->failed() && ! $retried && in_array((int) $r->json('error.code'), [10, 190, 200], true) && self::healToken()) {
+            return $this->post($payload, true);
         }
         if ($r->failed()) {
             Log::warning('Messenger send failed', ['status' => $r->status(), 'code' => $r->json('error.code'), 'sub' => $r->json('error.error_subcode')]);
