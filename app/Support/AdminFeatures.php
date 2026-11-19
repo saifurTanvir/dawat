@@ -14,6 +14,7 @@ use App\Filament\Resources\CallRequests\CallRequestResource;
 use App\Filament\Resources\Companies\CompanyResource;
 use App\Filament\Resources\Customers\CustomerResource;
 use App\Filament\Resources\Kitchens\KitchenResource;
+use App\Filament\Resources\MessengerThreads\MessengerThreadResource;
 use App\Filament\Resources\Orders\OrderResource;
 use App\Filament\Resources\Posts\PostResource;
 use App\Filament\Resources\QrCodes\QrCodeResource;
@@ -47,7 +48,7 @@ final class AdminFeatures
 {
     /** key => [label, what it opens] */
     public const FEATURES = [
-        'contacts' => ['যোগাযোগ ও ফলো-আপ', 'যোগাযোগ করতে হবে, আজকের ফলো-আপ, রিমার্কস'],
+        'contacts' => ['যোগাযোগ ও ফলো-আপ', 'যোগাযোগ করতে হবে, আজকের ফলো-আপ, রিমার্কস, Messenger চ্যাট'],
         'kitchens' => ['রান্নাঘর ও পোস্ট', 'রান্নাঘর, পোস্ট, ট্যাগ, জোনের হিসাব, পিন যাচাই'],
         'customers' => ['নিয়মিত গ্রাহক ও অফিস', 'নিয়মিত গ্রাহক, অফিস, অন্য খাবার ও অতিথির খাবারের অনুরোধ'],
         'orders' => ['অর্ডার ও ডেলিভারি', 'অর্ডার (বক্স), বক্স স্টিকার, ডেলিভারির হিসাব, আজকের প্লেট'],
@@ -61,6 +62,7 @@ final class AdminFeatures
     /** Panel page/resource/widget class => feature key. */
     public const PARTS = [
         CallRequestResource::class => 'contacts',
+        MessengerThreadResource::class => 'contacts',
         CallList::class => 'contacts',
         CallOnboardingPending::class => 'contacts',
         FollowUps::class => 'contacts',

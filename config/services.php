@@ -66,6 +66,19 @@ return [
         'subject' => env('WEBPUSH_SUBJECT', env('APP_URL', 'https://dawat.cloud')),
     ],
 
+    // F80: the page's Messenger, answered by the server. Keys come from GitHub
+    // secrets into shared/.env (never in the repo). The webhook's verify token
+    // is made from APP_KEY unless set, and shown to admins on the Messenger page.
+    'messenger' => [
+        'app_id' => env('MESSENGER_APP_ID'),
+        'app_secret' => env('MESSENGER_APP_SECRET'),
+        'page_token' => env('MESSENGER_PAGE_TOKEN'),
+        'verify_token' => env('MESSENGER_VERIFY_TOKEN'),
+        'graph' => env('MESSENGER_GRAPH_URL', 'https://graph.facebook.com/v21.0'),
+        // Seconds to wait for more messages before answering a burst at once.
+        'wait' => (int) env('MESSENGER_WAIT', 6),
+    ],
+
     // F54: Facebook ad tracking. Pixel in the browser + Conversions API from the server.
     // Off unless META_PIXEL_ID is set; the server half also needs META_CAPI_TOKEN.
     'meta' => [

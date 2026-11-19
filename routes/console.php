@@ -29,3 +29,6 @@ Schedule::command('menus:announce')->everyFiveMinutes()->withoutOverlapping();
 
 // F64: the cook has 5 minutes to answer a guest-meal request.
 Schedule::command('guests:follow-up')->everyMinute()->withoutOverlapping();
+
+// F80: the Messenger bot checks in on the status page while it is on.
+Schedule::command('messenger:heartbeat')->everyTenMinutes()->withoutOverlapping();
