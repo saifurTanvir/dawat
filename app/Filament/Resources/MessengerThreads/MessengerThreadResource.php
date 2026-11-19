@@ -120,7 +120,7 @@ class MessengerThreadResource extends Resource
                 ViewField::make('history')->hiddenLabel()->view('filament.messenger.chat')
                     ->viewData(['messages' => $t->messages()->latest('id')->limit(40)->get()->reverse(), 'thread' => $t]),
                 Textarea::make('reply')->label('উত্তর লিখুন (ইচ্ছা হলে)')->rows(3)->maxLength(1900)
-                    ->helperText('পাঠালে এই চ্যাটে বট '.MessengerThread::PAUSE_HOURS.' ঘণ্টা চুপ থাকবে। শেষ মেসেজের ২৪ ঘণ্টা পর Meta আর পাঠাতে দেয় না।'),
+                    ->helperText('পাঠানোর পরও বট তাঁর পরের মেসেজের উত্তর দেবে। শেষ মেসেজের ২৪ ঘণ্টা পর Meta আর পাঠাতে দেয় না।'),
             ])
             ->action(function (MessengerThread $t, array $data) {
                 $text = trim((string) ($data['reply'] ?? ''));
@@ -139,7 +139,8 @@ class MessengerThreadResource extends Resource
                     return;
                 }
                 $t->messages()->create(['direction' => 'out', 'by' => 'admin', 'text' => $text]);
-                $t->forceFill(['last_out_at' => now(), 'paused_until' => now()->addHours(MessengerThread::PAUSE_HOURS), 'needs_human' => false, 'human_reason' => null])->save();
+                // The bot keeps answering her next messages: nobody should be left waiting for a person.
+                $t->forceFill(['last_out_at' => now(), 'paused_until' => null, 'needs_human' => false, 'human_reason' => null])->save();
                 Notification::make()->title('পাঠানো হয়েছে')->success()->send();
             });
     }
