@@ -8,6 +8,7 @@ use App\Filament\Resources\StaffRoles\StaffRoleResource;
 use App\Filament\Support\FeatureGate;
 use App\Filament\Support\PhoneField;
 use App\Models\User;
+use App\Services\Admin\StaffView;
 use App\Support\AdminFeatures;
 use App\Support\PhoneNumber;
 use App\Support\Roles;
@@ -52,13 +53,18 @@ class StaffResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return User::query()->whereHas('roles', fn ($q) => $q->whereNotIn('name', Roles::all()));
+        // F71: admins too — a staff member can be made a full admin (the admin's clone).
+        return User::query()->whereHas('roles', fn ($q) => $q->whereNotIn('name', Roles::all())->orWhere('name', Roles::ADMIN));
     }
 
-    /** @return array<int, string> */
+    /** F71: "admin" = the admin's clone — sees and does everything an admin does. */
+    public const FULL_ADMIN = 'admin';
+
+    /** @return array<int|string, string> */
     public static function roleOptions(): array
     {
-        return StaffRoleResource::getEloquentQuery()->orderBy('name')->pluck('name', 'id')->all();
+        return [self::FULL_ADMIN => 'অ্যাডমিন — সব কিছু (অ্যাডমিনের মতো)']
+            + StaffRoleResource::getEloquentQuery()->orderBy('name')->pluck('name', 'id')->all();
     }
 
     public static function form(Schema $schema): Schema
@@ -72,8 +78,10 @@ class StaffResource extends Resource
                 ->required(fn (string $operation) => $operation === 'create')
                 ->helperText(fn (string $operation) => $operation === 'edit' ? 'বদলাতে চাইলে লিখুন, না হলে খালি রাখুন।' : 'কমপক্ষে ৮ অক্ষর। স্টাফকে নিজে জানিয়ে দিন।'),
             Select::make('staff_role')->label('ভূমিকা')->required()->options(fn () => self::roleOptions())
-                ->afterStateHydrated(fn ($component, ?User $record) => $component->state(self::staffRole($record)?->id))
-                ->helperText('আগে "স্টাফের ভূমিকা" পাতায় ভূমিকা বানান।'),
+                ->afterStateHydrated(fn ($component, ?User $record) => $component->state($record?->isAdmin() ? self::FULL_ADMIN : self::staffRole($record)?->id))
+                ->disabled(fn (?User $record) => $record?->id === auth()->id())
+                ->dehydrated(fn (?User $record) => $record?->id !== auth()->id())
+                ->helperText('"অ্যাডমিন — সব কিছু" দিলে ঠিক অ্যাডমিনের মতো সব দেখবেন ও করবেন, স্টাফ যোগ করাসহ। অন্যগুলো "স্টাফের ভূমিকা" পাতায় বানান। নিজের ভূমিকা নিজে বদলানো যায় না।'),
         ]);
     }
 
@@ -90,7 +98,7 @@ class StaffResource extends Resource
                 $phone = PhoneNumber::normalize((string) $data['phone']);
                 $user = User::firstOrNew(['phone' => $phone]);
                 if ($user->exists && $user->isAdmin()) {
-                    throw ValidationException::withMessages(['phone' => 'এই নম্বর একজন অ্যাডমিনের।']);
+                    throw ValidationException::withMessages(['phone' => 'এই নম্বর আগে থেকেই একজন অ্যাডমিনের।']);
                 }
                 if (! $user->exists) {
                     $user->status = UserStatus::Active;
@@ -106,16 +114,35 @@ class StaffResource extends Resource
                 $user->assignRole(Roles::BUYER);
             }
 
-            $role = Role::findById((int) $data['staff_role'], 'web');
-            // One staff role at a time.
-            $old = $user->roles->filter(fn ($r) => ! in_array($r->name, Roles::all(), true) && $r->id !== $role->id);
-            foreach ($old as $r) {
+            if (! array_key_exists('staff_role', $data)) {
+                return $user->fresh('roles'); // their own role stays
+            }
+            $full = (string) $data['staff_role'] === self::FULL_ADMIN;
+            $role = $full ? null : Role::findById((int) $data['staff_role'], 'web');
+            // One staff role at a time; admin is the whole panel.
+            foreach ($user->roles->filter(fn ($r) => ! in_array($r->name, Roles::all(), true) && $r->id !== $role?->id) as $r) {
                 $user->removeRole($r);
             }
-            $user->assignRole($role);
+            if ($full) {
+                $user->assignRole(Roles::ADMIN);
+            } else {
+                if ($user->hasRole(Roles::ADMIN)) {
+                    self::keepAnAdmin($user);
+                    $user->removeRole(Roles::ADMIN);
+                }
+                $user->assignRole($role);
+            }
 
             return $user->fresh('roles');
         });
+    }
+
+    /** Never leave Dawat without an admin. */
+    private static function keepAnAdmin(User $leaving): void
+    {
+        if (! User::role(Roles::ADMIN)->whereKeyNot($leaving->id)->exists()) {
+            throw ValidationException::withMessages(['staff_role' => 'অন্তত একজন অ্যাডমিন থাকতে হবে।']);
+        }
     }
 
     public static function table(Table $table): Table
@@ -126,15 +153,28 @@ class StaffResource extends Resource
             ->columns([
                 TextColumn::make('name')->label('নাম')->weight('semibold')->searchable()->description(fn (User $u) => $u->phone),
                 TextColumn::make('email')->label('ইমেইল')->searchable(),
-                TextColumn::make('staff_role')->label('ভূমিকা')->badge()->state(fn (User $u) => self::staffRole($u)?->name),
+                TextColumn::make('staff_role')->label('ভূমিকা')->badge()
+                    ->state(fn (User $u) => $u->isAdmin() ? 'অ্যাডমিন' : self::staffRole($u)?->name)
+                    ->color(fn (User $u) => $u->isAdmin() ? 'success' : 'gray'),
                 TextColumn::make('features')->label('যা দেখবেন')->wrap()
-                    ->state(fn (User $u) => collect(StaffRoleResource::featuresOf(self::staffRole($u)))->map(fn ($k) => AdminFeatures::FEATURES[$k][0] ?? $k)->implode(', ')),
+                    ->state(fn (User $u) => $u->isAdmin() ? 'সব কিছু' : collect(StaffRoleResource::featuresOf(self::staffRole($u)))->map(fn ($k) => AdminFeatures::FEATURES[$k][0] ?? $k)->implode(', ')),
             ])
             ->recordActions([
                 EditAction::make()->using(fn (User $record, array $data) => self::save($record, $data)),
+                // F71: see the panel exactly as this staff member does.
+                Action::make('viewAs')->label('তাঁর মতো করে দেখুন')->icon(Heroicon::OutlinedEye)->color('info')
+                    ->visible(fn (User $record) => ! $record->isAdmin() && ! $record->isBlocked())
+                    ->requiresConfirmation()
+                    ->modalDescription('প্যানেল এই স্টাফের চোখে খুলবে। উপরের বার থেকে "অ্যাডমিনে ফিরুন"। এ সময় যা করবেন, তা এই স্টাফের নামে লেখা হবে।')
+                    ->action(fn (User $record) => StaffView::start(auth()->user(), $record)),
                 Action::make('revoke')->label('প্যানেল বন্ধ')->icon(Heroicon::OutlinedNoSymbol)->color('danger')
+                    ->visible(fn (User $record) => $record->id !== auth()->id())
                     ->requiresConfirmation()->modalDescription('এই মানুষটা আর অ্যাডমিন প্যানেলে ঢুকতে পারবেন না। অ্যাপের সাধারণ অ্যাকাউন্ট থাকবে।')
                     ->action(function (User $record) {
+                        if ($record->hasRole(Roles::ADMIN)) {
+                            self::keepAnAdmin($record);
+                            $record->removeRole(Roles::ADMIN);
+                        }
                         foreach ($record->roles->filter(fn ($r) => ! in_array($r->name, Roles::all(), true)) as $r) {
                             $record->removeRole($r);
                         }

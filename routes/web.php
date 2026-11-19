@@ -4,6 +4,7 @@ use App\Http\Controllers\Web\BillController;
 use App\Http\Controllers\Web\PinController;
 use App\Http\Controllers\Web\SeoController;
 use App\Http\Controllers\Web\SpaController;
+use App\Services\Admin\StaffView;
 use App\Support\Geo\Geocoder;
 use App\Support\QrImage;
 use Illuminate\Http\Request;
@@ -36,6 +37,9 @@ Route::get('/admin-tools/login-qr', function (Request $request) {
 
     return response()->view('admin.login-qr', ['url' => $url, 'svg' => QrImage::svg($url)])->header('Cache-Control', 'no-store');
 })->name('admin.login-qr');
+
+// F71: back to the admin's own login after looking at the panel as a staff member.
+Route::get('/admin-tools/staff-view/stop', fn () => StaffView::stop())->name('admin.staff-view.stop');
 
 // F62: admins look up a home pin from an address or a map link (the panel's location box). F69: staff too.
 Route::get('/admin-tools/geocode', function (Request $request, Geocoder $geocoder) {

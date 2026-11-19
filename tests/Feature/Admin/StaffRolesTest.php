@@ -14,10 +14,12 @@ use App\Filament\Widgets\FollowUps;
 use App\Models\Remark;
 use App\Models\User;
 use App\Services\Admin\Impersonate;
+use App\Services\Admin\StaffView;
 use App\Support\AdminFeatures;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -135,5 +137,67 @@ class StaffRolesTest extends TestCase
         Livewire::test(FollowUps::class)->callTableAction('close', $next, ['note' => 'নম্বর বন্ধ, বাদ'])->assertHasNoTableActionErrors();
         $this->assertSame('নম্বর বন্ধ, বাদ', $next->fresh()->done_note);
         $this->assertSame($this->admin->id, $next->fresh()->done_by);
+    }
+
+    public function test_a_staff_member_can_be_a_full_admin_clone_and_back(): void
+    {
+        $staff = $this->makeCallTeam();
+        $this->actingAs($this->admin, 'web');
+
+        Livewire::test(ManageStaff::class)->callTableAction('edit', $staff, ['name' => 'সুমি', 'email' => 'sumi@dawat.test', 'password' => '', 'staff_role' => StaffResource::FULL_ADMIN])
+            ->assertHasNoTableActionErrors();
+        $staff = $staff->fresh();
+        $this->assertTrue($staff->isAdmin());
+        $this->assertFalse($staff->isStaff()); // the old limited role is gone
+        $this->assertTrue(AdminFeatures::allows(StaffResource::class, $staff));
+
+        // Back to a limited role; and the last admin can never be removed.
+        Livewire::test(ManageStaff::class)->callTableAction('edit', $staff, ['name' => 'সুমি', 'email' => 'sumi@dawat.test', 'password' => '', 'staff_role' => Role::where('name', 'কল টিম')->value('id')])
+            ->assertHasNoTableActionErrors();
+        $this->assertFalse($staff->fresh()->isAdmin());
+        Livewire::test(ManageStaff::class)->assertTableActionHidden('revoke', $this->admin);
+    }
+
+    public function test_new_staff_can_be_made_full_admin_from_the_start(): void
+    {
+        $this->actingAs($this->admin, 'web');
+        Livewire::test(ManageStaff::class)->callAction('create', [
+            'name' => 'ম্যানেজার', 'phone' => '01922222222', 'email' => 'manager@dawat.test', 'password' => 'manager-2026', 'staff_role' => StaffResource::FULL_ADMIN,
+        ])->assertHasNoActionErrors();
+        $this->assertTrue(User::where('phone', '01922222222')->firstOrFail()->isAdmin());
+    }
+
+    public function test_admin_looks_at_the_panel_as_a_staff_member_and_comes_back(): void
+    {
+        $staff = $this->makeCallTeam();
+        $this->actingAs($this->admin, 'web');
+
+        Livewire::test(ManageStaff::class)->assertTableActionHidden('viewAs', $this->admin)->callTableAction('viewAs', $staff);
+        $this->assertSame($staff->id, auth('web')->id());
+        $this->get('/admin')->assertOk()->assertSee('হিসেবে দেখছেন')->assertSee('অ্যাডমিনে ফিরুন');
+        $this->get(KitchenResource::getUrl())->assertForbidden();
+
+        $this->get('/admin-tools/staff-view/stop')->assertRedirect('/admin/staff');
+        $this->assertSame($this->admin->id, auth('web')->id());
+        $this->get('/admin')->assertOk()->assertDontSee('হিসেবে দেখছেন');
+    }
+
+    public function test_staff_cannot_use_view_as_or_the_way_back_to_become_admin(): void
+    {
+        $staff = $this->makeCallTeam();
+        $this->app['auth']->forgetGuards();
+        $this->actingAs($staff, 'web');
+        $this->expectException(ValidationException::class);
+        StaffView::start($staff, User::factory()->create());
+    }
+
+    public function test_the_way_back_does_nothing_without_a_started_view(): void
+    {
+        $staff = $this->makeCallTeam();
+        $this->app['auth']->forgetGuards();
+        $this->actingAs($staff, 'web');
+        $this->withSession([StaffView::KEY => ['admin' => $this->admin->id, 'staff' => 999, 'name' => 'x']])
+            ->get('/admin-tools/staff-view/stop')->assertRedirect('/admin');
+        $this->assertSame($staff->id, auth('web')->id());
     }
 }
