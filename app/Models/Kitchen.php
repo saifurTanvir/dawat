@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 #[Fillable(['platform_fee_type', 'platform_fee_value', 'delivery_cut_type', 'delivery_cut_value',
     'user_id', 'display_name', 'area_id', 'pickup_address', 'location', 'status',
-    'allow_call', 'allow_message', 'allow_comment', 'allow_order', 'contact_phone', 'contact_name', 'max_regular_customers', 'reach_m',
+    'allow_call', 'allow_message', 'allow_comment', 'allow_order', 'contact_phone', 'contact_name', 'max_regular_customers', 'reach_m', 'daily_plates',
 ])]
 #[Hidden(['location', 'public_location', 'pickup_address'])]
 class Kitchen extends Model
@@ -40,6 +40,7 @@ class Kitchen extends Model
             'rating_count' => 'integer',
             'max_regular_customers' => 'integer',
             'reach_m' => 'integer',
+            'daily_plates' => 'integer',
             'contact_verified_at' => 'datetime',
             'pending_contact_requested_at' => 'datetime',
         ];

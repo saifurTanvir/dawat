@@ -51,6 +51,8 @@
         <div wire:ignore class="dz-map" data-zone-map='@json(['zones' => $mapData, 'radius' => $radius])'></div>
     </x-filament::section>
 
+    <p class="text-sm text-gray-500">দিনে প্লেট (পিনসহ অনুমোদিত গৃহিণী): মোট {{ $bn($totals['plates']) }} · ৮০ ছুঁয়েছে এমন জোন {{ $bn($totals['zones_80']) }} · পিন আছে কিন্তু প্লেট জানাননি {{ $bn($totals['plates_unknown']) }} জন</p>
+
     @if ($totals['outside'] || $totals['no_area'])
         <p class="text-sm text-gray-500">
             @if ($totals['outside']) পিন সব জোনের বাইরে: {{ $bn($totals['outside']) }} জন। @endif
@@ -59,9 +61,9 @@
     @endif
 
     @foreach ($areas as $a)
-        <x-filament::section :heading="$a['name']" :description="'গৃহিণী '.$bn($a['cooks']).' (অপেক্ষায় '.$bn($a['pending']).') · গ্রাহক '.$bn($a['customers']).' · এলাকার শাহিদার '.$bn($a['shahidars'])" collapsible :collapsed="$a['cooks'] + $a['pending'] + $a['customers'] === 0">
+        <x-filament::section :heading="$a['name']" :description="'গৃহিণী '.$bn($a['cooks']).' (অপেক্ষায় '.$bn($a['pending']).') · প্লেট '.$bn($a['plates']).' · গ্রাহক '.$bn($a['customers']).' · এলাকার শাহিদার '.$bn($a['shahidars'])" collapsible :collapsed="$a['cooks'] + $a['pending'] + $a['customers'] === 0">
             <table class="dz w-full text-sm">
-                <thead><tr class="text-gray-500"><th>জোন</th><th>মূল ঠিকানা</th><th class="r">গৃহিণী</th><th class="r">অপেক্ষায়</th><th class="r">গ্রাহক</th><th>অবস্থা</th></tr></thead>
+                <thead><tr class="text-gray-500"><th>জোন</th><th>মূল ঠিকানা</th><th class="r">গৃহিণী</th><th class="r">অপেক্ষায়</th><th class="r">দিনে প্লেট / ৮০</th><th class="r">গ্রাহক</th><th>অবস্থা</th></tr></thead>
                 <tbody>
                     @foreach ($a['zones'] as $z)
                         <tr>
@@ -69,6 +71,7 @@
                             <td>{{ $a['name'] }}</td>
                             <td class="r">{{ $bn($z['cooks']) }}</td>
                             <td class="r">{{ $bn($z['pending']) }}</td>
+                            <td class="r">@if ($z['plates'] >= \App\Services\Geo\Zones::PLATES_GOAL)<span class="dz-badge dz-ready">{{ $bn($z['plates']) }} / ৮০</span>@else{{ $bn($z['plates']) }} / ৮০@endif</td>
                             <td class="r">{{ $bn($z['customers']) }}</td>
                             <td>
                                 @if ($z['cooks'] >= 3) <span class="dz-badge dz-ready">কর্পোরেট রিচ করা যায়</span>
@@ -83,6 +86,7 @@
                             <td>{{ $a['name'] }}</td>
                             <td class="r">{{ $bn($a['unpinned']['cooks']) }}</td>
                             <td class="r">{{ $bn($a['unpinned']['pending']) }}</td>
+                            <td class="r muted">পিন ছাড়া গোনা হয় না</td>
                             <td class="r">{{ $bn($a['unpinned']['customers']) }}</td>
                             <td></td>
                         </tr>

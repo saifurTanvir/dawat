@@ -23,6 +23,7 @@ class KitchenForm
                     ->schema([
                         TextInput::make('display_name')->label('নাম')->required()->maxLength(60),
                         Select::make('area_id')->label('এলাকা')->relationship('area', 'name'),
+                        Select::make('daily_plates')->label('দিনে কত প্লেট দেবেন (F77)')->options([1 => '১ প্লেট', 2 => '২ প্লেট'])->placeholder('এখনো জানাননি'),
                         TextInput::make('pickup_address')->label('পিকআপের ঠিকানা')->maxLength(255)
                             ->helperText('শাহিদার এই ঠিকানা থেকে নিয়মিত গ্রাহকের খাবার তুলবেন। ক্রেতারা কখনো দেখেন না।'),
                         TextInput::make('bfsa_reg_no')->label('BFSA রেজিস্ট্রেশন নম্বর')->maxLength(50),

@@ -28,6 +28,7 @@ class KitchensTable
                 TextColumn::make('user.phone')->label('ফোন')->searchable()->copyable(),
                 TextColumn::make('area.name')->label('এলাকা')->placeholder('—'),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
+                TextColumn::make('daily_plates')->label('দিনে প্লেট')->placeholder('—')->sortable(),
                 TextColumn::make('pending_contact_phone')
                     ->label('নতুন নম্বর')
                     ->badge()

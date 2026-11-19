@@ -10,6 +10,7 @@ use App\Models\Area;
 use App\Models\Kitchen;
 use App\Models\PinLink;
 use App\Models\User;
+use App\Services\Geo\Zones;
 use App\Support\Geo\GeoPoint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -118,5 +119,24 @@ class PinLinkTest extends TestCase
         $this->actingAs(User::factory()->admin()->create());
         Livewire::test(ViewKitchen::class, ['record' => $this->kitchen->getRouteKey()])->callAction('renewPinLink')->assertHasNoActionErrors();
         $this->assertTrue($new->fresh()->isExpired());
+    }
+
+    public function test_zone_report_counts_plates_of_pinned_cooks_only(): void
+    {
+        $this->kitchen->update(['location' => GeoPoint::make(23.7600, 90.3600), 'daily_plates' => 2]);
+        Kitchen::factory()->create(['area_id' => $this->area->id, 'location' => GeoPoint::make(23.7601, 90.3601), 'status' => KitchenStatus::Approved, 'daily_plates' => 1]);
+        Kitchen::factory()->create(['area_id' => $this->area->id, 'location' => null, 'status' => KitchenStatus::Approved, 'daily_plates' => 2]);
+        Kitchen::factory()->create(['area_id' => $this->area->id, 'location' => GeoPoint::make(23.7602, 90.3602), 'status' => KitchenStatus::Approved]);
+
+        $report = app(Zones::class)->report();
+        $area = $report['areas']->firstWhere('id', $this->area->id);
+        $this->assertSame(3, $area['plates']);
+        $this->assertSame(1, $report['totals']['plates_unknown']);
+
+        $this->actingAs(User::factory()->admin()->create());
+        Livewire::test(ViewKitchen::class, ['record' => $this->kitchen->getRouteKey()])
+            ->callAction('dailyPlates', ['daily_plates' => 1])->assertHasNoActionErrors();
+        $this->assertSame(1, $this->kitchen->fresh()->daily_plates);
+        Livewire::test(ZoneMap::class)->assertSee('দিনে প্লেট / ৮০');
     }
 }
