@@ -111,7 +111,7 @@ class Brain
 
         $payload = [
             'model' => config('services.ai.model'),
-            'max_tokens' => 700,
+            'max_tokens' => 1500,
             // The rules and the area list are the same for every chat: cached, they cost a tenth and
             // do not count against the per-minute token limit.
             'system' => [
@@ -144,11 +144,12 @@ class Brain
         }
         if ($response->failed()) {
             Log::warning('Messenger AI failed', ['status' => $response->status(), 'error' => $response->json('error.type')]);
-            throw new AssistantUnavailableException('AI service error '.$response->status(), busy: $response->status() === 429 || $response->status() >= 500);
+            throw new AssistantUnavailableException('AI '.$response->status().' '.mb_substr((string) ($response->json('error.message') ?? $response->json('error.type')), 0, 120), busy: $response->status() === 429 || $response->status() >= 500);
         }
         $use = collect($response->json('content', []))->first(fn ($b) => ($b['type'] ?? null) === 'tool_use' && ($b['name'] ?? null) === self::TOOL);
         if (! $use || ! is_array($use['input'] ?? null)) {
-            throw new AssistantUnavailableException('AI did not return a structured answer.');
+            // Usually a cut-off or chatty answer: asking again tends to work.
+            throw new AssistantUnavailableException('AI gave no structured answer (stop: '.$response->json('stop_reason').')', busy: true);
         }
 
         return $use['input'];

@@ -440,7 +440,8 @@ class MessengerBotTest extends TestCase
         // The last try falls back to the greeting and asks for a person; the 5-minute sweep tries once more.
         app(Agent::class)->answer($t->fresh(), final: true);
         $this->assertSame(Agent::WELCOME, $this->sent());
-        $this->assertSame(Agent::AI_FAILED, $t->fresh()->human_reason);
+        $this->assertStringStartsWith(Agent::AI_FAILED, $t->fresh()->human_reason);
+        $this->assertStringContainsString('AI 529', $t->fresh()->human_reason);
         MessengerThread::whereKey($t->id)->update(['last_in_at' => now()->subMinutes(10)]);
         $this->artisan('messenger:answer-waiting')->assertSuccessful();
         Queue::assertPushed(AnswerMessenger::class, fn ($j) => $j->threadId === $t->id && $j->force);
