@@ -127,6 +127,18 @@ class ManageMessengerThreads extends ManageRecords
                         });
                     Notification::make()->title("{$n}টা চ্যাট পড়া হলো")->success()->send();
                 }),
+            Action::make('remindPins')
+                ->visible(fn () => $admin() && Graph::configured())
+                ->label('পিন বাকিদের লিংক পাঠান')
+                ->icon(Heroicon::OutlinedMapPin)
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalDescription('গত ২৪ ঘণ্টায় যাঁরা লিখেছেন আর এখনো বাসার পিন দেননি, তাঁদের প্রত্যেককে তাঁর নিজের লোকেশন লিংক পাঠাবে (১২ ঘণ্টায় একবারের বেশি না)।')
+                ->action(function () {
+                    set_time_limit(180);
+                    $n = app(Agent::class)->remindPins();
+                    Notification::make()->title("{$n} জনকে লোকেশন লিংক পাঠানো হলো")->success()->send();
+                }),
             Action::make('backfill')
                 ->visible(fn () => $admin() && Graph::configured())
                 ->label('আগের চ্যাট আনুন')

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Messenger;
 
 use App\Enums\KitchenStatus;
+use App\Filament\Resources\Kitchens\Pages\ListKitchens;
 use App\Filament\Resources\MessengerThreads\Pages\ManageMessengerThreads;
 use App\Jobs\AnswerMessenger;
 use App\Models\AppSetting;
@@ -11,6 +12,7 @@ use App\Models\CallRequest;
 use App\Models\Kitchen;
 use App\Models\MessengerThread;
 use App\Models\OpsHeartbeat;
+use App\Models\PinLink;
 use App\Models\User;
 use App\Services\Messenger\Agent;
 use App\Services\Messenger\Backfill;
@@ -249,6 +251,24 @@ class MessengerBotTest extends TestCase
         $this->assertFalse($t->needs_human);
         $this->assertSame($old->location ? 0 : 1, collect($this->sent())->filter(fn ($x) => str_contains($x, '/pin/'))->count());
         $this->assertSame(0, app(Agent::class)->linkExisting());
+    }
+
+    public function test_cooks_without_a_pin_get_their_own_link_once_and_unknown_plates_become_one(): void
+    {
+        $old = Kitchen::factory()->approved()->create(['area_id' => $this->area->id, 'location' => null, 'daily_plates' => null]);
+        $this->hook([$this->text('PR', 'ok', 'mid.r1')]);
+        $t = MessengerThread::where('psid', 'PR')->firstOrFail();
+        $t->forceFill(['facts' => ['phone' => $old->user->phone]])->save();
+        $this->fake([]);
+
+        $this->assertSame(1, app(Agent::class)->remindPins());
+        $this->assertSame($old->id, $t->fresh()->kitchen_id);
+        $this->assertSame(1, collect($this->sent())->filter(fn ($x) => str_contains($x, PinLink::forKitchen($old)->url()))->count());
+        $this->assertSame(0, app(Agent::class)->remindPins()); // not again within 12 hours
+
+        $this->actingAs(User::role(Roles::ADMIN)->first());
+        Livewire::test(ListKitchens::class)->callAction('defaultPlates');
+        $this->assertSame(1, $old->fresh()->daily_plates);
     }
 
     public function test_she_is_told_about_her_existing_kitchen_only_once(): void
