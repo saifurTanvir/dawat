@@ -139,7 +139,7 @@ class MessengerBotTest extends TestCase
         $texts = $this->sent();
         $this->assertStringContainsString('Jatrabari e add kore approve kore dilam', $texts[0]);
         $this->assertTrue(collect($texts)->contains(fn ($x) => str_contains($x, '/pin/')));
-        $this->assertTrue(collect($texts)->contains(fn ($x) => str_contains($x, '1 plate dite parben na 2')));
+        $this->assertTrue(collect($texts)->contains(fn ($x) => str_contains($x, 'shuru te dine 1 plate')));
         $this->assertSame(count($texts), $t->messages()->where('by', 'bot')->count());
         $this->assertSame('messenger', OpsHeartbeat::latest('id')->first()->channel);
 
