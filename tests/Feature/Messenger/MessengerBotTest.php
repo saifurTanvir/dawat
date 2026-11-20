@@ -369,7 +369,7 @@ class MessengerBotTest extends TestCase
         (new AnswerMessenger($t->id, $first))->handle(app(Agent::class));
         $this->assertSame([], $this->sent()); // the newer message's job answers both
 
-        $t->forceFill(['last_in_at' => now()->subMinutes(5)])->save();
+        $t->forceFill(['last_in_at' => now()->subMinutes(6)])->save();
         $this->artisan('messenger:heartbeat')->assertSuccessful();
         $beat = OpsHeartbeat::latest('id')->firstOrFail();
         $this->assertSame(1, $beat->pending);
