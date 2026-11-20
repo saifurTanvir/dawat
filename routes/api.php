@@ -212,6 +212,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/regular/guest-meals', [GuestMealController::class, 'store'])->middleware('throttle:comments')->name('regular.guest-meals.store');
         Route::post('/regular/guest-meals/{guest}/cancel', [GuestMealController::class, 'cancel'])->middleware('throttle:comments')->name('regular.guest-meals.cancel');
         Route::post('/regular/choices', [RegularController::class, 'choose'])->middleware('throttle:comments')->name('regular.choices');
+        Route::get('/regular/nearby', [RegularController::class, 'nearby'])->middleware('throttle:feed')->name('regular.nearby');
         Route::post('/regular/orders/{order}/accept', [RegularController::class, 'accept'])->name('regular.orders.accept');
         Route::post('/regular/pauses', [RegularController::class, 'pause'])->middleware('throttle:comments')->name('regular.pauses.store');
         Route::delete('/regular/pauses/{pause}', [RegularController::class, 'unpause'])->name('regular.pauses.destroy');

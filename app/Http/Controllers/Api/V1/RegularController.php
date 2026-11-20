@@ -6,6 +6,7 @@ use App\Enums\CustomerStatus;
 use App\Enums\MealSlot;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Regular\SaveRegularRequest;
+use App\Http\Resources\FeedPostResource;
 use App\Http\Resources\RegularResource;
 use App\Models\Bill;
 use App\Models\Customer;
@@ -18,6 +19,7 @@ use App\Services\Regular\TodayMenu;
 use App\Support\Geo\GeoPoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -80,17 +82,45 @@ class RegularController extends Controller
         $customer = Customer::where('user_id', $request->user()->id)->firstOrFail();
         $data = $request->validate([
             'meal_slot' => ['required', Rule::enum(MealSlot::class)],
-            'choice' => ['required', Rule::in(['eat', 'skip', 'change'])],
+            'choice' => ['required', Rule::in(['eat', 'skip', 'change', 'pick'])],
             'wish' => ['nullable', 'string', 'max:300'],
-        ], ['choice.required' => 'একটা বেছে নিন।']);
+            'post_id' => ['required_if:choice,pick', 'nullable', 'integer'],
+        ], ['choice.required' => 'একটা বেছে নিন।', 'post_id.required_if' => 'একটা খাবার বেছে নিন।']);
 
-        $menu->choose($customer, MealSlot::from($data['meal_slot']), $data['choice'], $data['wish'] ?? null, $request->user());
+        $menu->choose($customer, MealSlot::from($data['meal_slot']), $data['choice'], $data['wish'] ?? null, $request->user(), $data['post_id'] ?? null);
 
         return RegularResource::make($customer->fresh(self::WITH))->additional(['message' => match ($data['choice']) {
             'eat' => 'ঠিক আছে, আজ খাবার আসবে।',
             'skip' => 'আজ এই বেলার খাবার আসবে না।',
             'change' => 'জানানো হয়েছে। আপনার শাহিদার শিগগিরই ফোন করে অন্য খাবারের ব্যবস্থা করবেন।',
+            'pick' => 'বুক হয়েছে। আজ এই খাবারটাই আপনার শাহিদার পৌঁছে দেবেন।',
         }]);
+    }
+
+    /**
+     * GET /api/v1/regular/nearby?meal_slot=&q=&tags[]=&max_taka=&sort=near|cheap — F85: other cooks'
+     * food near the customer today, to pick from. Distances are rounded; no coordinates.
+     */
+    public function nearby(Request $request, TodayMenu $menu): AnonymousResourceCollection
+    {
+        $customer = Customer::where('user_id', $request->user()->id)->firstOrFail();
+        $data = $request->validate([
+            'meal_slot' => ['required', Rule::enum(MealSlot::class)],
+            'q' => ['nullable', 'string', 'max:60'],
+            'tags' => ['nullable', 'array', 'max:5'],
+            'tags.*' => ['string', 'max:40'],
+            'max_taka' => ['nullable', 'integer', 'min:1', 'max:5000'],
+            'sort' => ['nullable', Rule::in(['near', 'cheap'])],
+        ]);
+
+        $posts = $menu->nearby($customer, MealSlot::from($data['meal_slot']), [
+            'q' => $data['q'] ?? null,
+            'tags' => $data['tags'] ?? [],
+            'max_paisa' => isset($data['max_taka']) ? $data['max_taka'] * 100 : null,
+            'sort' => $data['sort'] ?? 'near',
+        ]);
+
+        return FeedPostResource::collection($posts);
     }
 
     /** POST /api/v1/regular/orders/{order}/accept — "নেব" at today's higher price (F30). */

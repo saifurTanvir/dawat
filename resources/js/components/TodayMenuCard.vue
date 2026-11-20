@@ -7,7 +7,11 @@
             <p class="font-semibold">{{ m.title || 'গৃহিণী এখনো জানাননি' }}</p>
 
             <!-- Their answer -->
-            <p v-if="m.choice === 'skip'" class="mt-1 rounded-lg bg-steel px-3 py-2 text-sm">আজ এই বেলায় খাবেন না বলেছেন — খাবার আসবে না।</p>
+            <div v-if="m.choice === 'pick' && m.picked" class="mt-1 rounded-lg bg-leaf-soft px-3 py-2 text-sm">
+                <p>আজ নিচ্ছেন: <strong>{{ m.picked.title }}</strong></p>
+                <p class="text-muted">{{ m.picked.kitchen }} · {{ taka(m.picked.price_paisa) }} — আপনার শাহিদার পৌঁছে দেবেন।</p>
+            </div>
+            <p v-else-if="m.choice === 'skip'" class="mt-1 rounded-lg bg-steel px-3 py-2 text-sm">আজ এই বেলায় খাবেন না বলেছেন — খাবার আসবে না।</p>
             <div v-else-if="m.choice === 'change'" class="mt-1 rounded-lg px-3 py-2 text-sm" :class="m.handled ? 'bg-leaf-soft' : 'bg-turmeric-soft'">
                 <p>এই খাবার খাবেন না, চেয়েছেন: <strong>{{ m.wish }}</strong></p>
                 <p v-if="m.handled" class="mt-1">ব্যবস্থা হয়েছে<template v-if="m.handled_note">: {{ m.handled_note }}</template></p>
@@ -33,6 +37,13 @@
                 <p v-if="asking !== m.slot && m.choice === 'eat'" class="mt-1.5 text-xs text-muted">
                     {{ m.confirmed ? 'আপনি খাবেন বলেছেন। খাবার আসবে।' : 'কিছু না বললেও খাবার আসবে। নিশ্চিত করতে "খাব" চাপুন।' }}
                 </p>
+                <!-- F85: not her cook's dish today — say what you want, or pick another cook's food nearby. -->
+                <div v-else-if="asking === m.slot && !writing" class="mt-2 space-y-2">
+                    <p class="text-sm font-semibold">তাহলে কী করবেন?</p>
+                    <button type="button" class="btn-primary min-h-11 text-sm" @click="nearby = m">এলাকার অন্য খাবার দেখুন</button>
+                    <button type="button" class="min-h-11 w-full rounded-xl border border-rule px-3 text-sm font-semibold" @click="writing = true">কী খেতে চান লিখে জানান</button>
+                    <button type="button" class="btn-quiet min-h-10 px-3 text-sm" @click="asking = null">থাক</button>
+                </div>
                 <form v-else-if="asking === m.slot" class="mt-2" @submit.prevent="send(m, 'change')">
                     <label :for="`wish-${m.slot}`" class="mb-1 block text-sm font-semibold">কী খেতে চান?</label>
                     <input :id="`wish-${m.slot}`" v-model.trim="wish" class="field text-base" maxlength="300" placeholder="যেমন: মাছ ছাড়া কিছু, শুধু ডাল-ভাত" />
@@ -42,15 +53,26 @@
                         <button type="button" class="btn-quiet min-h-10 px-3 text-sm" @click="asking = null">থাক</button>
                     </div>
                 </form>
+                <button
+                    v-if="asking !== m.slot && m.choice !== 'pick'"
+                    type="button"
+                    class="mt-1 text-sm font-semibold text-leaf underline-offset-2 hover:underline"
+                    @click="nearby = m"
+                >
+                    এলাকার অন্য গৃহিণীদের আজকের খাবার দেখুন
+                </button>
             </template>
         </div>
         <p v-if="error" class="error-text" role="alert">{{ error }}</p>
+        <NearbyMealsSheet v-if="nearby" :meal="nearby" @close="nearby = null" @picked="onPicked" />
     </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import NearbyMealsSheet from '@/components/NearbyMealsSheet.vue';
 import { api, errorMessage } from '@/lib/api';
+import { taka } from '@/lib/format';
 
 defineProps({ meals: { type: Array, required: true } });
 const emit = defineEmits(['updated']);
@@ -65,10 +87,19 @@ const busy = ref(false);
 const error = ref('');
 const asking = ref(null);
 const wish = ref('');
+const writing = ref(false);
+const nearby = ref(null);
 
 function ask(m) {
     asking.value = m.slot;
+    writing.value = false;
     wish.value = '';
+}
+
+function onPicked(data) {
+    nearby.value = null;
+    asking.value = null;
+    emit('updated', data);
 }
 
 async function send(m, choice) {

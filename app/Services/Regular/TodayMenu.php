@@ -13,7 +13,10 @@ use App\Models\MealChoice;
 use App\Models\MenuNotice;
 use App\Models\Order;
 use App\Models\Pairing;
+use App\Models\Post;
 use App\Models\User;
+use App\Services\Feed\FeedQuery;
+use App\Services\Feed\FeedRadius;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Push\Push;
 use App\Support\DhakaTime;
@@ -80,12 +83,15 @@ class TodayMenu
      * The customer's answer: 'eat' ("খাব" — the default, now said out loud; also undoes
      * an earlier no before booking), 'skip', or 'change' with what they want.
      */
-    public function choose(Customer $customer, MealSlot $slot, string $choice, ?string $wish, User $by): ?MealChoice
+    public function choose(Customer $customer, MealSlot $slot, string $choice, ?string $wish, User $by, ?int $postId = null): ?MealChoice
     {
         $today = BookingPlanner::today();
         $pairing = $customer->pairing()->with(['kitchen', 'shahidar'])->first();
         if (! $pairing || $customer->status !== CustomerStatus::Active || ! in_array($slot->value, $customer->meal_slots ?? [], true)) {
             throw ValidationException::withMessages(['meal_slot' => 'আজ এই বেলায় আপনার বুকিং নেই।']);
+        }
+        if ($choice === 'pick') {
+            return $this->pick($customer->loadMissing('user'), $pairing, $slot, (int) $postId);
         }
         if ($choice === 'change' && mb_strlen(trim((string) $wish)) < 2) {
             throw ValidationException::withMessages(['wish' => 'কী খেতে চান লিখুন, যেমন "মাছ ছাড়া কিছু" বা "শুধু ডাল-ভাত"।']);
@@ -96,6 +102,9 @@ class TodayMenu
                 ->where('meal_slot', $slot->value)->latest('id')->lockForUpdate()->first();
             $existing = MealChoice::where('customer_id', $customer->id)->whereDate('service_date', $today)->where('meal_slot', $slot->value)->first();
 
+            if ($choice === 'eat' && $existing?->choice === 'pick') {
+                throw ValidationException::withMessages(['meal_slot' => 'আজ এই বেলায় আপনি অন্য গৃহিণীর খাবার নিয়েছেন। বদলাতে শাহিদারকে ফোন করুন।']);
+            }
             if ($choice === 'eat') {
                 // A box cancelled by an earlier "no" cannot come back from here.
                 if ($order && $order->status === OrderStatus::Cancelled && $existing && $existing->choice !== 'eat') {
@@ -139,6 +148,79 @@ class TodayMenu
         }
 
         return $result;
+    }
+
+    /**
+     * F85: other cooks' food near the customer for this meal today, to pick from instead.
+     * Filters: q (dish name), tags (slugs), max price (paisa), sort (near | cheap).
+     *
+     * @param  array{q?: ?string, tags?: list<string>, max_paisa?: ?int, sort?: ?string}  $filters
+     * @return Collection<int, Post>
+     */
+    public function nearby(Customer $customer, MealSlot $slot, array $filters = []): Collection
+    {
+        $customer->loadMissing(['area', 'pairing']);
+        $origin = $customer->location ?? $customer->area?->center;
+        if (! $origin) {
+            return collect();
+        }
+        $q = trim((string) ($filters['q'] ?? ''));
+        $tags = array_values(array_filter((array) ($filters['tags'] ?? [])));
+
+        $query = (new FeedQuery($origin, FeedRadius::ThreeKm, $slot))->query()
+            ->where('published_at', '>=', DhakaTime::startOfDay())
+            ->where('plates_left', '>=', max(1, (int) $customer->plates))
+            ->when($customer->pairing?->kitchen_id, fn ($q2, $id) => $q2->where('posts.kitchen_id', '!=', $id))
+            ->when($q !== '', fn ($q2) => $q2->where(fn ($w) => $w->where('posts.title', 'like', '%'.$q.'%')->orWhere('posts.note', 'like', '%'.$q.'%')
+                ->orWhereHas('kitchen', fn ($k) => $k->where('display_name', 'like', '%'.$q.'%'))))
+            ->when($tags, fn ($q2) => $q2->whereHas('tags', fn ($t) => $t->whereIn('slug', $tags), '>=', count($tags)))
+            ->when($filters['max_paisa'] ?? null, fn ($q2, $max) => $q2->where('price_paisa', '<=', (int) $max));
+        if (($filters['sort'] ?? 'near') === 'cheap') {
+            $query->reorder()->orderBy('price_paisa')->orderBy('distance_m');
+        }
+
+        return $query->limit(60)->get();
+    }
+
+    /** F85: books the picked post instead of her cook's food today; her cook is not told. */
+    private function pick(Customer $customer, Pairing $pairing, MealSlot $slot, int $postId): MealChoice
+    {
+        $post = $this->nearby($customer, $slot)->firstWhere('id', $postId);
+        if (! $post) {
+            throw ValidationException::withMessages(['post_id' => 'এই খাবারটা এখন আর পাওয়া যাচ্ছে না। আরেকটা বেছে নিন।']);
+        }
+        $today = BookingPlanner::today();
+
+        $choice = DB::transaction(function () use ($customer, $pairing, $slot, $post, $today) {
+            $orders = Order::where('customer_id', $customer->id)->whereDate('service_date', $today)
+                ->where('meal_slot', $slot->value)->lockForUpdate()->get();
+            if ($orders->contains(fn (Order $o) => ! in_array($o->status, [OrderStatus::Booked, OrderStatus::Asking, OrderStatus::Cancelled], true))) {
+                throw ValidationException::withMessages(['meal_slot' => 'খাবার আগেই রওনা হয়ে গেছে। শাহিদারকে ফোন করুন।']);
+            }
+            foreach ($orders->where('status', '!=', OrderStatus::Cancelled) as $o) {
+                $this->planner->cancel($o, 'customer', 'গ্রাহক: অন্য গৃহিণীর খাবার নিয়েছেন');
+            }
+            $order = $this->planner->bookPick($pairing, $post);
+            $notice = MenuNotice::where('kitchen_id', $pairing->kitchen_id)->whereDate('service_date', $today)->where('meal_slot', $slot->value)->first();
+
+            return MealChoice::updateOrCreate(
+                ['customer_id' => $customer->id, 'service_date' => $today, 'meal_slot' => $slot->value],
+                [
+                    'choice' => 'pick', 'wish' => null, 'menu_title' => $notice?->title,
+                    'kitchen_id' => $pairing->kitchen_id, 'shahidar_id' => $pairing->shahidar_id,
+                    'post_id' => $post->id, 'order_id' => $order->id,
+                    'status' => 'handled', 'handled_by' => null, 'handled_at' => now(), 'handled_note' => null,
+                ],
+            );
+        });
+
+        $order = $choice->order;
+        $name = $customer->user->name ?: $customer->user->phone;
+        Push::toUser($pairing->shahidar_id, "{$name} আজ অন্য রান্নাঘর থেকে নিচ্ছেন",
+            "{$slot->label()}: {$post->title} — {$post->kitchen->display_name} থেকে তুলবেন (বক্স {$order->code()})।", '/shahidar', 'meal-choice-'.$choice->id);
+        Push::toUser($post->kitchen->user_id, "নতুন বক্স {$order->code()} · {$slot->label()}", "আপনার \"{$post->title}\" থেকে একজন নিয়মিত গ্রাহক নিলেন। শাহিদার এসে নেবেন।", '/cook', 'order-'.$order->id);
+
+        return $choice;
     }
 
     /** The shahidar and every admin hear about "অন্য কিছু চাই" at once. */
@@ -234,7 +316,7 @@ class TodayMenu
             return [];
         }
         $notices = MenuNotice::where('kitchen_id', $pairing->kitchen_id)->whereDate('service_date', $today)->get()->keyBy(fn ($n) => $n->meal_slot->value);
-        $choices = MealChoice::where('customer_id', $customer->id)->whereDate('service_date', $today)->get()->keyBy(fn ($c) => $c->meal_slot->value);
+        $choices = MealChoice::where('customer_id', $customer->id)->whereDate('service_date', $today)->with(['post.kitchen'])->get()->keyBy(fn ($c) => $c->meal_slot->value);
         $orders = Order::where('customer_id', $customer->id)->whereDate('service_date', $today)->get()->keyBy(fn ($o) => $o->meal_slot->value);
 
         $rows = [];
@@ -253,12 +335,18 @@ class TodayMenu
                 'choice' => $choice?->choice ?? 'eat',
                 'confirmed' => $choice?->choice === 'eat',
                 'wish' => $choice?->wish,
+                // F85: the other cook's food they picked instead.
+                'picked' => $choice?->choice === 'pick' && $choice->post ? [
+                    'title' => $choice->post->title,
+                    'kitchen' => $choice->post->kitchen?->display_name,
+                    'price_paisa' => $choice->post->price_paisa,
+                ] : null,
                 'handled' => $choice?->status === 'handled',
                 'handled_note' => $choice?->status === 'handled' ? $choice->handled_note : null,
                 // Can still answer until the box leaves the cook.
                 'can_choose' => ! $order || in_array($order->status, [OrderStatus::Booked, OrderStatus::Asking, OrderStatus::Cancelled], true),
                 // A box already cancelled cannot come back; "খাব" only undoes an answer given before booking.
-                'can_undo' => $choice?->choice !== 'eat' && $choice !== null ? ! ($order && $order->status === OrderStatus::Cancelled) : true,
+                'can_undo' => $choice?->choice === 'pick' ? false : ($choice?->choice !== 'eat' && $choice !== null ? ! ($order && $order->status === OrderStatus::Cancelled) : true),
             ];
         }
 
