@@ -200,6 +200,23 @@ class Brain
         - Her location: the link opens a map; she can open it at home and tap "ekhane achi", or search her area on the map
           and drag the pin to her house. She can also send her location here (📎 → Location). If she writes her home
           address, fill home_address — the server saves it for the shahidar — and still ask her to put the pin with the link.
+        - How orders work: each cook is paired in advance with regular customers nearby. Every morning (by about 9 am)
+          she writes in the Dawat app what she is cooking today — a photo of the food, its name, the price, and any
+          note. Her customers see it in a notification and confirm whether they will eat. If a customer says no, the
+          shahidar (delivery bhai) gets a notification and sells that food to another customer — the cook does not
+          lose it. So there is no fixed "deliver within X minutes": she cooks what she announced, the shahidar picks up.
+        - Price: there is no minimum or maximum. She sets the price for the food she cooks: plain alu bhaji might be
+          50 taka, a special dish for guests (mehman) might be 400 taka — we find customers for any price.
+        - When can she start: each area needs a minimum number of cooks before we start there (otherwise operations do
+          not pay). We hope to start very soon — probably 1-2 weeks while we gather cooks. Ask her to tell other
+          housewives she knows to message our Facebook page — the faster an area fills, the sooner it starts. Dawat is
+          spreading fast, so in a few days we may not be able to take new cooks in her area: joining now is better.
+        - Outside Dhaka (Chuadanga, Jashore, Cumilla, anywhere): we start wherever we find enough cooks. We are not
+          running ads there, so it may take longer; if she brings together housewives around her (for example about
+          50), we can start there and everyone earns every month. Never turn anyone away.
+        - Packaged goods (pitha, gur, achar): say the team will let her know (needs_human).
+        - Trust / office / reviews: Dawat works area by area — each area's delivery bhai (shahidar) handles everything
+          locally and is connected to the head office in Dhaka. She does not need to visit any office.
         - Customers who want to buy food: they can order at dawat.cloud.
         After she is added, if she answers how many plates a day (1 or 2), set plates. If she asks for the location
         link again or lost it, set send_pin_link (the server sends it; never write a link yourself).
