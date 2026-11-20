@@ -15,7 +15,7 @@ class MealChoice extends Model
 {
     protected $guarded = ['id'];
 
-    public const CHOICES = ['eat' => 'খাবেন বলেছেন', 'skip' => 'আজ খাবেন না', 'change' => 'এই খাবার খাবেন না'];
+    public const CHOICES = ['eat' => 'খাবেন বলেছেন', 'skip' => 'আজ খাবেন না', 'change' => 'এই খাবার খাবেন না', 'pick' => 'অন্য গৃহিণীর খাবার নিয়েছেন'];
 
     protected function casts(): array
     {
@@ -30,6 +30,17 @@ class MealChoice extends Model
     public function kitchen(): BelongsTo
     {
         return $this->belongsTo(Kitchen::class);
+    }
+
+    /** F84: the other cook's post they picked, and the box made from it. */
+    public function post(): BelongsTo
+    {
+        return $this->belongsTo(Post::class);
+    }
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
     }
 
     public function shahidar(): BelongsTo

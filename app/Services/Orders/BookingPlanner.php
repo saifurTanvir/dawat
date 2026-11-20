@@ -58,7 +58,7 @@ class BookingPlanner
                 && in_array($weekday, array_map('intval', $p->customer->weekdays), true))
             ->reject(fn (Pairing $p) => CustomerPause::where('customer_id', $p->customer_id)->covering($date)->exists())
             // F61: said "আজ খাব না" or "এই খাবার খাব না" for this meal.
-            ->reject(fn (Pairing $p) => MealChoice::where('customer_id', $p->customer_id)->whereDate('service_date', $date)->where('meal_slot', $slot->value)->whereIn('choice', ['skip', 'change'])->exists())
+            ->reject(fn (Pairing $p) => MealChoice::where('customer_id', $p->customer_id)->whereDate('service_date', $date)->where('meal_slot', $slot->value)->whereIn('choice', ['skip', 'change', 'pick'])->exists())
             ->reject(fn (Pairing $p) => Order::where('customer_id', $p->customer_id)
                 ->whereDate('service_date', $date)->where('meal_slot', $slot->value)->exists())
             ->values();
@@ -113,12 +113,59 @@ class BookingPlanner
         ]);
     }
 
+    /**
+     * F84: the customer picked another cook's post for today: a box from it, through
+     * the customer's own shahidar, at that post's price. The post's plates go down.
+     */
+    public function bookPick(Pairing $pairing, Post $post): Order
+    {
+        return DB::transaction(function () use ($pairing, $post) {
+            $post = Post::whereKey($post->id)->lockForUpdate()->firstOrFail();
+            $plates = $pairing->customer->plates;
+            if ($post->plates_left < $plates) {
+                throw ValidationException::withMessages(['post_id' => 'এই খাবার এইমাত্র শেষ হয়ে গেছে। আরেকটা বেছে নিন।']);
+            }
+            $fields = [
+                'kitchen_id' => $post->kitchen_id,
+                'post_id' => $post->id,
+                'title' => $post->title,
+                'food_paisa' => $post->price_paisa * $plates,
+            ];
+            // One box per customer per meal a day: her cancelled box is reused for the new cook.
+            $old = Order::where('customer_id', $pairing->customer_id)->whereDate('service_date', self::today())
+                ->where('meal_slot', $post->meal_slot->value)->lockForUpdate()->first();
+            if ($old && $old->status !== OrderStatus::Cancelled) {
+                throw ValidationException::withMessages(['meal_slot' => 'আজকের বক্স আগে বাতিল করুন।']);
+            }
+            if ($old) {
+                $code = (string) random_int(1000, 9999);
+                $old->forceFill($fields + [
+                    'status' => OrderStatus::Booked, 'cancelled_by' => null, 'cancel_reason' => null, 'ask_until' => null,
+                    'plates' => $plates, 'shahidar_id' => $pairing->shahidar_id,
+                    'delivery_fee_paisa' => (int) $pairing->customer->area->delivery_fee_paisa,
+                    'delivery_code_hash' => Hash::make($code),
+                ])->save();
+                SendOrderSms::dispatch($old->id, OtpPurpose::OrderBooked, $code)->afterCommit();
+                $order = $old;
+            } else {
+                $order = $this->createOrder($pairing, $post->meal_slot, OrderStatus::Booked, $fields);
+            }
+            $post->plates_left -= $plates;
+            if ($post->plates_left === 0) {
+                $post->status = PostStatus::SoldOut;
+            }
+            $post->save();
+
+            return $order;
+        });
+    }
+
     /** Today's live post of this cook for this meal that still has plates on the feed. */
     private function livePost(Kitchen $kitchen, MealSlot $slot, bool $lock = false): ?Post
     {
         return Post::where('kitchen_id', $kitchen->id)->where('meal_slot', $slot->value)
             ->where('status', PostStatus::Live)->where('available_until', '>', now())
-            ->where('published_at', '>=', now(DhakaTime::TZ)->startOfDay())
+            ->where('published_at', '>=', DhakaTime::startOfDay())
             ->when($lock, fn ($q) => $q->lockForUpdate())
             ->latest('id')->first();
     }
