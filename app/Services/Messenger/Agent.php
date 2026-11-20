@@ -209,7 +209,7 @@ class Agent
         $area = $facts['area_text'] ?? Area::find($facts['area_id'])?->slug;
         $extra[] = 'basay boshe ei link khulun, location keu dekhbe na: '.PinLink::forKitchen($kitchen)->url();
         $extra[] = 'link e na hole ekhane 📎 → Location pathan';
-        $extra[] = 'ar: dine shorbochcho 2 plate — apni 1 plate dite parben na 2?';
+        $extra[] = 'ar: shuru te dine 1 plate (ek joner purno khabar) nebo 😊';
 
         return [
             'dhonnobad apu 😊 apnake '.($area ?: 'apnar elaka').' e add kore approve kore dilam ✅',
@@ -242,7 +242,7 @@ class Agent
                 $messages[] = 'link e na hole ekhane 📎 → Location pathan';
             }
             if (! $kitchen->daily_plates) {
-                $messages[] = 'ar: dine shorbochcho 2 plate — apni 1 plate dite parben na 2?';
+                $messages[] = 'ar: shuru te dine 1 plate (ek joner purno khabar) nebo 😊';
             }
             $this->send($t, $messages);
             $n++;
