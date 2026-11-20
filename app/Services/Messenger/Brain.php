@@ -118,7 +118,7 @@ class Brain
 
         $payload = [
             'model' => config('services.ai.model'),
-            'max_tokens' => 1500,
+            'max_tokens' => 3000,
             // The rules and the area list are the same for every chat: cached, they cost a tenth and
             // do not count against the per-minute token limit.
             'system' => [
