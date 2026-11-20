@@ -13,3 +13,4 @@ Homemade-food marketplace for Dhaka. Laravel 13 + MySQL 8 API (`/api/v1`), Vue 3
 - Locations: `App\Support\Geo\GeoPoint` + `App\Casts\AsGeoPoint`; MySQL stores SRID 4326 points as X=longitude, Y=latitude.
 - Enums in `app/Enums` carry Bangla labels (`label()`) and Filament badge colours.
 - Never commit secrets. Deploy credentials live in GitHub Actions secrets; production settings in `/var/www/dawat/shared/.env`.
+- Chat bots (Messenger now, WhatsApp later) know only what is in `bot_facts` (admin → "বটের জ্ঞান", `App\Models\BotFact::promptText()`). Whenever a feature changes what cooks, customers or shahidars are told, add or update its rows in a migration in the same commit, written in Bangla.

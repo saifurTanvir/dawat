@@ -3,11 +3,13 @@
 namespace Tests\Feature\Messenger;
 
 use App\Enums\KitchenStatus;
+use App\Filament\Resources\BotFacts\Pages\ManageBotFacts;
 use App\Filament\Resources\Kitchens\Pages\ListKitchens;
 use App\Filament\Resources\MessengerThreads\Pages\ManageMessengerThreads;
 use App\Jobs\AnswerMessenger;
 use App\Models\AppSetting;
 use App\Models\Area;
+use App\Models\BotFact;
 use App\Models\CallRequest;
 use App\Models\Kitchen;
 use App\Models\MessengerThread;
@@ -420,6 +422,52 @@ class MessengerBotTest extends TestCase
         Sleep::assertSleptTimes(2);
         $ai = collect(Http::recorded())->map(fn ($p) => $p[0])->first(fn (Request $r) => str_contains($r->url(), 'anthropic'));
         $this->assertSame(['type' => 'ephemeral'], $ai['system'][1]['cache_control']);
+    }
+
+    public function test_the_bot_reads_the_owners_fact_list_and_a_change_reaches_it(): void
+    {
+        $this->assertGreaterThan(15, BotFact::count()); // seeded from the README and the owner's answers
+        $this->actingAs(User::where('name', 'মালিক')->first());
+        Livewire::test(ManageBotFacts::class)->assertOk()->assertSee('অর্ডার কীভাবে আসে');
+
+        BotFact::create(['topic' => 'নতুন ফিচার', 'body' => 'গৃহিণী এখন বিকাশে টাকা নিতে পারেন।', 'audience' => 'cook']);
+        BotFact::where('topic', 'দাম')->update(['is_active' => false]);
+        BotFact::where('topic', 'কবে থেকে শুরু')->first()->update(['body' => 'আগামী সপ্তাহে শুরু।']);
+
+        Queue::fake();
+        Sleep::fake();
+        Http::swap(new HttpFactory);
+        Http::fake(['graph.test/*' => Http::response(['message_id' => 'm']), 'api.anthropic.com/*' => Http::response($this->aiAnswer(['replies' => ['ji apu 😊']]))]);
+        $this->hook([$this->text('K1', 'taka kivabe pabo', 'mid.k1')]);
+        $this->answer('K1');
+
+        $ai = collect(Http::recorded())->map(fn ($p) => $p[0])->first(fn (Request $r) => str_contains($r->url(), 'anthropic'));
+        $system = $ai['system'][0]['text'];
+        $this->assertStringContainsString('[cooks] নতুন ফিচার: গৃহিণী এখন বিকাশে টাকা নিতে পারেন।', $system);
+        $this->assertStringContainsString('কবে থেকে শুরু: আগামী সপ্তাহে শুরু।', $system); // the cached list was refreshed
+        $this->assertStringNotContainsString('আলু ভাজি', $system);
+        $this->assertStringNotContainsString('{{FACTS}}', $system);
+    }
+
+    public function test_flagged_chats_are_answered_again_from_the_new_facts(): void
+    {
+        Queue::fake();
+        $this->hook([$this->text('H1', 'pitha bechte parbo?', 'mid.h1'), $this->text('H2', 'old', 'mid.h2')]);
+        $recent = MessengerThread::where('psid', 'H1')->first();
+        $recent->forceFill(['needs_human' => true, 'human_reason' => 'প্যাকেট খাবার', 'last_out_at' => now()])->save();
+        $old = MessengerThread::where('psid', 'H2')->first();
+        $old->forceFill(['needs_human' => true, 'last_in_at' => now()->subDays(8)])->save();
+
+        $this->actingAs(User::where('name', 'মালিক')->first());
+        Livewire::test(ManageMessengerThreads::class)->callAction('reanswerFlagged')->assertNotified();
+
+        $recent->refresh();
+        $this->assertFalse($recent->needs_human);
+        $this->assertNotNull($recent->facts['followup_at']);
+        $this->assertTrue($old->fresh()->needs_human); // outside Meta's 7 days
+        Queue::assertPushed(AnswerMessenger::class, fn (AnswerMessenger $j) => $j->threadId === $recent->id && $j->force);
+        Queue::assertPushed(AnswerMessenger::class, fn (AnswerMessenger $j) => $j->force); // only the recent one is forced
+        $this->assertSame(1, Queue::pushed(AnswerMessenger::class, fn (AnswerMessenger $j) => $j->force)->count());
     }
 
     public function test_the_job_waits_and_retries_while_the_ai_stays_busy_and_only_then_greets(): void
