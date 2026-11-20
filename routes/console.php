@@ -37,3 +37,10 @@ Schedule::command('messenger:heartbeat')->everyTenMinutes()->withoutOverlapping(
 Schedule::command('messenger:remind-pins')->hourlyAt(5)->between('9:00', '21:00')->timezone('Asia/Dhaka')->withoutOverlapping();
 // Chats whose answer did not go out (e.g. the AI timed out) are tried again.
 Schedule::command('messenger:answer-waiting')->everyFiveMinutes()->withoutOverlapping();
+
+// F80: when many chats come at once, three more queue workers answer alongside the main one.
+// Each lives just under a minute and the scheduler starts it again, so nothing on the server changes.
+foreach ([1, 2, 3] as $i) {
+    Schedule::command("queue:work redis --queue=default --name=messenger-{$i} --sleep=1 --tries=4 --timeout=85 --max-time=55")
+        ->everyMinute()->withoutOverlapping(3)->runInBackground();
+}
