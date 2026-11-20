@@ -163,6 +163,8 @@ class Agent
                 if ($approver = self::approver()) {
                     $kitchen->approve($approver);
                 }
+                // Owner's rule: 1 plate a day until she says otherwise.
+                $kitchen->forceFill(['daily_plates' => $kitchen->daily_plates ?? 1])->save();
                 $thread->forceFill(['kitchen_id' => $kitchen->id])->save();
 
                 return $kitchen;

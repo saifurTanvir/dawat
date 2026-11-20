@@ -32,3 +32,8 @@ Schedule::command('guests:follow-up')->everyMinute()->withoutOverlapping();
 
 // F80: the Messenger bot checks in on the status page while it is on.
 Schedule::command('messenger:heartbeat')->everyTenMinutes()->withoutOverlapping();
+
+// Cooks without a home pin get their own link on Messenger during the day.
+Schedule::command('messenger:remind-pins')->hourlyAt(5)->between('9:00', '21:00')->timezone('Asia/Dhaka')->withoutOverlapping();
+// Chats whose answer did not go out (e.g. the AI timed out) are tried again.
+Schedule::command('messenger:answer-waiting')->everyFiveMinutes()->withoutOverlapping();
