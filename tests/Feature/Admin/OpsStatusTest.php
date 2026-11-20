@@ -57,4 +57,30 @@ class OpsStatusTest extends TestCase
 
         $this->get('/admin')->assertOk()->assertSee('বিস্তারিত দেখুন')->assertSee('চলছে');
     }
+
+    public function test_whatsapp_check_shows_when_it_was_checked_what_came_and_what_was_done(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $this->postJson('/admin-tools/heartbeat', [
+            'channel' => 'whatsapp', 'found' => 2, 'sent' => 1, 'note' => 'দুপুরের চেক',
+            'details' => [
+                ['who' => '01616468999', 'said' => 'আসসালামু আলাইকুম', 'did' => 'যোগ দেওয়ার নিয়ম জানানো হলো'],
+                ['who' => '01791249228', 'said' => 'ফোন দেবেন', 'did' => 'কল তালিকায় যোগ'],
+            ],
+        ])->assertCreated();
+        $this->postJson('/admin-tools/heartbeat', ['channel' => 'whatsapp', 'found' => 0])->assertCreated();
+
+        $this->get('/admin/status')->assertOk()
+            ->assertSee('WhatsApp চেকের হিসাব')
+            ->assertSee('কিছু আসেনি')
+            ->assertSee('কল তালিকায় যোগ')
+            ->assertSee('01616468999');
+
+        // Checked by hand hourly: 40 minutes of silence is still "running", 80 is stopped.
+        OpsHeartbeat::query()->update(['created_at' => now()->subMinutes(40)]);
+        $this->assertSame('ok', OpsHeartbeat::summary()['whatsapp']['state']);
+        OpsHeartbeat::query()->update(['created_at' => now()->subMinutes(80)]);
+        $this->assertSame('stopped', OpsHeartbeat::summary()['whatsapp']['state']);
+    }
 }

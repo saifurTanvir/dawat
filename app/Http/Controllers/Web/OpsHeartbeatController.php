@@ -21,6 +21,12 @@ class OpsHeartbeatController extends Controller
             'pending' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'note' => ['nullable', 'string', 'max:255'],
             'problem' => ['nullable', 'boolean'],
+            'found' => ['nullable', 'integer', 'min:0', 'max:5000'],
+            // F83: per chat — who, what they wrote, what was done.
+            'details' => ['nullable', 'array', 'max:200'],
+            'details.*.who' => ['required', 'string', 'max:120'],
+            'details.*.said' => ['nullable', 'string', 'max:300'],
+            'details.*.did' => ['nullable', 'string', 'max:300'],
         ]);
 
         $beat = OpsHeartbeat::create([
@@ -29,6 +35,10 @@ class OpsHeartbeatController extends Controller
             'pending' => $data['pending'] ?? null,
             'note' => $data['note'] ?? null,
             'problem' => (bool) ($data['problem'] ?? false),
+            'found' => $data['found'] ?? null,
+            'details' => isset($data['details'])
+                ? collect($data['details'])->map(fn (array $d) => ['who' => $d['who'], 'said' => $d['said'] ?? null, 'did' => $d['did'] ?? null])->values()->all()
+                : null,
         ]);
 
         return response()->json(['data' => ['id' => $beat->id]], 201);

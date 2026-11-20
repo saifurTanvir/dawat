@@ -14,13 +14,21 @@ class OpsHeartbeat extends Model
     /** A loop that has not checked in for this long is shown as stopped. */
     public const STALE_MINUTES = 30;
 
+    /** F83: WhatsApp is checked by hand once an hour, so it counts as stopped only after this long. */
+    public const STALE_BY_CHANNEL = ['whatsapp' => 75];
+
+    public static function staleMinutes(string $channel): int
+    {
+        return self::STALE_BY_CHANNEL[$channel] ?? self::STALE_MINUTES;
+    }
+
     public const UPDATED_AT = null;
 
-    protected $fillable = ['channel', 'sent', 'pending', 'note', 'problem'];
+    protected $fillable = ['channel', 'sent', 'found', 'pending', 'note', 'problem', 'details'];
 
     protected function casts(): array
     {
-        return ['sent' => 'integer', 'pending' => 'integer', 'problem' => 'boolean', 'created_at' => 'datetime'];
+        return ['sent' => 'integer', 'found' => 'integer', 'pending' => 'integer', 'problem' => 'boolean', 'details' => 'array', 'created_at' => 'datetime'];
     }
 
     /**
@@ -39,7 +47,7 @@ class OpsHeartbeat extends Model
                 'label' => $label,
                 'state' => match (true) {
                     $last === null => 'none',
-                    $last->created_at->lt(now()->subMinutes(self::STALE_MINUTES)) => 'stopped',
+                    $last->created_at->lt(now()->subMinutes(self::staleMinutes($key))) => 'stopped',
                     $last->problem => 'problem',
                     default => 'ok',
                 },
