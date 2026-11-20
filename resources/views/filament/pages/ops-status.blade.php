@@ -19,6 +19,8 @@
             .os-list { width: 100%; font-size: .85rem; }
             .os-list td { padding: 6px 8px 6px 0; vertical-align: top; border-top: 1px solid rgb(229 231 235); }
             .dark .os-list td { border-color: rgba(255,255,255,.1); }
+            .os-wa { padding: .5rem 0; border-top: 1px solid rgba(156,163,175,.25); font-size: .9rem; }
+            .os-wa summary { cursor: pointer; }
         </style>
 
         <div class="os-cards">
@@ -55,6 +57,30 @@
             </div></div>
         </div>
 
+        <x-filament::section heading="WhatsApp চেকের হিসাব" description="প্রতি ঘণ্টায় WhatsApp খুলে দেখা হয়: কখন দেখা হলো, নতুন কী মেসেজ এসেছিল, আর কী করা হলো।">
+            @if ($waChecks->isEmpty())
+                <div class="os-muted">গত দুই দিনে WhatsApp চেকের কোনো খবর নেই।</div>
+            @else
+                @foreach ($waChecks as $w)
+                    <details class="os-wa" @if ($loop->first) open @endif>
+                        <summary>
+                            <b>{{ $w->created_at->timezone(config('app.display_timezone'))->locale('bn')->translatedFormat('j M, g:i A') }}</b>
+                            — {{ $w->found !== null ? 'নতুন মেসেজ '.$bn($w->found).'টা' : '' }}{{ $w->sent ? ' · উত্তর গেছে '.$bn($w->sent).'জনকে' : '' }}{{ $w->found === 0 ? ' (কিছু আসেনি)' : '' }}{{ $w->problem ? ' · ⚠️ সমস্যা' : '' }}
+                            @if ($w->note)<span class="os-muted"> — {{ $w->note }}</span>@endif
+                        </summary>
+                        @if ($w->details)
+                            <table class="os-list" style="margin-top:.4rem">
+                                <tr class="os-muted"><td>কে</td><td>কী লিখেছিলেন</td><td>কী করা হলো</td></tr>
+                                @foreach ($w->details as $d)
+                                    <tr><td style="white-space:nowrap">{{ $d['who'] ?? '' }}</td><td>{{ $d['said'] ?? '' }}</td><td>{{ $d['did'] ?? '' }}</td></tr>
+                                @endforeach
+                            </table>
+                        @endif
+                    </details>
+                @endforeach
+            @endif
+        </x-filament::section>
+
         <x-filament::section heading="সাম্প্রতিক খবর">
             @if ($recent->isEmpty())
                 <div class="os-muted">এখনো কিছু নেই।</div>
@@ -64,7 +90,7 @@
                         <tr>
                             <td class="os-muted" style="white-space:nowrap">{{ $r->created_at->timezone(config('app.display_timezone'))->format('g:i A') }}</td>
                             <td style="white-space:nowrap">{{ \App\Models\OpsHeartbeat::CHANNELS[$r->channel] ?? $r->channel }}</td>
-                            <td>{{ $r->problem ? '⚠️ ' : '' }}{{ $r->sent ? $bn($r->sent).' জনকে উত্তর' : '' }}{{ $r->pending !== null ? ' · বাকি '.$bn($r->pending) : '' }}{{ $r->note ? ' — '.$r->note : '' }}</td>
+                            <td>{{ $r->problem ? '⚠️ ' : '' }}{{ $r->found !== null ? 'নতুন '.$bn($r->found).' · ' : '' }}{{ $r->sent ? $bn($r->sent).' জনকে উত্তর' : '' }}{{ $r->pending !== null ? ' · বাকি '.$bn($r->pending) : '' }}{{ $r->note ? ' — '.$r->note : '' }}</td>
                         </tr>
                     @endforeach
                 </table>

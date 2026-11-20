@@ -46,6 +46,8 @@ class OpsStatus extends Page
         return [
             'channels' => $channels,
             'recent' => OpsHeartbeat::query()->latest('id')->limit(15)->get(),
+            // F83: the WhatsApp checks of the last two days, each with what was found and done.
+            'waChecks' => OpsHeartbeat::query()->where('channel', 'whatsapp')->where('created_at', '>=', $today->copy()->subDay())->latest('id')->limit(40)->get(),
             'kitchensToday' => Kitchen::query()->where('created_at', '>=', $today)->count(),
             'kitchensTotal' => (clone $approved)->count(),
             'pinless' => (clone $approved)->whereNull('location')->count(),
