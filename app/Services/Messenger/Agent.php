@@ -427,7 +427,8 @@ class Agent
             $thread->forceFill(['last_out_at' => now(), 'send_error' => null])->save();
         }
         OpsHeartbeat::create([
-            'channel' => 'messenger', 'sent' => $sent, 'pending' => MessengerThread::query()->waiting()->count(),
+            // One person answered (however many lines); waiting = chats Meta still lets us answer.
+            'channel' => 'messenger', 'sent' => $sent ? 1 : 0, 'pending' => MessengerThread::query()->answerable()->count(),
             'note' => 'সার্ভার (Messenger API)', 'problem' => (bool) $thread->send_error,
         ]);
 

@@ -44,7 +44,10 @@ class OpsHeartbeat extends Model
                     default => 'ok',
                 },
                 'last' => $last,
-                'sentToday' => (int) self::query()->where('channel', $key)->where('created_at', '>=', $today)->sum('sent'),
+                'sentToday' => $key === 'messenger'
+                    // People answered today, counted from the chats themselves (not lines sent).
+                    ? MessengerMessage::query()->where('direction', 'out')->whereIn('by', ['bot', 'admin'])->where('created_at', '>=', $today)->distinct()->count('messenger_thread_id')
+                    : (int) self::query()->where('channel', $key)->where('created_at', '>=', $today)->sum('sent'),
             ];
         });
     }
