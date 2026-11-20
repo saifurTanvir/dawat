@@ -2,6 +2,7 @@
 
 namespace App\Services\Messenger;
 
+use App\Enums\KitchenStatus;
 use App\Filament\Actions\QuickAddActions;
 use App\Models\Area;
 use App\Models\CallRequest;
@@ -14,6 +15,7 @@ use App\Services\Kitchens\PinLinks;
 use App\Support\Geo\GeoPoint;
 use App\Support\PhoneNumber;
 use App\Support\Roles;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -211,6 +213,48 @@ class Agent
             }
             $this->send($t, $messages);
             $n++;
+        }
+
+        return $n;
+    }
+
+    /**
+     * Cooks still without a home pin who wrote to us within Meta's 24-hour
+     * window: join the chat to her kitchen by her number if needed, then send
+     * her own location link (at most once every 12 hours).
+     *
+     * @return int reminders sent
+     */
+    public function remindPins(): int
+    {
+        $n = 0;
+        $threads = MessengerThread::query()->where('last_in_at', '>', now()->subHours(23))->where('bot_off', false)->get();
+        foreach ($threads as $t) {
+            $kitchen = $t->kitchen;
+            if (! $kitchen && filled($t->fact('phone')) && ! preg_match('/\b(bites?|food|foods|kitchen|shop|store|business|restaurant|catering)\b/i', (string) $t->name)) {
+                $kitchen = User::where('phone', $t->fact('phone'))->first()?->kitchen;
+                if ($kitchen) {
+                    $t->forceFill(['kitchen_id' => $kitchen->id])->save();
+                }
+            }
+            if (! $kitchen || $kitchen->location || ! in_array($kitchen->status, [KitchenStatus::Approved, KitchenStatus::Pending], true)) {
+                continue;
+            }
+            $last = $t->fact('pin_reminded_at');
+            if ($last && now()->diffInHours(Carbon::parse($last), true) < 12) {
+                continue;
+            }
+            $this->graph->markSeen($t->psid);
+            $sent = $this->send($t, [
+                'apu, apnar basar location ta ekhono baki 🙏 location chara kache er customer der sathe jora jay na, shahidar o gate khuje pay na',
+                'basay boshe ei link khulun — location keu dekhbe na: '.PinLink::forKitchen($kitchen)->url(),
+                'link e na hole ekhane 📎 → Location → "Send current location" pathan, ba basar thikana likhe din — ami nijei boshiye dibo ✅',
+            ]);
+            if ($sent) {
+                $t->facts = [...($t->facts ?? []), 'pin_reminded_at' => now()->toIso8601String()];
+                $t->save();
+                $n++;
+            }
         }
 
         return $n;
