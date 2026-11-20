@@ -263,10 +263,14 @@ class Agent
      * "মানুষ লাগবে" (inside Meta's 7-day window) are answered again from the new
      * facts. Ones the facts still do not cover get flagged again by the Brain.
      */
-    public function reanswerFlagged(): int
+    /** @param  list<string>  $words  also chats where the person wrote any of these (e.g. "pitha", "আচার") */
+    public function reanswerFlagged(array $words = []): int
     {
+        $words = array_values(array_filter(array_map(fn ($w) => trim((string) $w), $words), fn ($w) => mb_strlen($w) >= 2));
         $n = 0;
-        MessengerThread::query()->where('needs_human', true)->where('bot_off', false)
+        MessengerThread::query()->where('bot_off', false)
+            ->where(fn ($q) => $q->where('needs_human', true)->when($words, fn ($q) => $q->orWhereHas('messages', fn ($m) => $m->where('direction', 'in')
+                ->where(fn ($m) => collect($words)->each(fn ($w) => $m->orWhere('text', 'like', '%'.addcslashes($w, '%_\\').'%'))))))
             ->whereNull('send_error')->where('last_in_at', '>', now()->subHours(166))
             ->orderBy('last_in_at')->get()
             ->each(function (MessengerThread $t) use (&$n) {
