@@ -4,6 +4,7 @@ use App\Http\Controllers\Web\BillController;
 use App\Http\Controllers\Web\BoxLabelController;
 use App\Http\Controllers\Web\OpsHeartbeatController;
 use App\Http\Controllers\Web\PinController;
+use App\Http\Controllers\Web\PinlessOutsideMessengerController;
 use App\Http\Controllers\Web\SeoController;
 use App\Http\Controllers\Web\SpaController;
 use App\Services\Admin\StaffView;
@@ -54,6 +55,8 @@ Route::get('/admin-tools/geocode', function (Request $request, Geocoder $geocode
 // F78: the reply loops check in (admin's own browser); the status page shows it.
 Route::post('/admin-tools/heartbeat', [OpsHeartbeatController::class, 'store'])
     ->middleware('throttle:120,1')->name('admin.heartbeat');
+Route::get('/admin-tools/pinless-outside-messenger', PinlessOutsideMessengerController::class)
+    ->middleware('throttle:20,1')->name('admin.pinless-outside-messenger');
 
 // F79: a shahidar's named box stickers, from a signed link in the app.
 Route::get('/print/stickers/{batch}', BoxLabelController::class)->where('batch', '[a-z0-9-]+')->middleware('signed:relative')->name('stickers.print');
