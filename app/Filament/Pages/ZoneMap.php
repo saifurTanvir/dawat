@@ -7,6 +7,7 @@ use App\Filament\Support\FeatureGate;
 use App\Models\Kitchen;
 use App\Models\PinLink;
 use App\Services\Geo\Zones;
+use App\Support\PinReach;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
@@ -85,14 +86,15 @@ class ZoneMap extends Page
                 ->action(function (): StreamedResponse {
                     $kitchens = Kitchen::query()->whereNull('location')->whereIn('status', [KitchenStatus::Approved, KitchenStatus::Pending])->with(['user', 'area'])->get();
                     $by = auth()->user();
+                    $reach = PinReach::of($kitchens);
 
-                    return response()->streamDownload(function () use ($kitchens, $by) {
+                    return response()->streamDownload(function () use ($kitchens, $by, $reach) {
                         $out = fopen('php://output', 'w');
                         fwrite($out, "\xEF\xBB\xBF");
-                        fputcsv($out, ['রান্নাঘর', 'গৃহিণী', 'মোবাইল', 'এলাকা', 'লিংক', 'মেসেজ']);
+                        fputcsv($out, ['রান্নাঘর', 'গৃহিণী', 'মোবাইল', 'এলাকা', 'লিংক', 'মেসেজ', 'Messenger']);
                         foreach ($kitchens as $k) {
                             $link = PinLink::forKitchen($k, $by);
-                            fputcsv($out, [$k->display_name, $k->user?->name, $k->user?->phone, $k->area?->name, $link->url(), $link->message()]);
+                            fputcsv($out, [$k->display_name, $k->user?->name, $k->user?->phone, $k->area?->name, $link->url(), $link->message(), PinReach::LABELS[$reach[$k->id]['reach'] ?? 'none']]);
                         }
                         fclose($out);
                     }, 'dawat-pin-links-'.now(config('app.display_timezone'))->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
