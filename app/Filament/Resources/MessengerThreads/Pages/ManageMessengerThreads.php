@@ -110,14 +110,19 @@ class ManageMessengerThreads extends ManageRecords
                     Notification::make()->title("{$n}টা চ্যাট রান্নাঘরের সাথে জোড়া হলো")->success()->send();
                 }),
             Action::make('reanswerFlagged')
-                ->visible(fn () => $admin() && Graph::botOn() && MessengerThread::query()->where('needs_human', true)->exists())
+                ->visible(fn () => $admin() && Graph::botOn())
                 ->label('"মানুষ লাগবে" — নতুন তথ্যে আবার উত্তর')
+                ->schema([
+                    TextInput::make('words')->label('এই শব্দ যাঁরা লিখেছেন, তাঁদেরও (ইচ্ছা হলে)')
+                        ->placeholder('যেমন: pitha, পিঠা, achar, আচার')
+                        ->helperText('কমা দিয়ে আলাদা করুন। গত ৭ দিনে যাঁরা এই শব্দ লিখেছেন, তাঁরাও নতুন উত্তর পাবেন।'),
+                ])
                 ->icon(Heroicon::OutlinedArrowPath)
                 ->color('gray')
                 ->requiresConfirmation()
                 ->modalDescription('"বটের জ্ঞান"-এ নতুন উত্তর যোগ করার পরে চাপুন। গত ৭ দিনের "মানুষ লাগবে" চ্যাটগুলোতে বট নতুন তথ্য দেখে আবার উত্তর দেবে। যেগুলোর উত্তর এখনো তালিকায় নেই, সেগুলো আবার "মানুষ লাগবে"-তে ফিরবে।')
-                ->action(function () {
-                    $n = app(Agent::class)->reanswerFlagged();
+                ->action(function (array $data) {
+                    $n = app(Agent::class)->reanswerFlagged(preg_split('/[,،]+/u', (string) ($data['words'] ?? '')) ?: []);
                     Notification::make()->title("{$n}টা চ্যাটে নতুন করে উত্তর যাচ্ছে")->success()->send();
                 }),
             Action::make('markSeen')

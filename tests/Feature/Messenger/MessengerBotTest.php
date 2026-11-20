@@ -468,6 +468,14 @@ class MessengerBotTest extends TestCase
         Queue::assertPushed(AnswerMessenger::class, fn (AnswerMessenger $j) => $j->threadId === $recent->id && $j->force);
         Queue::assertPushed(AnswerMessenger::class, fn (AnswerMessenger $j) => $j->force); // only the recent one is forced
         $this->assertSame(1, Queue::pushed(AnswerMessenger::class, fn (AnswerMessenger $j) => $j->force)->count());
+
+        // Chats that asked about a newly answered topic get the new answer too, flagged or not.
+        $this->hook([$this->text('H3', 'ami pitha banai, bikri korte parbo?', 'mid.h3'), $this->text('H4', 'kemon achen', 'mid.h4')]);
+        Livewire::test(ManageMessengerThreads::class)->callAction('reanswerFlagged', ['words' => 'পিঠা, pitha'])->assertNotified();
+        $forced = Queue::pushed(AnswerMessenger::class, fn (AnswerMessenger $j) => $j->force)->pluck('threadId');
+        $this->assertContains(MessengerThread::where('psid', 'H3')->value('id'), $forced);
+        $this->assertNotContains(MessengerThread::where('psid', 'H4')->value('id'), $forced);
+        $this->assertStringContainsString('সন্ধ্যার নাস্তারও নিয়মিত গ্রাহক', BotFact::promptText());
     }
 
     public function test_the_job_waits_and_retries_while_the_ai_stays_busy_and_only_then_greets(): void
