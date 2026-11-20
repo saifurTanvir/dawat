@@ -8,6 +8,7 @@ use App\Models\Area;
 use App\Models\Customer;
 use App\Models\Kitchen;
 use App\Models\User;
+use App\Services\Geo\LaunchZones;
 use App\Services\Geo\Zones;
 use App\Support\Geo\GeoPoint;
 use App\Support\Roles;
@@ -97,5 +98,26 @@ class ZoneMapTest extends TestCase
 
         $this->actingAs(User::factory()->create());
         $this->get('/admin/zones')->assertForbidden();
+    }
+
+    public function test_launch_zone_cards_count_cooks_by_area_and_list_the_ones_without_a_pin(): void
+    {
+        $mirpur1 = Area::factory()->create(['name' => 'মিরপুর ১', 'center' => GeoPoint::make(23.7950, 90.3540), 'radius_m' => 900]);
+        $mirpur10 = Area::factory()->create(['name' => 'মিরপুর ১০', 'center' => GeoPoint::make(23.8069, 90.3687), 'radius_m' => 900]);
+        $pinned = Kitchen::factory()->create(['area_id' => $mirpur1->id, 'location' => GeoPoint::make(23.7951, 90.3541), 'status' => KitchenStatus::Approved, 'daily_plates' => 2, 'display_name' => 'পিনওয়ালা রান্নাঘর']);
+        $pinless = Kitchen::factory()->create(['area_id' => $mirpur10->id, 'location' => null, 'status' => KitchenStatus::Approved, 'display_name' => 'পিনছাড়া রান্নাঘর']);
+        Kitchen::factory()->create(['area_id' => $mirpur10->id, 'location' => null, 'status' => KitchenStatus::Pending]);
+
+        $mirpur = app(LaunchZones::class)->summary()->firstWhere('name', 'মিরপুর');
+        $this->assertSame(['cooks' => 2, 'pending' => 1, 'pinned' => 1, 'pinless' => 1, 'plates' => 2], array_intersect_key($mirpur, array_flip(['cooks', 'pending', 'pinned', 'pinless', 'plates'])));
+
+        $this->actingAs(User::factory()->admin()->create());
+        Livewire::test(ZoneMap::class)
+            ->assertSee('অপারেশনের জোন')->assertSee('মিরপুর')
+            ->assertDontSee('পিনছাড়া রান্নাঘর')
+            ->call('openLaunchZone', $mirpur['key'], 'nopin')
+            ->assertSee('পিনছাড়া রান্নাঘর')->assertDontSee('পিনওয়ালা রান্নাঘর')
+            ->call('openLaunchZone', $mirpur['key'], 'nopin')
+            ->assertDontSee('পিনছাড়া রান্নাঘর');
     }
 }
