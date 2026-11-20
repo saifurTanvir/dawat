@@ -21,7 +21,10 @@ class MessengerAnswerWaiting extends Command
             return self::SUCCESS;
         }
         $n = 0;
-        MessengerThread::query()->answerable()->where('last_in_at', '<', now()->subMinutes(3))->whereNull('send_error')
+        // Chats from an ad may be answered for up to 7 days; others fail once and are left (send_error).
+        MessengerThread::query()->waiting()->where('last_in_at', '>', now()->subHours(166))->where('last_in_at', '<', now()->subMinutes(3))
+            ->where('bot_off', false)->where(fn ($q) => $q->whereNull('paused_until')->orWhere('paused_until', '<', now()))
+            ->whereNull('send_error')->limit(40)
             ->each(function (MessengerThread $t) use (&$n) {
                 AnswerMessenger::dispatch($t->id, (int) $t->messages()->where('direction', 'in')->max('id'))->delay(now()->addSeconds(3 * $n++));
             });

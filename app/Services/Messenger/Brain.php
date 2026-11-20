@@ -44,6 +44,9 @@ class Brain
             : (filled($thread->facts['existing_kitchen_phone'] ?? null)
                 ? 'The number she gave already has a Dawat kitchen (she joined before); she has been told once that the team will check. Do not repeat that line; answer her latest message itself, and if there is nothing new to say, reply briefly.'
                 : 'Not added as a cook yet.');
+        if ($thread->last_in_at && $thread->last_in_at->lt(now()->subHours(3))) {
+            $state .= ' Her last message was '.(int) $thread->last_in_at->diffInHours(now(), true).' hours ago: start with a short sorry for the late reply ("apu, deri holo, dukkhito 🙏").';
+        }
         $facts = json_encode($thread->facts ?? (object) [], JSON_UNESCAPED_UNICODE);
 
         $transcript = $thread->messages()->latest('id')->limit(14)->get()->reverse()
