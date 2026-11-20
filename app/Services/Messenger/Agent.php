@@ -65,9 +65,11 @@ class Agent
         }
         $this->graph->typing($thread->psid);
 
+        $why = null;
         try {
             $out = $this->brain->think($thread);
         } catch (AssistantUnavailableException $e) {
+            $why = $e->getMessage();
             Log::warning('Messenger brain unavailable', ['thread' => $thread->id, 'error' => $e->getMessage(), 'final' => $final]);
             if ($e->busy && ! $final) {
                 throw $e; // the job tries again in a little while
@@ -78,7 +80,7 @@ class Agent
         if ($out === null) {
             // No AI even after retrying: greet once with the standard lines; the chat is tried again later.
             $first = ! $thread->messages()->where('direction', 'out')->exists();
-            $this->flag($thread, self::AI_FAILED);
+            $this->flag($thread, self::AI_FAILED.($why ? " ({$why})" : ''));
             $replies = $first ? self::WELCOME : [];
         } else {
             $replies = $this->act($thread, $out, $extra);
