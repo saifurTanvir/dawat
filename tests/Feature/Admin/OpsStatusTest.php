@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Kitchen;
+use App\Models\MessengerThread;
 use App\Models\OpsHeartbeat;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -82,5 +84,20 @@ class OpsStatusTest extends TestCase
         $this->assertSame('ok', OpsHeartbeat::summary()['whatsapp']['state']);
         OpsHeartbeat::query()->update(['created_at' => now()->subMinutes(80)]);
         $this->assertSame('stopped', OpsHeartbeat::summary()['whatsapp']['state']);
+    }
+
+    public function test_pin_stats_splits_pinless_cooks_by_messenger_reach(): void
+    {
+        $open = Kitchen::factory()->approved()->create(['location' => null]);
+        $old = Kitchen::factory()->approved()->create(['location' => null]);
+        Kitchen::factory()->approved()->create(['location' => null]);
+        MessengerThread::create(['psid' => 'P1', 'kitchen_id' => $open->id, 'last_in_at' => now()->subDay()]);
+        MessengerThread::create(['psid' => 'P2', 'facts' => ['phone' => $old->user->phone], 'last_in_at' => now()->subDays(9)]);
+
+        $this->artisan('ops:pin-stats')
+            ->expectsOutputToContain('no pin, reachable on Messenger now: 1 (reminded in last 12h: 0)')
+            ->expectsOutputToContain('no pin, Messenger chat older than 7 days: 1')
+            ->expectsOutputToContain('no pin, no Messenger chat: 1')
+            ->assertSuccessful();
     }
 }
