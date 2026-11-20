@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Jobs\AnswerMessenger;
 use App\Models\MessengerThread;
+use App\Services\Messenger\Agent;
 use App\Services\Messenger\Graph;
 use Illuminate\Console\Command;
 
@@ -23,6 +24,18 @@ class MessengerAnswerWaiting extends Command
         MessengerThread::query()->answerable()->where('last_in_at', '<', now()->subMinutes(3))->whereNull('send_error')
             ->each(function (MessengerThread $t) use (&$n) {
                 AnswerMessenger::dispatch($t->id, (int) $t->messages()->where('direction', 'in')->max('id'))->delay(now()->addSeconds(3 * $n++));
+            });
+        // Chats the bot gave up on (AI busy) or could not place (unknown area) get one more go, while Meta still lets us answer.
+        MessengerThread::query()->where('needs_human', true)->where('last_in_at', '>', now()->subHours(23))
+            ->where(fn ($q) => $q->where('human_reason', Agent::AI_FAILED)->orWhere('human_reason', 'like', Agent::NO_AREA.'%'))
+            ->each(function (MessengerThread $t) use (&$n) {
+                $facts = $t->facts ?? [];
+                $tries = (int) ($facts['bot_retries'] ?? 0);
+                if ($tries >= 2) {
+                    return; // left for a person
+                }
+                $t->forceFill(['needs_human' => false, 'human_reason' => null, 'facts' => [...$facts, 'bot_retries' => $tries + 1]])->save();
+                AnswerMessenger::dispatch($t->id, (int) $t->messages()->where('direction', 'in')->max('id'), force: true)->delay(now()->addSeconds(3 * $n++));
             });
         $this->info("{$n} chats queued");
 

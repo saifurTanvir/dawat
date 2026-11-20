@@ -87,7 +87,7 @@ class MessengerWebhookController extends Controller
     {
         $attachments = collect($message['attachments'] ?? [])->map(fn ($a) => [
             'type' => $a['type'] ?? null,
-            'payload' => array_intersect_key((array) ($a['payload'] ?? []), array_flip(['url', 'coordinates', 'title'])),
+            'payload' => array_intersect_key((array) ($a['payload'] ?? []), array_flip(['url', 'coordinates', 'title', 'sticker_id'])),
         ])->values()->all();
 
         try {

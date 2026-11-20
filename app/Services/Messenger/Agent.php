@@ -12,12 +12,14 @@ use App\Models\PinLink;
 use App\Models\User;
 use App\Services\Ai\AssistantUnavailableException;
 use App\Services\Kitchens\PinLinks;
+use App\Support\Geo\Geocoder;
 use App\Support\Geo\GeoPoint;
 use App\Support\PhoneNumber;
 use App\Support\Roles;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -31,35 +33,52 @@ class Agent
 {
     public function __construct(private readonly Graph $graph, private readonly Brain $brain) {}
 
+    public const AI_FAILED = 'বট উত্তর লিখতে পারেনি (AI চালু নেই) — নিজে উত্তর দিন';
+
+    public const NO_AREA = 'এলাকা তালিকায় নেই';
+
     public const WELCOME = [
         'assalamu alaikum apu 😊 Dawat theke bolchi',
         'apni basay ranna kore ashepasher manusher kache bikri korte parben — amader delivery bhai (shahidar) basar gate theke box niye jaben, box Dawat dibe',
         'join korte apnar nam, elaka ar mobile number ta likhe din — ami nijei add kore dibo',
     ];
 
-    /** @return int messages sent */
-    public function answer(MessengerThread $thread): int
+    /** "ok", "thanks", a like or a sticker: a smile back, no AI needed. */
+    public const SMALL_TALK = '/^\s*(ok+|okay|oke|k|thanks?|thank you|tnx|thx|dhonnobad|donnobad|ধন্যবাদ|জি|জ্বি|ji|jee|hmm+|accha|আচ্ছা|ঠিক আছে|thik ase|thik ache|alhamdulillah|আলহামদুলিল্লাহ)?(\s*(apu|apa|vai|bhai|আপু|ভাই))?[\s!.।\p{So}\p{Sk}\x{200d}\x{fe0f}]*$/iu';
+
+    /**
+     * @param  bool  $final  false while the job may still retry: a busy AI then throws instead of falling back
+     * @return int messages sent
+     */
+    public function answer(MessengerThread $thread, bool $final = true): int
     {
         if (! $thread->botMayAnswer()) {
             return 0;
         }
         $this->graph->markSeen($thread->psid);
-        $this->graph->typing($thread->psid);
 
         $extra = [];
         $location = $this->sharedLocation($thread);
 
+        if (! $location && $this->onlySmallTalk($thread)) {
+            return $this->send($thread, ['😊']);
+        }
+        $this->graph->typing($thread->psid);
+
         try {
             $out = $this->brain->think($thread);
         } catch (AssistantUnavailableException $e) {
-            Log::warning('Messenger brain unavailable', ['thread' => $thread->id, 'error' => $e->getMessage()]);
+            Log::warning('Messenger brain unavailable', ['thread' => $thread->id, 'error' => $e->getMessage(), 'final' => $final]);
+            if ($e->busy && ! $final) {
+                throw $e; // the job tries again in a little while
+            }
             $out = null;
         }
 
         if ($out === null) {
-            // No AI: greet once with the standard lines, and let an admin take it from there.
+            // No AI even after retrying: greet once with the standard lines; the chat is tried again later.
             $first = ! $thread->messages()->where('direction', 'out')->exists();
-            $this->flag($thread, 'বট উত্তর লিখতে পারেনি (AI চালু নেই) — নিজে উত্তর দিন');
+            $this->flag($thread, self::AI_FAILED);
             $replies = $first ? self::WELCOME : [];
         } else {
             $replies = $this->act($thread, $out, $extra);
@@ -88,6 +107,11 @@ class Agent
         }
         if ($out['area_id'] && Area::active()->whereKey($out['area_id'])->exists()) {
             $facts['area_id'] = $out['area_id'];
+        } elseif (($out['area_place'] ?? null) && empty($facts['area_id']) && ($out['cook'] || ($facts['cook'] ?? false))) {
+            // Owner's rule: nobody is turned away — a place not in the list becomes a new area.
+            if ($area = $this->areaFor($out['area_place'], $out['area_name_bn'] ?? null, $out['area_text'] ?? $out['area_place'])) {
+                $facts['area_id'] = $area->id;
+            }
         }
         $badPhone = false;
         if ($out['phone'] !== null) {
@@ -115,7 +139,7 @@ class Agent
                 return $this->addCook($thread, $extra) ?? $replies;
             }
             if (filled($facts['area_text'] ?? null)) {
-                $this->flag($thread, 'এলাকা তালিকায় নেই: "'.$facts['area_text'].'" — এলাকা যোগ করে রান্নাঘর যোগ করুন');
+                $this->flag($thread, self::NO_AREA.': "'.$facts['area_text'].'" — এলাকা যোগ করে রান্নাঘর যোগ করুন');
             }
         }
         if ($badPhone && ! $thread->kitchen_id) {
@@ -123,6 +147,10 @@ class Agent
         }
 
         $kitchen = $thread->kitchen;
+        // Her written address helps the shahidar find the gate; the pin still comes from her link.
+        if ($kitchen && ($out['home_address'] ?? null) && blank($kitchen->pickup_address)) {
+            $kitchen->forceFill(['pickup_address' => $out['home_address']])->save();
+        }
         if ($kitchen && $out['plates'] !== null && $kitchen->daily_plates !== $out['plates']) {
             $kitchen->forceFill(['daily_plates' => $out['plates']])->save();
         }
@@ -260,6 +288,65 @@ class Agent
         }
 
         return $n;
+    }
+
+    /**
+     * An area for a place that is not in the list: an existing area whose centre is within
+     * 1.5 km of the place, or a new one around it. Null when the map does not know the place.
+     */
+    private function areaFor(string $place, ?string $nameBn, string $text): ?Area
+    {
+        $hit = app(Geocoder::class)->search(str_contains(strtolower($place), 'bangladesh') ? $place : $place.', Bangladesh')[0] ?? null;
+        if (! $hit) {
+            return null;
+        }
+        $at = GeoPoint::make($hit['lat'], $hit['lng']);
+        $near = Area::active()->get()->filter(fn (Area $a) => $a->center && $a->center->distanceTo($at) <= 1500)
+            ->sortBy(fn (Area $a) => $a->center->distanceTo($at))->first();
+        if ($near) {
+            return $near;
+        }
+        $slug = Str::slug(Str::before($place, ',')) ?: 'area';
+        $base = $slug;
+        for ($i = 2; Area::where('slug', $slug)->exists(); $i++) {
+            $slug = $base.'-'.$i;
+        }
+        $fee = (int) (Area::where('is_active', true)->selectRaw('delivery_fee_paisa, COUNT(*) AS n')
+            ->groupBy('delivery_fee_paisa')->orderByDesc('n')->value('delivery_fee_paisa') ?? 0);
+
+        Log::info('Messenger bot added an area', ['slug' => $slug, 'place' => $place]);
+
+        return Area::create([
+            'slug' => $slug,
+            'name' => $nameBn ?: Str::title(Str::before($text, ',')),
+            'center' => $at,
+            'radius_m' => 1500,
+            'delivery_fee_paisa' => $fee,
+            'is_active' => true,
+            'sort_order' => (int) Area::max('sort_order') + 1,
+        ]);
+    }
+
+    /** Everything they wrote since our last answer is small talk (and we have talked before). */
+    private function onlySmallTalk(MessengerThread $thread): bool
+    {
+        $lastOut = $thread->messages()->where('direction', 'out')->max('id');
+        if (! $lastOut) {
+            return false;
+        }
+        $new = $thread->messages()->where('direction', 'in')->where('id', '>', $lastOut)->get();
+        if ($new->isEmpty()) {
+            return false;
+        }
+
+        return $new->every(function ($m) {
+            $text = trim((string) $m->text);
+            if ($text === '') {
+                return filled($m->attachments) && collect($m->attachments)->every(fn ($a) => filled($a['payload']['sticker_id'] ?? null));
+            }
+
+            return (bool) preg_match(self::SMALL_TALK, $text);
+        });
     }
 
     /** Coordinates from a location they shared in the chat, if the newest messages have one. */

@@ -23,6 +23,7 @@ use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Sleep;
 use Illuminate\Testing\TestResponse;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -70,7 +71,7 @@ class MessengerBotTest extends TestCase
         Http::fake([
             'graph.test/*' => Http::response(['first_name' => 'Rina', 'last_name' => 'Akter', 'message_id' => 'm']),
             'api.anthropic.com/*' => Http::response(['content' => [['type' => 'tool_use', 'name' => 'answer', 'input' => $answer + [
-                'replies' => ['dhonnobad apu 😊'], 'name' => null, 'phone' => null, 'area_id' => null, 'area_text' => null, 'cook' => false,
+                'replies' => ['dhonnobad apu 😊'], 'name' => null, 'phone' => null, 'area_id' => null, 'area_text' => null, 'area_name_bn' => null, 'area_place' => null, 'home_address' => null, 'cook' => false,
                 'plates' => null, 'send_pin_link' => false, 'wants_call' => false, 'call_reason' => null, 'needs_human' => false, 'human_reason' => null,
             ]]]]),
         ]);
@@ -390,5 +391,117 @@ class MessengerBotTest extends TestCase
         Livewire::test(ManageMessengerThreads::class)->callAction('answerWaiting')
             ->callTableAction('botAnswer', MessengerThread::where('psid', 'P9')->first());
         Queue::assertPushed(AnswerMessenger::class, 2);
+    }
+
+    /** @return array<string, mixed> Claude's answer with these facts */
+    private function aiAnswer(array $answer): array
+    {
+        return ['content' => [['type' => 'tool_use', 'name' => 'answer', 'input' => $answer + [
+            'replies' => ['dhonnobad apu 😊'], 'name' => null, 'phone' => null, 'area_id' => null, 'area_text' => null, 'area_name_bn' => null, 'area_place' => null,
+            'home_address' => null, 'cook' => false, 'plates' => null, 'send_pin_link' => false, 'wants_call' => false, 'call_reason' => null, 'needs_human' => false, 'human_reason' => null,
+        ]]]];
+    }
+
+    public function test_a_busy_ai_is_tried_again_and_the_rules_are_cached(): void
+    {
+        Queue::fake();
+        Sleep::fake();
+        Http::swap(new HttpFactory);
+        Http::fake([
+            'graph.test/*' => Http::response(['message_id' => 'm']),
+            'api.anthropic.com/*' => Http::sequence()->push(['error' => ['type' => 'rate_limit_error']], 429)->push([], 529)->push($this->aiAnswer(['replies' => ['ji apu 😊']])),
+        ]);
+        $this->hook([$this->text('B1', 'kivabe join korbo', 'mid.b1')]);
+
+        $t = $this->answer('B1');
+
+        $this->assertSame(['ji apu 😊'], $this->sent());
+        $this->assertFalse($t->needs_human);
+        Sleep::assertSleptTimes(2);
+        $ai = collect(Http::recorded())->map(fn ($p) => $p[0])->first(fn (Request $r) => str_contains($r->url(), 'anthropic'));
+        $this->assertSame(['type' => 'ephemeral'], $ai['system'][1]['cache_control']);
+    }
+
+    public function test_the_job_waits_and_retries_while_the_ai_stays_busy_and_only_then_greets(): void
+    {
+        Sleep::fake();
+        Http::swap(new HttpFactory);
+        Http::fake(['graph.test/*' => Http::response(['message_id' => 'm']), 'api.anthropic.com/*' => Http::response([], 529)]);
+        Queue::fake();
+        $this->hook([$this->text('B2', 'hello', 'mid.b2')]);
+        $t = MessengerThread::where('psid', 'B2')->firstOrFail();
+
+        $job = (new AnswerMessenger($t->id, (int) $t->messages()->max('id')))->withFakeQueueInteractions();
+        $job->handle(app(Agent::class));
+        $job->assertReleased(AnswerMessenger::BACKOFF[0]);
+        $this->assertSame([], $this->sent());
+        $this->assertFalse($t->fresh()->needs_human);
+
+        // The last try falls back to the greeting and asks for a person; the 5-minute sweep tries once more.
+        app(Agent::class)->answer($t->fresh(), final: true);
+        $this->assertSame(Agent::WELCOME, $this->sent());
+        $this->assertSame(Agent::AI_FAILED, $t->fresh()->human_reason);
+        MessengerThread::whereKey($t->id)->update(['last_in_at' => now()->subMinutes(10)]);
+        $this->artisan('messenger:answer-waiting')->assertSuccessful();
+        Queue::assertPushed(AnswerMessenger::class, fn ($j) => $j->threadId === $t->id && $j->force);
+        $this->assertFalse($t->fresh()->needs_human);
+    }
+
+    public function test_a_place_not_in_the_list_becomes_a_new_area_and_she_is_added(): void
+    {
+        Queue::fake();
+        Http::swap(new HttpFactory);
+        Http::fake([
+            'graph.test/*' => Http::response(['message_id' => 'm']),
+            'nominatim.openstreetmap.org/*' => Http::response([['display_name' => 'Chandina, Cumilla', 'lat' => '23.4870', 'lon' => '91.0080']]),
+            'api.anthropic.com/*' => Http::response($this->aiAnswer(['name' => 'Alina', 'phone' => '01625307149', 'area_text' => 'Chandina, Comilla', 'area_name_bn' => 'চান্দিনা', 'area_place' => 'Chandina, Cumilla', 'cook' => true])),
+        ]);
+        $this->hook([$this->text('B3', 'Alina, Chandina Comilla, 01625307149', 'mid.b3')]);
+
+        $t = $this->answer('B3');
+
+        $area = Area::where('name', 'চান্দিনা')->firstOrFail();
+        $this->assertSame('chandina', $area->slug);
+        $this->assertSame($area->id, $t->kitchen->area_id);
+        $this->assertFalse($t->needs_human);
+        $this->assertStringContainsString('Chandina, Comilla e add kore approve kore dilam', $this->sent()[0]);
+    }
+
+    public function test_a_place_right_next_to_a_listed_area_joins_that_area(): void
+    {
+        Queue::fake();
+        $c = $this->area->center;
+        Http::swap(new HttpFactory);
+        Http::fake([
+            'graph.test/*' => Http::response(['message_id' => 'm']),
+            'nominatim.openstreetmap.org/*' => Http::response([['display_name' => 'x', 'lat' => (string) ($c->lat + 0.004), 'lon' => (string) $c->lng]]),
+            'api.anthropic.com/*' => Http::response($this->aiAnswer(['name' => 'Mina', 'phone' => '01811223399', 'area_text' => 'Dhalpur', 'area_name_bn' => 'ধলপুর', 'area_place' => 'Dhalpur, Dhaka', 'cook' => true])),
+        ]);
+        $count = Area::count();
+        $this->hook([$this->text('B4', 'Mina Dhalpur 01811223399', 'mid.b4')]);
+
+        $t = $this->answer('B4');
+
+        $this->assertSame($count, Area::count());
+        $this->assertSame($this->area->id, $t->kitchen->area_id);
+    }
+
+    public function test_ok_and_stickers_get_a_smile_without_the_ai_and_an_address_is_kept(): void
+    {
+        Queue::fake();
+        $this->hook([$this->text('B5', 'Rina, Jatrabari, 01722334455', 'mid.b5')]);
+        $this->fake(['name' => 'Rina', 'phone' => '01722334455', 'area_id' => $this->area->id, 'cook' => true]);
+        $t = $this->answer('B5');
+
+        $this->hook([$this->text('B5', 'বাসা ১২, রোড ৩, ধলপুর', 'mid.b6')]);
+        $this->fake(['home_address' => 'বাসা ১২, রোড ৩, ধলপুর']);
+        $this->answer('B5');
+        $this->assertSame('বাসা ১২, রোড ৩, ধলপুর', $t->kitchen->fresh()->pickup_address);
+
+        $this->hook([['sender' => ['id' => 'B5'], 'recipient' => ['id' => 'PAGE'], 'message' => ['mid' => 'mid.b7', 'attachments' => [['type' => 'image', 'payload' => ['url' => 'https://x/s.png', 'sticker_id' => 369239263222822]]]]]]);
+        $this->hook([$this->text('B5', 'ok apu', 'mid.b8')]);
+        $this->fake([]);
+        $this->answer('B5');
+        $this->assertSame(['😊'], $this->sent());
     }
 }
