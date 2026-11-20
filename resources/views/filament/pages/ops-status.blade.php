@@ -1,8 +1,9 @@
 <x-filament-panels::page>
     <div wire:poll.60s class="os">
         <style>
-            .os { display: grid; gap: 1rem; }
-            .os-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .75rem; }
+            .os { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; max-width: 100%; }
+            .os > *, .os-cards > * { min-width: 0; }
+            .os-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr)); gap: .75rem; }
             .os-card { border: 1px solid rgb(229 231 235); border-radius: .75rem; padding: 1rem; }
             .dark .os-card { border-color: rgba(255,255,255,.1); }
             .os-head { display: flex; justify-content: space-between; align-items: center; gap: .5rem; font-weight: 600; font-size: 1.05rem; }
@@ -15,12 +16,14 @@
             .os-nums div { border-radius: .5rem; background: rgba(156,163,175,.12); padding: .45rem .25rem; }
             .os-nums b { display: block; font-size: 1.35rem; }
             .os-nums span, .os-muted { font-size: .78rem; color: rgb(107 114 128); }
-            .os-note { margin-top: .6rem; font-size: .85rem; }
+            .os-note { margin-top: .6rem; font-size: .85rem; overflow-wrap: anywhere; }
             .os-list { width: 100%; font-size: .85rem; }
-            .os-list td { padding: 6px 8px 6px 0; vertical-align: top; border-top: 1px solid rgb(229 231 235); }
+            .os-list td { padding: 6px 8px 6px 0; vertical-align: top; overflow-wrap: anywhere; border-top: 1px solid rgb(229 231 235); }
             .dark .os-list td { border-color: rgba(255,255,255,.1); }
             .os-wa { padding: .5rem 0; border-top: 1px solid rgba(156,163,175,.25); font-size: .9rem; }
-            .os-wa summary { cursor: pointer; }
+            .os-wa summary { cursor: pointer; overflow-wrap: anywhere; }
+            .os-scroll { overflow-x: auto; max-width: 100%; }
+            .os-detail { padding: 6px 0; border-top: 1px solid rgba(156,163,175,.25); font-size: .85rem; overflow-wrap: anywhere; }
         </style>
 
         <div class="os-cards">
@@ -69,12 +72,15 @@
                             @if ($w->note)<span class="os-muted"> — {{ $w->note }}</span>@endif
                         </summary>
                         @if ($w->details)
-                            <table class="os-list" style="margin-top:.4rem">
-                                <tr class="os-muted"><td>কে</td><td>কী লিখেছিলেন</td><td>কী করা হলো</td></tr>
+                            <div style="margin-top:.4rem">
                                 @foreach ($w->details as $d)
-                                    <tr><td style="white-space:nowrap">{{ $d['who'] ?? '' }}</td><td>{{ $d['said'] ?? '' }}</td><td>{{ $d['did'] ?? '' }}</td></tr>
+                                    <div class="os-detail">
+                                        <b>{{ $d['who'] ?? '' }}</b>
+                                        @if (filled($d['said'] ?? null))<div><span class="os-muted">লিখেছিলেন:</span> {{ $d['said'] }}</div>@endif
+                                        @if (filled($d['did'] ?? null))<div><span class="os-muted">করা হলো:</span> {{ $d['did'] }}</div>@endif
+                                    </div>
                                 @endforeach
-                            </table>
+                            </div>
                         @endif
                     </details>
                 @endforeach
@@ -85,7 +91,7 @@
             @if ($recent->isEmpty())
                 <div class="os-muted">এখনো কিছু নেই।</div>
             @else
-                <table class="os-list">
+                <div class="os-scroll"><table class="os-list">
                     @foreach ($recent as $r)
                         <tr>
                             <td class="os-muted" style="white-space:nowrap">{{ $r->created_at->timezone(config('app.display_timezone'))->format('g:i A') }}</td>
@@ -93,7 +99,7 @@
                             <td>{{ $r->problem ? '⚠️ ' : '' }}{{ $r->found !== null ? 'নতুন '.$bn($r->found).' · ' : '' }}{{ $r->sent ? $bn($r->sent).' জনকে উত্তর' : '' }}{{ $r->pending !== null ? ' · বাকি '.$bn($r->pending) : '' }}{{ $r->note ? ' — '.$r->note : '' }}</td>
                         </tr>
                     @endforeach
-                </table>
+                </table></div>
             @endif
         </x-filament::section>
     </div>
