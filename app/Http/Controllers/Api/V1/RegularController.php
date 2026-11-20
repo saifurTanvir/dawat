@@ -98,7 +98,7 @@ class RegularController extends Controller
     }
 
     /**
-     * GET /api/v1/regular/nearby?meal_slot=&q=&tags[]=&max_taka=&sort=near|cheap — F84: other cooks'
+     * GET /api/v1/regular/nearby?meal_slot=&q=&tags[]=&max_taka=&sort=near|cheap — F85: other cooks'
      * food near the customer today, to pick from. Distances are rounded; no coordinates.
      */
     public function nearby(Request $request, TodayMenu $menu): AnonymousResourceCollection

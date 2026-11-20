@@ -151,7 +151,7 @@ class TodayMenu
     }
 
     /**
-     * F84: other cooks' food near the customer for this meal today, to pick from instead.
+     * F85: other cooks' food near the customer for this meal today, to pick from instead.
      * Filters: q (dish name), tags (slugs), max price (paisa), sort (near | cheap).
      *
      * @param  array{q?: ?string, tags?: list<string>, max_paisa?: ?int, sort?: ?string}  $filters
@@ -182,7 +182,7 @@ class TodayMenu
         return $query->limit(60)->get();
     }
 
-    /** F84: books the picked post instead of her cook's food today; her cook is not told. */
+    /** F85: books the picked post instead of her cook's food today; her cook is not told. */
     private function pick(Customer $customer, Pairing $pairing, MealSlot $slot, int $postId): MealChoice
     {
         $post = $this->nearby($customer, $slot)->firstWhere('id', $postId);
@@ -335,7 +335,7 @@ class TodayMenu
                 'choice' => $choice?->choice ?? 'eat',
                 'confirmed' => $choice?->choice === 'eat',
                 'wish' => $choice?->wish,
-                // F84: the other cook's food they picked instead.
+                // F85: the other cook's food they picked instead.
                 'picked' => $choice?->choice === 'pick' && $choice->post ? [
                     'title' => $choice->post->title,
                     'kitchen' => $choice->post->kitchen?->display_name,

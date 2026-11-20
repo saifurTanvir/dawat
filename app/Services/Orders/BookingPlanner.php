@@ -114,7 +114,7 @@ class BookingPlanner
     }
 
     /**
-     * F84: the customer picked another cook's post for today: a box from it, through
+     * F85: the customer picked another cook's post for today: a box from it, through
      * the customer's own shahidar, at that post's price. The post's plates go down.
      */
     public function bookPick(Pairing $pairing, Post $post): Order

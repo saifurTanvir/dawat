@@ -32,7 +32,7 @@ class MealChoice extends Model
         return $this->belongsTo(Kitchen::class);
     }
 
-    /** F84: the other cook's post they picked, and the box made from it. */
+    /** F85: the other cook's post they picked, and the box made from it. */
     public function post(): BelongsTo
     {
         return $this->belongsTo(Post::class);

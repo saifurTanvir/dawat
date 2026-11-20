@@ -23,6 +23,17 @@
         .dz-nums div { border-radius: .5rem; background: rgba(156,163,175,.12); padding: .35rem .25rem; }
         .dz-nums b { display: block; font-size: 1.05rem; }
         .dz-nums span { font-size: .7rem; color: rgb(107 114 128); }
+        .dz-lz { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .75rem; }
+        .dz-lz-card { border: 1px solid rgb(229 231 235); border-radius: .75rem; padding: .75rem 1rem; }
+        .dz-lz-card.on { border-color: #16a34a; box-shadow: 0 0 0 1px #16a34a; }
+        .dark .dz-lz-card { border-color: rgba(255,255,255,.1); }
+        .dz-lz-bar { height: 6px; border-radius: 999px; background: rgba(156,163,175,.25); margin: .4rem 0 .6rem; overflow: hidden; }
+        .dz-lz-bar i { display: block; height: 100%; background: #16a34a; }
+        .dz-lz-nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: .25rem; text-align: center; }
+        .dz-lz-nums button { border-radius: .5rem; background: rgba(156,163,175,.12); padding: .35rem .25rem; cursor: pointer; }
+        .dz-lz-nums button.sel { background: #dcfce7; color: #166534; }
+        .dz-lz-nums b { display: block; font-size: 1.1rem; }
+        .dz-lz-nums span { font-size: .7rem; color: rgb(107 114 128); }
         @media (max-width: 640px) {
             .dz-wide { display: none; }
             .dz-cards { display: block; }
@@ -39,6 +50,58 @@
         <div class="dz-stat"><span class="muted">গ্রাহক</span><b>{{ $bn($totals['customers']) }}</b></div>
         <div class="dz-stat"><span class="muted">শাহিদার</span><b>{{ $bn($totals['shahidars']) }}</b></div>
     </div>
+
+
+    {{-- F84: zones we may start operations in. Counted by the cook's chosen area, so cooks without a pin count too. --}}
+    @php($whichLabel = ['all' => 'সব অনুমোদিত গৃহিণী', 'pin' => 'লোকেশন আছে', 'nopin' => 'লোকেশন নেই', 'pending' => 'অপেক্ষায়'])
+    <x-filament::section heading="অপারেশনের জোন" description="কয়েকটা পাশাপাশি এলাকা মিলে একটা জোন। শুরু করতে একটা জোনে ৭০–৮০ জন গৃহিণী লাগবে। সংখ্যায় চাপলে তালিকা খুলবে।">
+        <div class="dz-lz" data-launch-zones>
+            @foreach ($launchZones as $lz)
+                <div class="dz-lz-card {{ $launchZone === $lz['key'] ? 'on' : '' }}">
+                    <div class="dz-card-head">
+                        <div class="font-medium">{{ $lz['name'] }}</div>
+                        @if ($lz['cooks'] >= \App\Services\Geo\LaunchZones::COOKS_GOAL) <span class="dz-badge dz-ready">শুরু করা যায়</span>
+                        @else <span class="dz-badge dz-some">আরও {{ $bn(\App\Services\Geo\LaunchZones::COOKS_GOAL - $lz['cooks']) }} জন</span> @endif
+                    </div>
+                    <div class="muted">গৃহিণী {{ $bn($lz['cooks']) }} / ৭০ · দিনে প্লেট {{ $bn($lz['plates']) }}</div>
+                    <div class="dz-lz-bar"><i style="width: {{ min(100, round($lz['cooks'] / \App\Services\Geo\LaunchZones::COOKS_GOAL * 100)) }}%"></i></div>
+                    <div class="dz-lz-nums">
+                        @foreach (['all' => [$lz['cooks'], 'গৃহিণী'], 'pin' => [$lz['pinned'], 'লোকেশন আছে'], 'nopin' => [$lz['pinless'], 'লোকেশন নেই'], 'pending' => [$lz['pending'], 'অপেক্ষায়']] as $which => [$n, $label])
+                            <button type="button" wire:click="openLaunchZone({{ $lz['key'] }}, '{{ $which }}')" class="{{ $launchZone === $lz['key'] && $launchWhich === $which ? 'sel' : '' }}"><b>{{ $bn($n) }}</b><span>{{ $label }}</span></button>
+                        @endforeach
+                    </div>
+                    <details class="muted" style="margin-top:.5rem"><summary>কোন কোন এলাকা</summary>{{ implode(', ', $lz['areas']) }}</details>
+                </div>
+            @endforeach
+        </div>
+
+        @if ($launchZone !== null)
+            @php($open = $launchZones->firstWhere('key', $launchZone))
+            <div style="margin-top:1rem" data-launch-list>
+                <div class="font-medium" style="margin-bottom:.5rem">{{ $open['name'] ?? '' }} — {{ $whichLabel[$launchWhich] }} ({{ $bn($launchList->count()) }} জন)
+                    <button type="button" wire:click="openLaunchZone({{ $launchZone }}, '{{ $launchWhich }}')" class="muted" style="margin-left:.5rem">বন্ধ করুন ✕</button>
+                </div>
+                @if ($launchList->isEmpty())
+                    <p class="text-sm text-gray-500">কেউ নেই।</p>
+                @else
+                    <table class="dz w-full text-sm">
+                        <thead><tr class="text-gray-500"><th>রান্নাঘর</th><th>মোবাইল</th><th>এলাকা</th><th class="r">প্লেট</th><th>লোকেশন</th></tr></thead>
+                        <tbody>
+                            @foreach ($launchList as $k)
+                                <tr>
+                                    <td class="font-medium"><a href="{{ \App\Filament\Resources\Kitchens\KitchenResource::getUrl('view', ['record' => $k]) }}" class="text-primary-600">{{ $k->display_name }}</a><div class="muted">{{ $k->user?->name }}</div></td>
+                                    <td>{{ $k->user?->phone }}</td>
+                                    <td>{{ $k->area?->name }}</td>
+                                    <td class="r">{{ $k->daily_plates ? $bn($k->daily_plates) : '—' }}</td>
+                                    <td>@if ($k->location)<span class="dz-badge dz-ready">আছে</span>@else<span class="dz-badge dz-none">নেই</span>@endif</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endif
+            </div>
+        @endif
+    </x-filament::section>
 
     @if ($showPinLinks)
         <x-filament::section heading="পিন ছাড়া গৃহিণী" description="এঁদের বাসার লোকেশন নেই, তাই কোনো জোনে পড়েননি। লিংক পাঠান — লগইন ছাড়াই খোলে, ৭ দিন চলে।">

@@ -37,7 +37,7 @@
                 <p v-if="asking !== m.slot && m.choice === 'eat'" class="mt-1.5 text-xs text-muted">
                     {{ m.confirmed ? 'আপনি খাবেন বলেছেন। খাবার আসবে।' : 'কিছু না বললেও খাবার আসবে। নিশ্চিত করতে "খাব" চাপুন।' }}
                 </p>
-                <!-- F84: not her cook's dish today — say what you want, or pick another cook's food nearby. -->
+                <!-- F85: not her cook's dish today — say what you want, or pick another cook's food nearby. -->
                 <div v-else-if="asking === m.slot && !writing" class="mt-2 space-y-2">
                     <p class="text-sm font-semibold">তাহলে কী করবেন?</p>
                     <button type="button" class="btn-primary min-h-11 text-sm" @click="nearby = m">এলাকার অন্য খাবার দেখুন</button>

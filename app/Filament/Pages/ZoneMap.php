@@ -6,6 +6,7 @@ use App\Enums\KitchenStatus;
 use App\Filament\Support\FeatureGate;
 use App\Models\Kitchen;
 use App\Models\PinLink;
+use App\Services\Geo\LaunchZones;
 use App\Services\Geo\Zones;
 use App\Support\PinReach;
 use BackedEnum;
@@ -42,6 +43,18 @@ class ZoneMap extends Page
     /** F68: list cooks without a home pin, with their links. */
     public bool $showPinLinks = false;
 
+    /** F84: which launch-zone list is open (zone key) and which cooks (all | pin | nopin | pending). */
+    public ?int $launchZone = null;
+
+    public string $launchWhich = 'nopin';
+
+    public function openLaunchZone(int $key, string $which): void
+    {
+        $same = $this->launchZone === $key && $this->launchWhich === $which;
+        $this->launchZone = $same ? null : $key;
+        $this->launchWhich = in_array($which, ['all', 'pin', 'nopin', 'pending'], true) ? $which : 'nopin';
+    }
+
     protected function getViewData(): array
     {
         $report = app(Zones::class)->report();
@@ -63,7 +76,10 @@ class ZoneMap extends Page
                 ->map(fn (Kitchen $k) => ['kitchen' => $k, 'link' => PinLink::forKitchen($k, auth()->user())])
             : collect();
 
-        return ['onlyBusy' => $this->onlyBusy, 'pinless' => $pinless, 'areas' => $areas, 'totals' => $report['totals'], 'mapData' => $map, 'radius' => Zones::RADIUS_M];
+        $launch = app(LaunchZones::class);
+        $launchList = $this->launchZone !== null ? $launch->kitchens($this->launchZone, $this->launchWhich) : collect();
+
+        return ['launchZones' => $launch->summary(), 'launchList' => $launchList, 'onlyBusy' => $this->onlyBusy, 'pinless' => $pinless, 'areas' => $areas, 'totals' => $report['totals'], 'mapData' => $map, 'radius' => Zones::RADIUS_M];
     }
 
     protected function getHeaderActions(): array
