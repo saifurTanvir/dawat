@@ -249,8 +249,8 @@ class Agent
     }
 
     /**
-     * Cooks still without a home pin who wrote to us within Meta's 24-hour
-     * window: join the chat to her kitchen by her number if needed, then send
+     * Cooks still without a home pin who wrote to us within the last 7 days
+     * (Meta allows up to 7 days for chats started from an ad; others just fail): join the chat to her kitchen by her number if needed, then send
      * her own location link (at most once every 12 hours).
      *
      * @return int reminders sent
@@ -258,7 +258,7 @@ class Agent
     public function remindPins(): int
     {
         $n = 0;
-        $threads = MessengerThread::query()->where('last_in_at', '>', now()->subHours(23))->where('bot_off', false)->get();
+        $threads = MessengerThread::query()->where('last_in_at', '>', now()->subHours(166))->where('bot_off', false)->get();
         foreach ($threads as $t) {
             $kitchen = $t->kitchen;
             if (! $kitchen && filled($t->fact('phone')) && ! preg_match('/\b(bites?|food|foods|kitchen|shop|store|business|restaurant|catering)\b/i', (string) $t->name)) {
