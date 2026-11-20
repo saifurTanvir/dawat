@@ -100,4 +100,21 @@ class OpsStatusTest extends TestCase
             ->expectsOutputToContain('no pin, no Messenger chat: 1')
             ->assertSuccessful();
     }
+
+    public function test_pinless_cooks_outside_messenger_come_with_their_pin_link_for_admins_only(): void
+    {
+        $inside = Kitchen::factory()->approved()->create(['location' => null]);
+        $outside = Kitchen::factory()->approved()->create(['location' => null]);
+        MessengerThread::create(['psid' => 'P1', 'kitchen_id' => $inside->id, 'last_in_at' => now()->subDay()]);
+
+        $this->actingAs(User::factory()->create());
+        $this->getJson('/admin-tools/pinless-outside-messenger')->assertForbidden();
+
+        $this->actingAs(User::factory()->admin()->create());
+        $this->getJson('/admin-tools/pinless-outside-messenger')->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $outside->id)
+            ->assertJsonPath('data.0.reach', 'none')
+            ->assertJsonPath('data.0.phone', $outside->user->phone);
+    }
 }
