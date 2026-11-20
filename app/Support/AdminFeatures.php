@@ -10,6 +10,7 @@ use App\Filament\Pages\Money;
 use App\Filament\Pages\ZoneMap;
 use App\Filament\PageWidgets\DeliveryQualityTable;
 use App\Filament\Resources\Bills\BillResource;
+use App\Filament\Resources\BotFacts\BotFactResource;
 use App\Filament\Resources\CallRequests\CallRequestResource;
 use App\Filament\Resources\Companies\CompanyResource;
 use App\Filament\Resources\Customers\CustomerResource;
@@ -48,7 +49,7 @@ final class AdminFeatures
 {
     /** key => [label, what it opens] */
     public const FEATURES = [
-        'contacts' => ['যোগাযোগ ও ফলো-আপ', 'যোগাযোগ করতে হবে, আজকের ফলো-আপ, রিমার্কস, Messenger চ্যাট'],
+        'contacts' => ['যোগাযোগ ও ফলো-আপ', 'যোগাযোগ করতে হবে, আজকের ফলো-আপ, রিমার্কস, Messenger চ্যাট, বটের জ্ঞান'],
         'kitchens' => ['রান্নাঘর ও পোস্ট', 'রান্নাঘর, পোস্ট, ট্যাগ, জোনের হিসাব, পিন যাচাই'],
         'customers' => ['নিয়মিত গ্রাহক ও অফিস', 'নিয়মিত গ্রাহক, অফিস, অন্য খাবার ও অতিথির খাবারের অনুরোধ'],
         'orders' => ['অর্ডার ও ডেলিভারি', 'অর্ডার (বক্স), বক্স স্টিকার, ডেলিভারির হিসাব, আজকের প্লেট'],
@@ -63,6 +64,7 @@ final class AdminFeatures
     public const PARTS = [
         CallRequestResource::class => 'contacts',
         MessengerThreadResource::class => 'contacts',
+        BotFactResource::class => 'contacts',
         CallList::class => 'contacts',
         CallOnboardingPending::class => 'contacts',
         FollowUps::class => 'contacts',

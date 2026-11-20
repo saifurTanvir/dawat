@@ -109,6 +109,17 @@ class ManageMessengerThreads extends ManageRecords
                     $n = app(Agent::class)->linkExisting();
                     Notification::make()->title("{$n}টা চ্যাট রান্নাঘরের সাথে জোড়া হলো")->success()->send();
                 }),
+            Action::make('reanswerFlagged')
+                ->visible(fn () => $admin() && Graph::botOn() && MessengerThread::query()->where('needs_human', true)->exists())
+                ->label('"মানুষ লাগবে" — নতুন তথ্যে আবার উত্তর')
+                ->icon(Heroicon::OutlinedArrowPath)
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalDescription('"বটের জ্ঞান"-এ নতুন উত্তর যোগ করার পরে চাপুন। গত ৭ দিনের "মানুষ লাগবে" চ্যাটগুলোতে বট নতুন তথ্য দেখে আবার উত্তর দেবে। যেগুলোর উত্তর এখনো তালিকায় নেই, সেগুলো আবার "মানুষ লাগবে"-তে ফিরবে।')
+                ->action(function () {
+                    $n = app(Agent::class)->reanswerFlagged();
+                    Notification::make()->title("{$n}টা চ্যাটে নতুন করে উত্তর যাচ্ছে")->success()->send();
+                }),
             Action::make('markSeen')
                 ->visible(fn () => $admin() && Graph::configured())
                 ->label('উত্তর দেওয়া চ্যাট "পড়া" করুন')

@@ -4,6 +4,7 @@ namespace App\Services\Messenger;
 
 use App\Enums\KitchenStatus;
 use App\Filament\Actions\QuickAddActions;
+use App\Jobs\AnswerMessenger;
 use App\Models\Area;
 use App\Models\CallRequest;
 use App\Models\MessengerThread;
@@ -257,6 +258,29 @@ class Agent
      *
      * @return int reminders sent
      */
+    /**
+     * F82: after the owner adds answers to "বটের জ্ঞান", the chats that were sent to
+     * "মানুষ লাগবে" (inside Meta's 7-day window) are answered again from the new
+     * facts. Ones the facts still do not cover get flagged again by the Brain.
+     */
+    public function reanswerFlagged(): int
+    {
+        $n = 0;
+        MessengerThread::query()->where('needs_human', true)->where('bot_off', false)
+            ->whereNull('send_error')->where('last_in_at', '>', now()->subHours(166))
+            ->orderBy('last_in_at')->get()
+            ->each(function (MessengerThread $t) use (&$n) {
+                $t->forceFill([
+                    'facts' => [...($t->facts ?? []), 'followup_at' => now()->toIso8601String()],
+                    'needs_human' => false, 'human_reason' => null, 'paused_until' => null,
+                ])->save();
+                $last = (int) $t->messages()->where('direction', 'in')->max('id');
+                AnswerMessenger::dispatch($t->id, $last, force: true)->delay(now()->addSeconds(3 * $n++));
+            });
+
+        return $n;
+    }
+
     public function remindPins(): int
     {
         $n = 0;
