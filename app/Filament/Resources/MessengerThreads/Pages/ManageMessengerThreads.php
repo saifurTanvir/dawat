@@ -133,7 +133,7 @@ class ManageMessengerThreads extends ManageRecords
                 ->icon(Heroicon::OutlinedMapPin)
                 ->color('gray')
                 ->requiresConfirmation()
-                ->modalDescription('গত ২৪ ঘণ্টায় যাঁরা লিখেছেন আর এখনো বাসার পিন দেননি, তাঁদের প্রত্যেককে তাঁর নিজের লোকেশন লিংক পাঠাবে (১২ ঘণ্টায় একবারের বেশি না)।')
+                ->modalDescription('গত ৭ দিনে যাঁরা লিখেছেন (বিজ্ঞাপন থেকে আসা চ্যাটে Meta ৭ দিন পর্যন্ত পাঠাতে দেয়) আর এখনো বাসার পিন দেননি, তাঁদের প্রত্যেককে তাঁর নিজের লোকেশন লিংক পাঠাবে (১২ ঘণ্টায় একবারের বেশি না)।')
                 ->action(function () {
                     set_time_limit(180);
                     $n = app(Agent::class)->remindPins();
