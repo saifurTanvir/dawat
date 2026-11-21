@@ -26,6 +26,13 @@
             .os-detail { padding: 6px 0; border-top: 1px solid rgba(156,163,175,.25); font-size: .85rem; overflow-wrap: anywhere; }
         </style>
 
+        @if ($tokenProblem)
+            <div data-token-problem style="border:1px solid #fca5a5;background:#fef2f2;color:#991b1b;border-radius:.75rem;padding:.75rem 1rem;margin-bottom:1rem">
+                <b>⛔ Messenger-এর উত্তর যাচ্ছে না:</b> Meta পেজের টোকেন বাতিল করেছে ({{ \Illuminate\Support\Carbon::parse($tokenProblem['at'])->diffForHumans() }})।
+                <a href="{{ route('admin.messenger.connect') }}" style="text-decoration:underline;font-weight:600">Facebook দিয়ে আবার যুক্ত করুন</a>
+            </div>
+        @endif
+
         <div class="os-cards">
             @foreach ($channels as $c)
                 @php($cls = ['ok' => 'os-ok', 'problem' => 'os-problem', 'stopped' => 'os-stopped', 'none' => 'os-none'][$c['state']])

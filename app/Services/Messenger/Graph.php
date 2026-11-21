@@ -75,6 +75,23 @@ class Graph
     /** The Facebook page the bot answers for. */
     public const PAGE_ID = '1482964881559150';
 
+    /** F85: Meta threw the page token out (password change etc.) — admins see a reconnect button. */
+    public static function flagTokenProblem(string $why): void
+    {
+        cache()->put('messenger:token-problem', ['at' => now()->toIso8601String(), 'why' => mb_substr($why, 0, 200)], now()->addDays(7));
+    }
+
+    /** @return array{at: string, why: string}|null */
+    public static function tokenProblem(): ?array
+    {
+        return cache()->get('messenger:token-problem');
+    }
+
+    public static function clearTokenProblem(): void
+    {
+        cache()->forget('messenger:token-problem');
+    }
+
     /**
      * What Meta says about a token. A user token (Graph API Explorer's default)
      * is swapped for the page's own token, so pasting either one works.
@@ -167,6 +184,9 @@ class Graph
         }
         if ($r->failed() && ! $retried && in_array((int) $r->json('error.code'), [10, 190, 200], true) && self::healToken()) {
             return $this->post($payload, true);
+        }
+        if ($r->failed() && (int) $r->json('error.code') === 190) {
+            self::flagTokenProblem((string) $r->json('error.message'));
         }
         if ($r->failed()) {
             Log::warning('Messenger send failed', ['status' => $r->status(), 'code' => $r->json('error.code'), 'sub' => $r->json('error.error_subcode')]);

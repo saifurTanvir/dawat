@@ -561,4 +561,46 @@ class MessengerBotTest extends TestCase
         $this->answer('B5');
         $this->assertSame(['😊'], $this->sent());
     }
+
+    public function test_a_thrown_out_token_is_flagged_and_facebook_login_reconnects_the_page(): void
+    {
+        config(['services.messenger.app_id' => 'APP1']);
+        Http::swap(new HttpFactory);
+        Http::fake([
+            'graph.test/me/messages*' => Http::response(['error' => ['code' => 190, 'message' => 'Error validating access token: The session has been invalidated']], 400),
+        ]);
+        $this->assertNotNull((new Graph)->send('PSID1', 'hi'));
+        $this->assertNotNull(Graph::tokenProblem());
+
+        $admin = User::role(Roles::ADMIN)->first();
+        $this->actingAs($admin);
+        Livewire::test(ManageMessengerThreads::class)->assertSee('আবার যুক্ত করুন');
+
+        $go = $this->get('/admin-tools/messenger/connect');
+        $go->assertRedirect();
+        $this->assertStringContainsString('facebook.com/v21.0/dialog/oauth', $go->headers->get('Location'));
+        $this->assertStringContainsString('pages_messaging', urldecode($go->headers->get('Location')));
+        parse_str(parse_url($go->headers->get('Location'), PHP_URL_QUERY), $q);
+
+        // A wrong state is refused and nothing is saved.
+        $this->get('/admin-tools/messenger/connect/callback?code=C&state=wrong')->assertRedirect();
+        $this->assertSame('page-token', Graph::pageToken());
+
+        Http::swap(new HttpFactory);
+        Http::fake([
+            'graph.test/oauth/access_token*' => Http::sequence()->push(['access_token' => 'short-user'])->push(['access_token' => 'long-user']),
+            'graph.test/me?*' => Http::response(['id' => 'USER1', 'name' => 'Saifur', 'metadata' => ['type' => 'user']]),
+            'graph.test/me/accounts*' => Http::response(['data' => [['id' => Graph::PAGE_ID, 'name' => 'দাওয়াত', 'access_token' => 'fresh-page-token']]]),
+        ]);
+        $this->get('/admin-tools/messenger/connect');
+        $state = session('messenger_connect_state');
+        $this->get('/admin-tools/messenger/connect/callback?code=C&state='.$state)->assertRedirect();
+        $this->assertSame('fresh-page-token', Graph::pageToken());
+        $this->assertNull(Graph::tokenProblem());
+        Http::assertSent(fn (Request $r) => str_contains($r->url(), 'fb_exchange_token=short-user'));
+
+        // Not for anyone else.
+        $this->actingAs(User::factory()->create());
+        $this->get('/admin-tools/messenger/connect')->assertForbidden();
+    }
 }
