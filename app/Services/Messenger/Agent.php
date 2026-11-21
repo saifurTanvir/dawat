@@ -298,6 +298,9 @@ class Agent
         return $n;
     }
 
+    /** Owner, 21 Nov: cooks found the 12-hourly reminders too many — once every 2–3 days. */
+    public const PIN_REMIND_GAP_HOURS = 60;
+
     public function remindPins(): int
     {
         $n = 0;
@@ -314,7 +317,7 @@ class Agent
                 continue;
             }
             $last = $t->fact('pin_reminded_at');
-            if ($last && now()->diffInHours(Carbon::parse($last), true) < 12) {
+            if ($last && now()->diffInHours(Carbon::parse($last), true) < self::PIN_REMIND_GAP_HOURS) {
                 continue;
             }
             $this->graph->markSeen($t->psid);

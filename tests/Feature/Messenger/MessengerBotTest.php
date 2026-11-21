@@ -268,7 +268,13 @@ class MessengerBotTest extends TestCase
         $this->assertSame(1, app(Agent::class)->remindPins());
         $this->assertSame($old->id, $t->fresh()->kitchen_id);
         $this->assertSame(1, collect($this->sent())->filter(fn ($x) => str_contains($x, PinLink::forKitchen($old)->url()))->count());
-        $this->assertSame(0, app(Agent::class)->remindPins()); // not again within 12 hours
+        $this->assertSame(0, app(Agent::class)->remindPins()); // not again soon
+        // Owner, 21 Nov: once every 2–3 days, not every 12 hours.
+        $this->travel(30)->hours();
+        $this->assertSame(0, app(Agent::class)->remindPins());
+        $this->travel(31)->hours();
+        $this->assertSame(1, app(Agent::class)->remindPins());
+        $this->travelBack();
 
         $this->actingAs(User::role(Roles::ADMIN)->first());
         Livewire::test(ListKitchens::class)->callAction('defaultPlates');

@@ -41,7 +41,7 @@ class Brain
         $kitchen = $thread->kitchen;
         $state = $kitchen
             ? "Already added from this chat: kitchen \"{$kitchen->display_name}\" in {$kitchen->area?->name}, approved. "
-                .($kitchen->location ? 'Her home location is set. ' : 'Her home location is NOT set yet (she has been sent her link). ')
+                .($kitchen->location ? 'Her home location is set. ' : 'Her home location is NOT set yet (she has been sent her link; the server reminds her every 2–3 days, so do not bring it up in your answers unless she asks about it). ')
                 .($kitchen->daily_plates ? "Plates per day: {$kitchen->daily_plates}." : 'Plates per day: not answered yet.')
             : (filled($thread->facts['existing_kitchen_phone'] ?? null)
                 ? 'The number she gave already has a Dawat kitchen (she joined before); she has been told once that the team will check. Do not repeat that line; answer her latest message itself, and if there is nothing new to say, reply briefly.'

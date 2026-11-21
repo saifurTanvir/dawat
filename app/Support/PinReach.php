@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Kitchen;
 use App\Models\MessengerThread;
+use App\Services\Messenger\Agent;
 use Illuminate\Support\Collection;
 
 /**
@@ -25,7 +26,7 @@ final class PinReach
         $byKitchen = $threads->whereNotNull('kitchen_id')->groupBy('kitchen_id');
         $byPhone = $threads->filter(fn ($t) => filled($t->facts['phone'] ?? null))->groupBy(fn ($t) => $t->facts['phone']);
         $window = now()->subHours(166);
-        $recent = now()->subHours(12)->toIso8601String();
+        $recent = now()->subHours(Agent::PIN_REMIND_GAP_HOURS)->toIso8601String();
 
         return $kitchens->mapWithKeys(function (Kitchen $k) use ($byKitchen, $byPhone, $window, $recent) {
             $ts = ($byKitchen[$k->id] ?? collect())->merge($byPhone[$k->user?->phone] ?? collect());
