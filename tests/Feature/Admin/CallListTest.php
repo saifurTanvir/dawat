@@ -116,4 +116,22 @@ class CallListTest extends TestCase
         $this->assertSame('কথা হয়েছে, শুক্রবার থেকে দেবেন', $r->latestNote());
         $this->assertFalse(CallList::canView());
     }
+
+    public function test_admins_read_the_open_list_as_json_and_close_an_entry_with_a_note(): void
+    {
+        $open = CallRequest::create(['phone' => '01713259733', 'name' => 'রেহানা', 'reason' => 'বক্সের কথা জানতে চান']);
+        CallRequest::create(['phone' => '01711111111', 'reason' => 'পুরনো'])->forceFill(['status' => CallRequestStatus::Done])->save();
+
+        $this->actingAs(User::factory()->create());
+        $this->getJson('/admin-tools/call-list')->assertForbidden();
+
+        $this->actingAs(User::factory()->admin()->create());
+        $this->getJson('/admin-tools/call-list')->assertOk()->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.reason', 'বক্সের কথা জানতে চান')->assertJsonMissingPath('data.0.kitchen.location');
+
+        $this->postJson('/admin-tools/call-list/'.$open->id.'/note', ['body' => 'মেসেঞ্জারে উত্তর দেওয়া হলো', 'close' => true])->assertOk();
+        $this->assertSame(CallRequestStatus::Done, $open->fresh()->status);
+        $this->assertSame('মেসেঞ্জারে উত্তর দেওয়া হলো', $open->fresh()->notes[0]['body']);
+        $this->getJson('/admin-tools/call-list')->assertJsonCount(0, 'data');
+    }
 }
