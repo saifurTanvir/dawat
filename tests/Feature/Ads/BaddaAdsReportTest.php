@@ -49,6 +49,11 @@ class BaddaAdsReportTest extends TestCase
         $t2->messages()->create(['direction' => 'out', 'by' => 'page', 'text' => 'আসসালামু আলাইকুম 🙏 এলাকা ম্যানেজার হতে আগ্রহের জন্য ধন্যবাদ!']);
         $t2->messages()->create(['direction' => 'in', 'by' => 'person', 'text' => 'ami korte chai']);
 
+        // A customer-ad chat known only by the quick question the person tapped.
+        $t4 = MessengerThread::create(['psid' => 'P4', 'last_in_at' => now()]);
+        $t4->messages()->create(['direction' => 'in', 'by' => 'person', 'text' => 'কোন কোন এলাকায় দেন?']);
+        $this->assertSame('customer', BaddaAds::kindOf($t4));
+
         // A cook greeting outside Badda is the other cook ad — not counted.
         $t3 = MessengerThread::create(['psid' => 'P3', 'last_in_at' => now(), 'facts' => ['area_text' => 'Mirpur 10']]);
         $t3->messages()->create(['direction' => 'out', 'by' => 'page', 'text' => 'যোগ দিতে চাইলে শুধু আপনার নাম, এলাকা']);
@@ -58,10 +63,12 @@ class BaddaAdsReportTest extends TestCase
             ['ad' => 'cook', 'phone' => '+880 1712-345678', 'name' => 'Runa', 'replied' => true],
             ['ad' => 'cook', 'phone' => '01712345678', 'replied' => true],
         ]])->assertOk();
-        AdLead::create(['ad' => 'customer', 'channel' => 'comment', 'key' => 'c1', 'name' => 'Sara', 'first_at' => now(), 'replied_at' => null]);
+        $this->actingAs($admin)->postJson('/admin-tools/ad-leads', ['leads' => [
+            ['ad' => 'customer', 'channel' => 'comment', 'phone' => 'Sara · 4:50 pm', 'name' => 'Sara', 'replied' => false],
+        ]])->assertOk();
 
         $r = app(BaddaAds::class)->report();
-        $this->assertSame([1, 1, 1, 0], [$r['customer']['messenger'], $r['customer']['messenger_answered'], $r['customer']['comments'], $r['customer']['comments_answered']]);
+        $this->assertSame([2, 1, 1, 0], [$r['customer']['messenger'], $r['customer']['messenger_answered'], $r['customer']['comments'], $r['customer']['comments_answered']]);
         $this->assertSame([1, 0], [$r['manager']['messenger'], $r['manager']['messenger_answered']]);
         $this->assertSame([0, 1, 1], [$r['cook']['messenger'], $r['cook']['whatsapp'], $r['cook']['whatsapp_answered']]);
 

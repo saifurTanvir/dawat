@@ -44,6 +44,3 @@ foreach ([1, 2, 3] as $i) {
     Schedule::command("queue:work redis --queue=default --name=messenger-{$i} --sleep=1 --tries=4 --timeout=85 --max-time=55")
         ->everyMinute()->withoutOverlapping(3)->runInBackground();
 }
-
-// F93: comments on the Badda ad posts, for the ads report.
-Schedule::command('ads:sync-comments')->everyFifteenMinutes()->withoutOverlapping();
