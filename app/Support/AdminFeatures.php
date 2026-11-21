@@ -29,6 +29,7 @@ use App\Filament\Widgets\CallList;
 use App\Filament\Widgets\CallOnboardingPending;
 use App\Filament\Widgets\DailyActivityChart;
 use App\Filament\Widgets\DawatStats;
+use App\Filament\Widgets\FocusSplitWidget;
 use App\Filament\Widgets\FollowUps;
 use App\Filament\Widgets\GuestMealRequests;
 use App\Filament\Widgets\MealRequests;
@@ -93,6 +94,7 @@ final class AdminFeatures
         UserResource::class => 'reports',
         SmsProblems::class => 'reports',
         DawatStats::class => 'stats',
+        FocusSplitWidget::class => 'stats',
         DailyActivityChart::class => 'stats',
         TopQrCodes::class => 'stats',
         QrCodeResource::class => 'stats',
