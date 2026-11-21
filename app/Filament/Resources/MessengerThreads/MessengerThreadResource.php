@@ -7,6 +7,7 @@ use App\Filament\Resources\MessengerThreads\Pages\ManageMessengerThreads;
 use App\Filament\Support\FeatureGate;
 use App\Jobs\AnswerMessenger;
 use App\Models\MessengerThread;
+use App\Services\Ads\BaddaAds;
 use App\Services\Messenger\Agent;
 use App\Services\Messenger\Graph;
 use BackedEnum;
@@ -18,6 +19,7 @@ use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use UnitEnum;
@@ -84,6 +86,11 @@ class MessengerThreadResource extends Resource
             ->filters([
                 Filter::make('needs_human')->label('মানুষ লাগবে')->query(fn ($query) => $query->where('needs_human', true)),
                 Filter::make('waiting')->label('উত্তর বাকি')->query(fn ($query) => $query->waiting()),
+                // F95: read the chats from the Badda ads. Only reading — opening a chat changes nothing for the bot.
+                SelectFilter::make('badda_ad')->label('বাড্ডা অ্যাড')
+                    ->options(['all' => 'বাড্ডার যেকোনো অ্যাড'] + collect(BaddaAds::ADS)->map(fn ($a) => $a['label'].' অ্যাড')->all())
+                    ->query(fn ($query, array $data) => blank($data['value'] ?? null) ? $query
+                        : $query->whereIn('id', app(BaddaAds::class)->threadIds($data['value'] === 'all' ? null : $data['value']))),
             ])
             ->recordAction('chat')
             ->recordActions([
