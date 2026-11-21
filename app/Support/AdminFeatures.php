@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Filament\Pages\BaddaAdsReport;
 use App\Filament\Pages\CookFeesPage;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\DeliveryQuality;
@@ -95,6 +96,7 @@ final class AdminFeatures
         SmsProblems::class => 'reports',
         DawatStats::class => 'stats',
         FocusSplitWidget::class => 'stats',
+        BaddaAdsReport::class => 'stats',
         DailyActivityChart::class => 'stats',
         TopQrCodes::class => 'stats',
         QrCodeResource::class => 'stats',
