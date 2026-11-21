@@ -63,7 +63,8 @@
                         @if ($lz['cooks'] >= \App\Services\Geo\LaunchZones::COOKS_GOAL) <span class="dz-badge dz-ready">শুরু করা যায়</span>
                         @else <span class="dz-badge dz-some">আরও {{ $bn(\App\Services\Geo\LaunchZones::COOKS_GOAL - $lz['cooks']) }} জন</span> @endif
                     </div>
-                    <div class="muted">গৃহিণী {{ $bn($lz['cooks']) }} / ৭০ · দিনে প্লেট {{ $bn($lz['plates']) }}</div>
+                    <div class="muted">অনুমোদিত গৃহিণী <b>{{ $bn($lz['cooks']) }} জন</b> · লক্ষ্য {{ $bn(\App\Services\Geo\LaunchZones::COOKS_GOAL) }} জন</div>
+                    <div class="muted">দিনে প্লেট <b>{{ $bn($lz['plates']) }}</b> <span title="যাঁদের বাসার লোকেশন আছে শুধু তাঁদের প্লেট; লোকেশন ছাড়া কাউকে গ্রাহক দেওয়া যায় না">(লোকেশন আছে এমন {{ $bn($lz['pinned']) }} জনের)</span></div>
                     <div class="dz-lz-bar"><i style="width: {{ min(100, round($lz['cooks'] / \App\Services\Geo\LaunchZones::COOKS_GOAL * 100)) }}%"></i></div>
                     <div class="dz-lz-nums">
                         @foreach (['all' => [$lz['cooks'], 'গৃহিণী'], 'pin' => [$lz['pinned'], 'লোকেশন আছে'], 'nopin' => [$lz['pinless'], 'লোকেশন নেই'], 'pending' => [$lz['pending'], 'অপেক্ষায়']] as $which => [$n, $label])
