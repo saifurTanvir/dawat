@@ -30,16 +30,19 @@ class BaddaAds
         'cook' => [
             'label' => 'গৃহিণী', 'ad_id' => '120252639071060371',
             'greeting' => 'যোগ দিতে চাইলে শুধু আপনার নাম', 'shared' => true,
+            'questions' => ['কিভাবে যোগ দিতে হয়?', 'প্লেটের মূল্য কি?', 'খাবার ডেলিভারি সেবা আছে?'],
             'post' => 'শাহজাদপুরের গৃহিণীদের জন্য',
         ],
         'customer' => [
             'label' => 'গ্রাহক', 'ad_id' => '120252639235840371',
             'greeting' => 'বাড্ডায় ঘরের খাবার নিতে', 'shared' => false,
+            'questions' => ['কীভাবে খাবার নেব?', 'দাম কত?', 'কোন কোন এলাকায় দেন?'],
             'post' => 'বাড্ডায় অফিস করেন?',
         ],
         'manager' => [
             'label' => 'এলাকা ম্যানেজার', 'ad_id' => '120252639358330371',
             'greeting' => 'এলাকা ম্যানেজার হতে আগ্রহের জন্য', 'shared' => false,
+            'questions' => ['কাজটা কী?', 'আয় কেমন?', 'কোন এলাকায় কাজ পাব?'],
             'post' => 'নিজের এলাকায় সম্মানজনক কাজ',
         ],
     ];
@@ -52,7 +55,7 @@ class BaddaAds
     }
 
     /** Which ad (if any) a Messenger chat came from. */
-    public function adOfThread(MessengerThread $thread, Collection $pageTexts, array $baddaAreaIds): ?string
+    public function adOfThread(MessengerThread $thread, Collection $pageTexts, array $baddaAreaIds, ?Collection $personTexts = null): ?string
     {
         $adId = (string) (($thread->facts ?? [])['ad_id'] ?? '');
         foreach (self::ADS as $key => $ad) {
@@ -64,7 +67,9 @@ class BaddaAds
             return null; // another ad
         }
         foreach (self::ADS as $key => $ad) {
-            if ($pageTexts->contains(fn ($t) => str_contains((string) $t, $ad['greeting']))) {
+            // Meta does not pass the ad's greeting on, but the quick questions the person taps arrive as their messages.
+            $asked = ($personTexts ?? collect())->contains(fn ($t) => in_array(trim((string) $t), $ad['questions'], true));
+            if ($asked || $pageTexts->contains(fn ($t) => str_contains((string) $t, $ad['greeting']))) {
                 if (! $ad['shared']) {
                     return $key;
                 }
@@ -93,7 +98,7 @@ class BaddaAds
         $byAd = array_fill_keys(array_keys(self::ADS), []);
         foreach ($threads as $t) {
             $page = $t->messages->where('direction', 'out')->where('by', 'page')->pluck('text');
-            $key = $this->adOfThread($t, $page, $badda);
+            $key = $this->adOfThread($t, $page, $badda, $t->messages->where('direction', 'in')->pluck('text'));
             if ($key) {
                 $byAd[$key][] = $t;
             }
@@ -175,5 +180,32 @@ class BaddaAds
         $lead->save();
 
         return $lead;
+    }
+
+    /** A comment on a Badda ad post, noted from the page inbox (key: anything unique for that comment). */
+    public function noteComment(string $ad, string $key, ?string $name, ?string $text, bool $replied): AdLead
+    {
+        $lead = AdLead::query()->firstOrNew(['channel' => 'comment', 'key' => mb_substr($key, 0, 120)]);
+        $lead->fill(['ad' => $ad, 'name' => $name ?: $lead->name, 'text' => $text ? mb_substr($text, 0, 500) : $lead->text, 'first_at' => $lead->first_at ?? now()]);
+        if ($replied && ! $lead->replied_at) {
+            $lead->replied_at = now();
+        }
+        $lead->save();
+
+        return $lead;
+    }
+
+    /** Which kind of ad a chat came from (any area) — tells the bot who it is talking to. */
+    public static function kindOf(MessengerThread $thread): ?string
+    {
+        $adId = (string) (($thread->facts ?? [])['ad_id'] ?? '');
+        $asked = $thread->messages()->where('direction', 'in')->latest('id')->limit(30)->pluck('text')->map(fn ($t) => trim((string) $t));
+        foreach (self::ADS as $key => $ad) {
+            if (($adId !== '' && $adId === $ad['ad_id']) || $asked->intersect($ad['questions'])->isNotEmpty()) {
+                return $key;
+            }
+        }
+
+        return null;
     }
 }

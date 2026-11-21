@@ -6,6 +6,7 @@ use App\Models\Area;
 use App\Models\BotFact;
 use App\Models\MessengerMessage;
 use App\Models\MessengerThread;
+use App\Services\Ads\BaddaAds;
 use App\Services\Ai\AnthropicFoodAssistant;
 use App\Services\Ai\AssistantUnavailableException;
 use Illuminate\Http\Client\ConnectionException;
@@ -51,6 +52,13 @@ class Brain
         if (($at = $thread->facts['followup_at'] ?? null) && now()->subHours(2)->lt($at)) {
             $state .= ' Her earlier question was passed to the team, and the owner has now added the answers to the FACTS. Answer her earlier question(s) now from the facts, starting with a short "apu, apnar proshner uttor ta janai 😊". Do not say the team will let her know again unless the facts still do not cover it.';
         }
+        // F93: the quick questions they tapped (or the ad id) say which ad brought them.
+        $state .= match (BaddaAds::kindOf($thread)) {
+            'customer' => ' They came from our CUSTOMER ad (Badda home food for office lunch, and breakfast/dinner for people living away from home): treat them as a would-be customer, not a cook; do not ask whether they want to buy or sell.',
+            'manager' => ' They came from our AREA MANAGER ad (the delivery/area in-charge job): treat them as a job applicant; follow the area manager facts.',
+            'cook' => ' They came from our COOK ad: treat them as a home cook who may join.',
+            default => '',
+        };
         $facts = json_encode($thread->facts ?? (object) [], JSON_UNESCAPED_UNICODE);
 
         $transcript = $thread->messages()->latest('id')->limit(14)->get()->reverse()
