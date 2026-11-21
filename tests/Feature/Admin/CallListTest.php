@@ -74,7 +74,9 @@ class CallListTest extends TestCase
         $this->assertSame('কথা হয়েছে, কাল থেকে দেবেন', $r->latestNote());
         $this->assertFalse(CallList::canView());
 
-        Livewire::test(ManageCallRequests::class)->assertCanSeeTableRecords([$r])->assertSee('কথা হয়েছে');
+        // F88: a finished one leaves the list; it shows only when asked for.
+        Livewire::test(ManageCallRequests::class)->assertCanNotSeeTableRecords([$r])
+            ->filterTable('status', CallRequestStatus::Done->value)->assertCanSeeTableRecords([$r]);
     }
 
     public function test_bad_phone_is_refused_and_non_admins_cannot_open_the_page(): void

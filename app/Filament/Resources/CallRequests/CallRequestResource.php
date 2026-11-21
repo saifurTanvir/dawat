@@ -74,8 +74,16 @@ class CallRequestResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            // Open ones first, oldest first; done ones at the bottom.
-            ->modifyQueryUsing(fn (Builder $query) => $query->with('user.kitchen')->orderByRaw("status = 'done'"))
+            // F88: only the people still to contact; finished ones show only when asked for.
+            ->modifyQueryUsing(function (Builder $query, $livewire) {
+                $filters = $livewire->tableFilters ?? [];
+                $askedForStatus = filled($filters['status']['value'] ?? null);
+                $notOnboarded = (bool) ($filters['not_onboarded']['isActive'] ?? false);
+
+                return $query->with('user.kitchen')
+                    ->when(! $askedForStatus && ! $notOnboarded, fn (Builder $q) => $q->open())
+                    ->orderByRaw("status = 'done'");
+            })
             ->defaultSort('created_at')
             ->columns([
                 TextColumn::make('name')->label('কে')->weight('semibold')
