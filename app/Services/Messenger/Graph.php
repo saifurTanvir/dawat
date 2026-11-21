@@ -118,6 +118,15 @@ class Graph
         }
         $page = collect($pages->json('data', []))->first(fn ($p) => (string) ($p['id'] ?? '') === self::PAGE_ID)
             ?? (count($pages->json('data', [])) === 1 ? $pages->json('data.0') : null);
+        if (! $page) {
+            // Pages reached through the business portfolio are not always in /me/accounts — ask the page itself.
+            try {
+                $direct = Http::timeout(10)->get($graph.'/'.self::PAGE_ID, ['fields' => 'id,name,access_token', 'access_token' => $token]);
+                $page = $direct->json('access_token') ? $direct->json() : null;
+            } catch (ConnectionException) {
+                $page = null;
+            }
+        }
         if (! $page || empty($page['access_token'])) {
             return $fail('এটা পেজের টোকেন নয়, আর এই টোকেন দিয়ে দাওয়াত পেজটা পাওয়া গেল না। Explorer-এ "User or Page" থেকে দাওয়াত পেজ বেছে নিন।');
         }

@@ -590,7 +590,9 @@ class MessengerBotTest extends TestCase
         Http::fake([
             'graph.test/oauth/access_token*' => Http::sequence()->push(['access_token' => 'short-user'])->push(['access_token' => 'long-user']),
             'graph.test/me?*' => Http::response(['id' => 'USER1', 'name' => 'Saifur', 'metadata' => ['type' => 'user']]),
-            'graph.test/me/accounts*' => Http::response(['data' => [['id' => Graph::PAGE_ID, 'name' => 'দাওয়াত', 'access_token' => 'fresh-page-token']]]),
+            // The page comes through the business portfolio, so /me/accounts is empty and the page is asked directly.
+            'graph.test/me/accounts*' => Http::response(['data' => []]),
+            'graph.test/'.Graph::PAGE_ID.'*' => Http::response(['id' => Graph::PAGE_ID, 'name' => 'দাওয়াত', 'access_token' => 'fresh-page-token']),
         ]);
         $this->get('/admin-tools/messenger/connect');
         $state = session('messenger_connect_state');
