@@ -60,7 +60,7 @@ class MealRequests extends TableWidget
                     ->url(fn (MealChoice $c) => 'tel:+'.PhoneNumber::international($c->customer->user->phone)),
                 Action::make('handled')->label('ব্যবস্থা হয়েছে')->icon(Heroicon::OutlinedCheck)->color('success')
                     ->visible(fn (MealChoice $c) => $c->status !== 'handled')
-                    ->schema([TextInput::make('note')->label('কী ব্যবস্থা হলো')->maxLength(300)->placeholder('যেমন: সালমা আপার কাছ থেকে মাছ-ভাত যাবে')])
+                    ->schema([TextInput::make('note')->label('কী ব্যবস্থা হলো')->maxLength(300)->placeholder('যেমন: সালমার কাছ থেকে মাছ-ভাত যাবে')])
                     ->action(function (MealChoice $c, array $data) {
                         app(TodayMenu::class)->handle($c, auth()->user(), $data['note'] ?? null);
                         Notification::make()->title('ব্যবস্থা হয়েছে বলে রাখা হলো')->success()->send();

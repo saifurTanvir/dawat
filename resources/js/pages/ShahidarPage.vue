@@ -40,7 +40,7 @@
                     </div>
                     <p v-if="r.handled" class="mt-2 rounded-lg bg-leaf-soft px-3 py-2 text-sm">ব্যবস্থা হয়েছে<template v-if="r.handled_by"> ({{ r.handled_by }})</template><template v-if="r.handled_note">: {{ r.handled_note }}</template></p>
                     <form v-else class="mt-2 flex gap-2" @submit.prevent="handleRequest(r)">
-                        <input v-model.trim="requestNotes[r.id]" class="field flex-1 text-base" maxlength="300" placeholder="কী ব্যবস্থা হলো, যেমন: সালমা আপার মাছ-ভাত" aria-label="কী ব্যবস্থা হলো" />
+                        <input v-model.trim="requestNotes[r.id]" class="field flex-1 text-base" maxlength="300" placeholder="কী ব্যবস্থা হলো, যেমন: সালমার মাছ-ভাত" aria-label="কী ব্যবস্থা হলো" />
                         <button type="submit" class="btn-primary w-auto shrink-0 px-4 text-sm" :disabled="busy">ব্যবস্থা হয়েছে</button>
                     </form>
                 </div>

@@ -39,8 +39,8 @@ class Agent
     public const NO_AREA = 'এলাকা তালিকায় নেই';
 
     public const WELCOME = [
-        'assalamu alaikum apu 😊 Dawat theke bolchi',
-        'apni basay ranna kore ashepasher manusher kache bikri korte parben — amader delivery bhai (shahidar) basar gate theke box niye jaben, box Dawat dibe',
+        'assalamu alaikum 😊 Dawat theke bolchi',
+        'apni basay ranna kore ashepasher manusher kache bikri korte parben — amader elaka manager basar gate theke box niye jaben, box Dawat dibe',
         'join korte apnar nam, elaka ar mobile number ta likhe din — ami nijei add kore dibo',
     ];
 
@@ -152,7 +152,7 @@ class Agent
             }
         }
         if ($badPhone && ! $thread->kitchen_id) {
-            $replies[] = 'apu mobile number ta 01 diye 11 digit e likhun 🙏';
+            $replies[] = 'mobile number ta 01 diye 11 digit e likhun 🙏';
         }
 
         $kitchen = $thread->kitchen;
@@ -192,7 +192,7 @@ class Agent
             $thread->facts = [...$facts, 'existing_kitchen_phone' => $facts['phone']];
             $thread->save();
 
-            return ['apu ei number diye apni age thekei Dawat e join kora ache ✅ notun kore add korte hobe na', 'amader team mile dekhe ekhanei janabe 🙏 ar kichu jante chaile likhun'];
+            return ['ei number diye apni age thekei Dawat e join kora ache ✅ notun kore add korte hobe na', 'amader team mile dekhe ekhanei janabe 🙏 ar kichu jante chaile likhun'];
         }
 
         try {
@@ -225,8 +225,8 @@ class Agent
         $extra[] = 'ar: shuru te dine 1 plate (ek joner purno khabar) nebo 😊';
 
         return [
-            'dhonnobad apu 😊 apnake '.($area ?: 'apnar elaka').' e add kore approve kore dilam ✅',
-            'ekhon shudhu basar location ta lagbe — ashepasher 1 km er customer apnar sathe jurbe, ar amader delivery bhai (shahidar) basar gate theke box nibe (box Dawat dibe)',
+            'dhonnobad 😊 apnake '.($area ?: 'apnar elaka').' e add kore approve kore dilam ✅',
+            'ekhon shudhu basar location ta lagbe — ashepasher 1 km er customer apnar sathe jurbe, ar amader elaka manager basar gate theke box nibe (box Dawat dibe)',
         ];
     }
 
@@ -249,7 +249,7 @@ class Agent
                 continue;
             }
             $t->forceFill(['kitchen_id' => $kitchen->id, 'needs_human' => false, 'human_reason' => null])->save();
-            $messages = ['apu, mile dekhlam ✅ ei number e apnar rannaghor "'.$kitchen->display_name.'" age thekei ache — notun kore kichu korte hobe na 😊'];
+            $messages = ['mile dekhlam ✅ ei number e apnar rannaghor "'.$kitchen->display_name.'" age thekei ache — notun kore kichu korte hobe na 😊'];
             if (! $kitchen->location) {
                 $messages[] = 'shudhu basar location ta baki — basay boshe ei link khulun, location keu dekhbe na: '.PinLink::forKitchen($kitchen)->url();
                 $messages[] = 'link e na hole ekhane 📎 → Location pathan';
@@ -319,7 +319,7 @@ class Agent
             }
             $this->graph->markSeen($t->psid);
             $sent = $this->send($t, [
-                'apu, apnar basar location ta ekhono baki 🙏 location chara kache er customer der sathe jora jay na, shahidar o gate khuje pay na',
+                'apnar basar location ta ekhono baki 🙏 location chara kache er customer der sathe jora jay na, elaka manager o gate khuje pay na',
                 'basay boshe ei link khulun — location keu dekhbe na: '.PinLink::forKitchen($kitchen)->url(),
                 'link e na hole ekhane 📎 → Location → "Send current location" pathan, ba basar thikana likhe din — ami nijei boshiye dibo ✅',
             ]);
@@ -422,7 +422,7 @@ class Agent
         }
         $result = app(PinLinks::class)->submit(PinLink::forKitchen($kitchen), $at, 'map', null);
 
-        return [$result === 'saved' ? 'location peyechi, boshiye dilam ✅ dhonnobad apu 😊' : 'location peyechi ✅ amader team ekbar mile dekhe nibe 🙏'];
+        return [$result === 'saved' ? 'location peyechi, boshiye dilam ✅ dhonnobad 😊' : 'location peyechi ✅ amader team ekbar mile dekhe nibe 🙏'];
     }
 
     private function callList(MessengerThread $thread, ?string $reason): void

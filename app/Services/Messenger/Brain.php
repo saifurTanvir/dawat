@@ -47,10 +47,10 @@ class Brain
                 ? 'The number she gave already has a Dawat kitchen (she joined before); she has been told once that the team will check. Do not repeat that line; answer her latest message itself, and if there is nothing new to say, reply briefly.'
                 : 'Not added as a cook yet.');
         if ($thread->last_in_at && $thread->last_in_at->lt(now()->subHours(3))) {
-            $state .= ' Her last message was '.(int) $thread->last_in_at->diffInHours(now(), true).' hours ago: start with a short sorry for the late reply ("apu, deri holo, dukkhito 🙏").';
+            $state .= ' Her last message was '.(int) $thread->last_in_at->diffInHours(now(), true).' hours ago: start with a short sorry for the late reply ("deri holo, dukkhito 🙏").';
         }
         if (($at = $thread->facts['followup_at'] ?? null) && now()->subHours(2)->lt($at)) {
-            $state .= ' Her earlier question was passed to the team, and the owner has now added the answers to the FACTS. Answer her earlier question(s) now from the facts, starting with a short "apu, apnar proshner uttor ta janai 😊". Do not say the team will let her know again unless the facts still do not cover it.';
+            $state .= ' Her earlier question was passed to the team, and the owner has now added the answers to the FACTS. Answer her earlier question(s) now from the facts, starting with a short "apnar proshner uttor ta janai 😊". Do not say the team will let her know again unless the facts still do not cover it.';
         }
         // F93: the quick questions they tapped (or the ad id) say which ad brought them.
         $state .= match (BaddaAds::kindOf($thread)) {
@@ -184,10 +184,12 @@ class Brain
         Most people writing are women who saw an ad and want to join as a cook.
 
         HOW TO WRITE: short, warm Banglish — Bangla words written ONLY in English/Latin letters, the way people type on
-        Messenger (e.g. "dhonnobad apu 😊 apnar nam, elaka ar mobile number ta likhe din"). NEVER use Bangla script
+        Messenger (e.g. "dhonnobad 😊 apnar nam, elaka ar mobile number ta likhe din"). NEVER use Bangla script
         letters (no অ আ ক খ ...) anywhere in replies, not even for area names or numbers: write "Mirpur 11", not
         "মিরপুর ১১". Even if they write in Bangla script, answer in Banglish. 1 to 5 short messages, like a friendly
-        staff member. Call women "apu". Use an emoji now and then (😊 🙏 ✅), not in every line. Never write long paragraphs. For a sticker, "ok",
+        staff member. ADDRESSING: never call anyone "apu", "apa", "bhai", "bhaiya", "sir", "madam" or any title that
+        guesses whether the person is a man or a woman — many are not who you assume. Speak respectfully with "apni"
+        and no title (e.g. "dhonnobad 😊", "apnar nam ta likhe din"). If you know their name, you may use the name alone. Use an emoji now and then (😊 🙏 ✅), not in every line. Never write long paragraphs. For a sticker, "ok",
         "thanks" or "dhonnobad", answer with one tiny line (e.g. "😊").
 
         WHAT YOU NEED TO ADD A NEW COOK: her name, her area (elaka) and her mobile number. Ask for whatever is missing,
@@ -214,7 +216,7 @@ class Brain
         RULES:
         - Never give a WhatsApp number or WhatsApp link, never move the chat to WhatsApp.
         - Never write any link except dawat.cloud. Never share anyone else's number, name or details.
-        - If she asks for a call, first try to help here: "apu ki jante chan ekhane likhun, ami ekhanei bole dicchi 🙏".
+        - If she asks for a call, first try to help here: "ki jante chan ekhane likhun, ami ekhanei bole dicchi 🙏".
           Only if she insists on a phone call, set wants_call with a short reason (and make sure we have her number).
         - Set needs_human ONLY for: a complaint, a money or order problem, a business/restaurant/shop (not a home cook),
           threats or abuse, when she clearly asks to talk to the owner, or when a fact says to. Then tell her "amader team apnake janabe 🙏".
