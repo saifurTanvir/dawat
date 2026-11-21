@@ -11,6 +11,7 @@ use App\Http\Controllers\Web\PinlessOutsideMessengerController;
 use App\Http\Controllers\Web\SeoController;
 use App\Http\Controllers\Web\SpaController;
 use App\Services\Admin\StaffView;
+use App\Services\Kitchens\PinlessCallList;
 use App\Support\Geo\Geocoder;
 use App\Support\QrImage;
 use Illuminate\Http\Request;
@@ -47,6 +48,26 @@ Route::get('/admin-tools/login-qr', function (Request $request) {
 // F71: back to the admin's own login after looking at the panel as a staff member.
 Route::get('/admin-tools/staff-view/stop', fn () => StaffView::stop())->name('admin.staff-view.stop');
 
+// F94: a zone's cooks without a pin, to call (admins only — carries each cook's own location link).
+Route::get('/admin-tools/pinless-calls.csv', function (Request $request, PinlessCallList $list) {
+    abort_unless($request->user()?->isAdmin(), 403);
+    $rows = $list->rows($request->user());
+    $csv = function () use ($rows) {
+        $out = fopen('php://output', 'w');
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, PinlessCallList::HEADERS);
+        foreach ($rows as $r) {
+            fputcsv($out, $r);
+        }
+        fclose($out);
+    };
+    $name = 'dawat-badda-pin-baki-'.now(config('app.display_timezone'))->format('Y-m-d').'.csv';
+
+    return $request->boolean('view')
+        ? response()->stream($csv, 200, ['Content-Type' => 'text/plain; charset=UTF-8', 'Cache-Control' => 'no-store'])
+        : response()->streamDownload($csv, $name, ['Content-Type' => 'text/csv; charset=UTF-8']);
+})->name('admin.pinless-calls');
+
 // F62: admins look up a home pin from an address or a map link (the panel's location box). F69: staff too.
 Route::get('/admin-tools/geocode', function (Request $request, Geocoder $geocoder) {
     abort_unless($request->user()?->isTeam(), 403);
@@ -66,7 +87,7 @@ Route::get('/admin-tools/messenger/connect/callback', [MessengerConnectControlle
 // F87: work through the call list from the admin's browser.
 Route::get('/admin-tools/call-list', [CallListController::class, 'index'])->middleware('throttle:30,1')->name('admin.call-list.json');
 Route::post('/admin-tools/call-list/{callRequest}/note', [CallListController::class, 'note'])->middleware('throttle:120,1')->name('admin.call-list.note');
-// F93: WhatsApp people who came from a Badda ad.
+// F94: WhatsApp people who came from a Badda ad.
 Route::post('/admin-tools/ad-leads', [AdLeadController::class, 'store'])->middleware('throttle:60,1')->name('admin.ad-leads');
 Route::get('/admin-tools/pinless-outside-messenger', PinlessOutsideMessengerController::class)
     ->middleware('throttle:20,1')->name('admin.pinless-outside-messenger');
