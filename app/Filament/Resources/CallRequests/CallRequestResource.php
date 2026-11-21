@@ -9,6 +9,7 @@ use App\Filament\Support\FeatureGate;
 use App\Filament\Support\Links;
 use App\Filament\Support\PhoneField;
 use App\Models\CallRequest;
+use App\Models\User;
 use App\Services\Admin\CallOnboarding;
 use BackedEnum;
 use Filament\Forms\Components\Select;
@@ -79,9 +80,10 @@ class CallRequestResource extends Resource
                 $filters = $livewire->tableFilters ?? [];
                 $askedForStatus = filled($filters['status']['value'] ?? null);
                 $notOnboarded = (bool) ($filters['not_onboarded']['isActive'] ?? false);
+                $closedBy = filled($filters['done_by']['value'] ?? null);
 
                 return $query->with('user.kitchen')
-                    ->when(! $askedForStatus && ! $notOnboarded, fn (Builder $q) => $q->open())
+                    ->when(! $askedForStatus && ! $notOnboarded && ! $closedBy, fn (Builder $q) => $q->open())
                     ->orderByRaw("status = 'done'");
             })
             ->defaultSort('created_at')
@@ -102,6 +104,15 @@ class CallRequestResource extends Resource
                         null, '' => $query,
                         default => $query->where('status', $data['value']),
                     }),
+                // F88: who closed how many — pick a person to see the ones they finished.
+                SelectFilter::make('done_by')->label('কে বন্ধ করেছেন')
+                    ->options(fn () => User::query()
+                        ->whereIn('id', CallRequest::query()->whereNotNull('done_by')->select('done_by'))
+                        ->withCount(['closedCallRequests'])->orderByDesc('closed_call_requests_count')->get()
+                        ->mapWithKeys(fn ($u) => [$u->id => $u->name.' ('.$u->closed_call_requests_count.')'])->all())
+                    ->query(fn (Builder $query, array $data) => filled($data['value'] ?? null)
+                        ? $query->where('done_by', $data['value'])->where('status', CallRequestStatus::Done)
+                        : $query),
                 // F70
                 Filter::make('not_onboarded')->label('কথা হয়েছে, সিস্টেমে যোগ বাকি')
                     ->query(fn (Builder $query) => $query->whereIn('id', CallOnboarding::pending()->select('id'))),
