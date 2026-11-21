@@ -48,7 +48,7 @@ class GuestMealRequests extends TableWidget
                 TextColumn::make('note')->label('নোট')->placeholder('—')->wrap(),
                 TextColumn::make('kitchen.display_name')->label('গৃহিণী')->placeholder('—')
                     ->description(fn (GuestMeal $g) => $g->kitchen?->user?->phone),
-                TextColumn::make('shahidar.name')->label('শাহিদার')->placeholder('—'),
+                TextColumn::make('shahidar.name')->label('এলাকা ম্যানেজার')->placeholder('—'),
                 TextColumn::make('status')->label('অবস্থা')->badge()
                     ->formatStateUsing(fn (string $state, GuestMeal $g) => ($g->followup_at && $state === 'asked' ? '৫ মিনিট পার — ' : '').GuestMeal::STATUS[$state])
                     ->color(fn (string $state, GuestMeal $g) => match ($state) {

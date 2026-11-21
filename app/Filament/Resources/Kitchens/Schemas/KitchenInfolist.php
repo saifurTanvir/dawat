@@ -73,7 +73,7 @@ class KitchenInfolist
                             ->placeholder('—'),
                     ]),
                 Section::make('গৃহিণীর হয়ে যা করা হয়েছে')
-                    ->description('অ্যাডমিন বা শাহিদার যা যা করেছেন — প্রতিবার গৃহিণীকে জানানো হয়েছে।')
+                    ->description('অ্যাডমিন বা এলাকা ম্যানেজার যা যা করেছেন — প্রতিবার গৃহিণীকে জানানো হয়েছে।')
                     ->collapsible()
                     ->schema([ViewEntry::make('acted_log')->hiddenLabel()->view('filament.kitchens.log')]),
             ]);

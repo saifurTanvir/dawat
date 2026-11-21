@@ -22,11 +22,11 @@ class KitchenAction extends Model
         return $this->belongsTo(Kitchen::class);
     }
 
-    /** "দাওয়াত টিম (রাশেদ)" or "শাহিদার করিম" */
+    /** "দাওয়াত টিম (রাশেদ)" or "এলাকা ম্যানেজার করিম" */
     public function whoLabel(): string
     {
         return $this->role === 'shahidar'
-            ? 'শাহিদার '.($this->user?->name ?: '')
+            ? 'এলাকা ম্যানেজার '.($this->user?->name ?: '')
             : 'দাওয়াত টিম'.($this->user?->name ? " ({$this->user->name})" : '');
     }
 

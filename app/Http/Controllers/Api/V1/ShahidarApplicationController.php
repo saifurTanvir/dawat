@@ -35,8 +35,8 @@ class ShahidarApplicationController extends Controller
 
         if ($applications->isAlreadyShahidar($data['phone'])) {
             return response()->json([
-                'message' => 'এই নম্বর আগে থেকেই দাওয়াতের শাহিদার। এই নম্বর দিয়ে লগইন করুন।',
-                'errors' => ['phone' => ['এই নম্বর আগে থেকেই শাহিদার।']],
+                'message' => 'এই নম্বর আগে থেকেই দাওয়াতের এলাকা ম্যানেজার। এই নম্বর দিয়ে লগইন করুন।',
+                'errors' => ['phone' => ['এই নম্বর আগে থেকেই এলাকা ম্যানেজার।']],
             ], 422);
         }
 

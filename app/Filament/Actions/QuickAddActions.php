@@ -70,16 +70,16 @@ final class QuickAddActions
     public static function shahidar(): Action
     {
         return Action::make('addShahidar')
-            ->label('শাহিদার যোগ করুন')
+            ->label('এলাকা ম্যানেজার যোগ করুন')
             ->icon(Heroicon::OutlinedTruck)
             ->color('info')
-            ->modalHeading('নতুন শাহিদার')
+            ->modalHeading('নতুন এলাকা ম্যানেজার')
             ->modalSubmitActionLabel('যোগ করুন')
             ->extraModalWindowAttributes(self::VOICE)
             ->schema(ShahidarResource::createForm())
             ->action(function (array $data, $livewire) {
                 $user = ShahidarResource::createShahidar($data);
-                Notification::make()->title('শাহিদার যোগ হয়েছে: '.$user->name)->success()->send();
+                Notification::make()->title('এলাকা ম্যানেজার যোগ হয়েছে: '.$user->name)->success()->send();
                 $livewire->redirect(ShahidarResource::getUrl('view', ['record' => $user]));
             });
     }
@@ -120,7 +120,7 @@ final class QuickAddActions
             Select::make('area_id')->label('এলাকা')->required()
                 ->options(fn () => Area::active()->orderBy('sort_order')->pluck('name', 'id')),
             TextInput::make('pickup_address')->label('পিকআপের ঠিকানা')->maxLength(255)
-                ->helperText('শাহিদার এখান থেকে খাবার তুলবেন। ক্রেতারা কখনো দেখেন না।'),
+                ->helperText('এলাকা ম্যানেজার এখান থেকে খাবার তুলবেন। ক্রেতারা কখনো দেখেন না।'),
             // F62: link, current location or address search
             LocationField::make('where')->live(onBlur: true),
             Toggle::make('approve')->label('এখনই অনুমোদন দিন (ফোনে কথা হয়েছে)')

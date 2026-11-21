@@ -17,11 +17,11 @@ class ViewShahidar extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'শাহিদার: '.($this->getRecord()->name ?: $this->getRecord()->phone);
+        return 'এলাকা ম্যানেজার: '.($this->getRecord()->name ?: $this->getRecord()->phone);
     }
 
     protected function getHeaderActions(): array
     {
-        return [ViewAsAction::make(fn ($record) => $record, 'শাহিদারের অ্যাপ দেখুন'), LoginHelpActions::group(fn ($record) => $record), RemarkActions::add(fn ($record) => $record), EditAction::make(), RemovalActions::removeShahidar()];
+        return [ViewAsAction::make(fn ($record) => $record, 'এলাকা ম্যানেজারের অ্যাপ দেখুন'), LoginHelpActions::group(fn ($record) => $record), RemarkActions::add(fn ($record) => $record), EditAction::make(), RemovalActions::removeShahidar()];
     }
 }

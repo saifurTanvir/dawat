@@ -9,13 +9,13 @@
             <!-- Their answer -->
             <div v-if="m.choice === 'pick' && m.picked" class="mt-1 rounded-lg bg-leaf-soft px-3 py-2 text-sm">
                 <p>আজ নিচ্ছেন: <strong>{{ m.picked.title }}</strong></p>
-                <p class="text-muted">{{ m.picked.kitchen }} · {{ taka(m.picked.price_paisa) }} — আপনার শাহিদার পৌঁছে দেবেন।</p>
+                <p class="text-muted">{{ m.picked.kitchen }} · {{ taka(m.picked.price_paisa) }} — আপনার এলাকা ম্যানেজার পৌঁছে দেবেন।</p>
             </div>
             <p v-else-if="m.choice === 'skip'" class="mt-1 rounded-lg bg-steel px-3 py-2 text-sm">আজ এই বেলায় খাবেন না বলেছেন — খাবার আসবে না।</p>
             <div v-else-if="m.choice === 'change'" class="mt-1 rounded-lg px-3 py-2 text-sm" :class="m.handled ? 'bg-leaf-soft' : 'bg-turmeric-soft'">
                 <p>এই খাবার খাবেন না, চেয়েছেন: <strong>{{ m.wish }}</strong></p>
                 <p v-if="m.handled" class="mt-1">ব্যবস্থা হয়েছে<template v-if="m.handled_note">: {{ m.handled_note }}</template></p>
-                <p v-else class="mt-1 text-muted">আপনার শাহিদার শিগগিরই ফোন করে অন্য খাবারের ব্যবস্থা করবেন।</p>
+                <p v-else class="mt-1 text-muted">আপনার এলাকা ম্যানেজার শিগগিরই ফোন করে অন্য খাবারের ব্যবস্থা করবেন।</p>
             </div>
 
             <template v-if="m.can_choose">
@@ -47,7 +47,7 @@
                 <form v-else-if="asking === m.slot" class="mt-2" @submit.prevent="send(m, 'change')">
                     <label :for="`wish-${m.slot}`" class="mb-1 block text-sm font-semibold">কী খেতে চান?</label>
                     <input :id="`wish-${m.slot}`" v-model.trim="wish" class="field text-base" maxlength="300" placeholder="যেমন: মাছ ছাড়া কিছু, শুধু ডাল-ভাত" />
-                    <p class="mt-1 text-xs text-muted">আপনার শাহিদার আর দাওয়াত টিম জানবেন, গৃহিণী নন।</p>
+                    <p class="mt-1 text-xs text-muted">আপনার এলাকা ম্যানেজার আর দাওয়াত টিম জানবেন, গৃহিণী নন।</p>
                     <div class="mt-2 flex gap-2">
                         <button type="submit" class="btn-primary min-h-10 w-auto px-4 text-sm" :disabled="busy || wish.length < 2">জানান</button>
                         <button type="button" class="btn-quiet min-h-10 px-3 text-sm" @click="asking = null">থাক</button>

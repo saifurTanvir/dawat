@@ -30,7 +30,7 @@
             <p class="mt-1">{{ bn(o.plates) }} প্লেট · {{ taka(o.total_paisa) }} · <span class="font-semibold">{{ o.status_label }}</span></p>
             <p class="mt-1 text-sm text-muted">{{ o.receive === 'self' ? 'নিজে নেবেন — গৃহিণী ফোন করবেন' : `পৌঁছাবে: ${o.address}` }}</p>
             <div class="mt-2 flex flex-wrap items-center gap-x-4">
-                <a v-if="o.shahidar && ['booked', 'picked_up'].includes(o.status)" :href="`tel:${o.shahidar.phone}`" class="font-semibold text-leaf">শাহিদারকে ফোন ({{ o.shahidar.name }})</a>
+                <a v-if="o.shahidar && ['booked', 'picked_up'].includes(o.status)" :href="`tel:${o.shahidar.phone}`" class="font-semibold text-leaf">এলাকা ম্যানেজারকে ফোন ({{ o.shahidar.name }})</a>
                 <button v-if="o.can_cancel" type="button" class="font-semibold text-chili" :disabled="busy" @click="cancel(o)">বাতিল করুন</button>
             </div>
         </div>

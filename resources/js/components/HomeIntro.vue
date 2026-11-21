@@ -17,9 +17,9 @@
                 <span :class="[ICON, 'bg-turmeric-soft text-leaf-deep']"><svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h16a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6Z" /><path d="M12 9V6M8 9V7M16 9V7M2 13h20" /></svg></span>
                 রান্না করে আয় করুন
             </RouterLink>
-            <RouterLink to="/join/shahidar" :class="[TILE, 'ring-2 ring-turmeric']">
+            <RouterLink to="/join/area-manager" :class="[TILE, 'ring-2 ring-turmeric']">
                 <span :class="[ICON, 'bg-turmeric text-leaf-deep']"><svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="16.5" r="3.5" /><circle cx="18.5" cy="16.5" r="3.5" /><path d="M5.5 16.5L9 9h6l3.5 7.5M9 9l3 7.5h-6.5M14 5h2.5L15 9" /></svg></span>
-                <span>শাহিদার হয়ে আয় করুন<span class="block text-xs font-normal text-muted">মাসে {{ incomeShort }}</span></span>
+                <span>এলাকা ম্যানেজার হয়ে আয় করুন<span class="block text-xs font-normal text-muted">মাসে {{ incomeShort }}</span></span>
             </RouterLink>
         </nav>
         <details class="mt-2 text-[0.9375rem]">
@@ -79,12 +79,12 @@
             </RouterLink>
 
             <!-- F53: the offer that brings in runners -->
-            <RouterLink to="/join/shahidar" :class="[DOOR, 'ring-2 ring-turmeric']">
+            <RouterLink to="/join/area-manager" :class="[DOOR, 'ring-2 ring-turmeric']">
                 <span :class="[ART, 'bg-turmeric text-leaf-deep']">
                     <svg viewBox="0 0 24 24" class="size-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="16.5" r="3.5" /><circle cx="18.5" cy="16.5" r="3.5" /><path d="M5.5 16.5L9 9h6l3.5 7.5M9 9l3 7.5h-6.5M14 5h2.5L15 9" /></svg>
                 </span>
                 <span class="flex-1">
-                    <strong class="block text-[1.0625rem]">শাহিদার হয়ে আয় করুন</strong>
+                    <strong class="block text-[1.0625rem]">এলাকা ম্যানেজার হয়ে আয় করুন</strong>
                     <span class="block font-semibold text-leaf">মাসে {{ incomeText }} পর্যন্ত আয়ের সুযোগ</span>
                     <span class="block text-sm text-muted">নিজের পাড়ায় খাবার পৌঁছে দিন · পুরুষ-মহিলা সবাই</span>
                 </span>
@@ -180,7 +180,7 @@ const trust = computed(() => {
 const steps = [
     'পাড়ার গৃহিণী রান্না পোস্ট দেন — দাওয়াত প্রত্যেক রান্নাঘর নিজে দেখে অনুমোদন দেয়।',
     'আপনি আজকের খাবার থেকে "নিতে চাই" চাপেন, বা রোজকার লাঞ্চ বুক করেন।',
-    'শাহিদার (দাওয়াতের পাড়ার ডেলিভারি সাথী) খাবার বাসায় বা অফিসে পৌঁছে দেন।',
+    'এলাকা ম্যানেজার (খাবার নেওয়া ও পৌঁছানো) খাবার বাসায় বা অফিসে পৌঁছে দেন।',
 ];
 
 onMounted(async () => {

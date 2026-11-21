@@ -143,7 +143,7 @@ class PeopleImportTest extends TestCase
         $w->addRow(Row::fromValues(['এই শিটে কিছু নেই']));
         $w->addNewSheetAndMakeItCurrent()->setName('তালিকা');
         $w->addRow(Row::fromValues(['মোবাইল (আবশ্যক)', 'নাম', 'ভূমিকা', 'এলাকা']));
-        $w->addRow(Row::fromValues([1912345678, 'সালমা', 'শাহিদার', 'রামপুরা']));
+        $w->addRow(Row::fromValues([1912345678, 'সালমা', 'এলাকা ম্যানেজার', 'রামপুরা']));
         $w->close();
         $file = UploadedFile::fake()->createWithContent('marketing.xlsx', file_get_contents($path));
 

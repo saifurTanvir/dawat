@@ -142,7 +142,7 @@ class PostForCookTest extends TestCase
         $this->assertSame(1, Order::where('customer_id', $this->customer->id)->count());
 
         $this->actingAs($this->kitchen->user, 'sanctum')->getJson('/api/v1/my/posts')
-            ->assertJsonPath('data.0.source_label', 'শাহিদার');
+            ->assertJsonPath('data.0.source_label', 'এলাকা ম্যানেজার');
 
         $other = Kitchen::factory()->approved()->create();
         $this->actingAs($this->shahidar, 'sanctum')->postJson("/api/v1/shahidar/kitchens/{$other->id}/posts", [

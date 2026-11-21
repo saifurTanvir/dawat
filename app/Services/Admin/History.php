@@ -128,7 +128,7 @@ class History
             $add($o->ready_at, 'রান্না রেডি', trim(($actor ? $actor->whoLabel().' জানিয়েছেন' : 'গৃহিণী জানিয়েছেন').($o->ready_note ? ' · “'.$o->ready_note.'”' : '')));
         }
         if ($o->picked_at) {
-            $add($o->picked_at, 'শাহিদার খাবার তুলেছেন', trim(($o->shahidar?->name ?? '').($o->sticker ? ' · স্টিকার '.$o->sticker->displayCode() : '')));
+            $add($o->picked_at, 'এলাকা ম্যানেজার খাবার তুলেছেন', trim(($o->shahidar?->name ?? '').($o->sticker ? ' · স্টিকার '.$o->sticker->displayCode() : '')));
         }
         if ($o->delivered_at) {
             $add($o->delivered_at, 'পৌঁছেছে', BoxReviews::deliveredBy($o)
@@ -148,7 +148,7 @@ class History
             $add($o->paid_at, 'টাকা পাওয়া গেছে', BoxReviews::paymentLabel($o).($o->collected_by ? ' · তুলেছেন '.$by($o->collected_by) : ''));
         }
         if ($o->shahidar_settlement_id && ($s = Settlement::find($o->shahidar_settlement_id))) {
-            $add($s->created_at, 'শাহিদার দাওয়াতকে টাকা জমা দিয়েছেন', 'জমা নিয়েছেন '.($by($s->settled_by) ?? '—'));
+            $add($s->created_at, 'এলাকা ম্যানেজার দাওয়াতকে টাকা জমা দিয়েছেন', 'জমা নিয়েছেন '.($by($s->settled_by) ?? '—'));
         }
         if ($o->cook_settlement_id && ($s = Settlement::find($o->cook_settlement_id))) {
             $add($s->created_at, 'গৃহিণীকে পরিশোধ', $this->tk($s->amount_paisa).' (একসাথে '.$this->bn($s->orders_count).'টা বক্স)'.($s->note ? ' · '.$s->note : ''));

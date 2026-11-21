@@ -30,7 +30,7 @@ class QuickAddTest extends TestCase
     public function test_dashboard_shows_the_three_buttons_and_the_voice_typing_script(): void
     {
         $this->get('/admin')->assertOk()
-            ->assertSee('গ্রাহক যোগ করুন')->assertSee('রাঁধুনি যোগ করুন')->assertSee('শাহিদার যোগ করুন')
+            ->assertSee('গ্রাহক যোগ করুন')->assertSee('রাঁধুনি যোগ করুন')->assertSee('এলাকা ম্যানেজার যোগ করুন')
             ->assertSee('webkitSpeechRecognition', false);
     }
 

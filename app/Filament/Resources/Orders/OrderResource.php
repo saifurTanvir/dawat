@@ -95,7 +95,7 @@ class OrderResource extends Resource
                 TextColumn::make('recipient')->label('গ্রাহক')->state(fn (Order $record) => $record->recipient()->name ?: $record->recipient()->phone)
                     ->description(fn (Order $record) => $record->isOneOff() ? ($record->isSelfPickup() ? 'একবারের · নিজে নেবেন' : 'একবারের') : null),
                 TextColumn::make('kitchen.display_name')->label('গৃহিণী')->url(fn (Order $record) => Links::kitchen($record->kitchen_id)),
-                TextColumn::make('shahidar.name')->label('শাহিদার')->url(fn (Order $record) => Links::shahidar($record->shahidar_id)),
+                TextColumn::make('shahidar.name')->label('এলাকা ম্যানেজার')->url(fn (Order $record) => Links::shahidar($record->shahidar_id)),
                 TextColumn::make('plates')->label('প্লেট'),
                 TextColumn::make('total')->label('মোট')->state(fn (Order $record) => '৳'.number_format($record->totalPaisa() / 100)),
                 TextColumn::make('status')->label('অবস্থা')->badge()
@@ -114,7 +114,7 @@ class OrderResource extends Resource
                 SelectFilter::make('kind')->label('ধরন')->options(['regular' => 'নিয়মিত', 'oneoff' => 'একবারের (নিতে চাই)']),
                 Filter::make('unverified')->label('যাচাই বাকি (কোড/স্ক্যান ছাড়া)')
                     ->query(fn (Builder $query) => $query->where('confirm_method', 'shahidar_tap')),
-                SelectFilter::make('shahidar_id')->label('শাহিদার')
+                SelectFilter::make('shahidar_id')->label('এলাকা ম্যানেজার')
                     ->options(fn () => User::role(Roles::SHAHIDAR)->get()->mapWithKeys(fn (User $u) => [$u->id => $u->name ?: $u->phone])->all()),
                 SelectFilter::make('kitchen_id')->label('গৃহিণী')->relationship('kitchen', 'display_name'),
             ])
@@ -166,7 +166,7 @@ class OrderResource extends Resource
                     ->state(fn (Order $record) => trim(($record->recipient()?->name ?? '').' · '.($record->recipient()?->phone ?? ''), ' ·'))
                     ->url(fn (Order $record) => Links::recipient($record)),
                 TextEntry::make('kitchen.display_name')->label('গৃহিণী')->url(fn (Order $record) => Links::kitchen($record->kitchen_id)),
-                TextEntry::make('shahidar.name')->label('শাহিদার')->placeholder('—')->url(fn (Order $record) => Links::shahidar($record->shahidar_id)),
+                TextEntry::make('shahidar.name')->label('এলাকা ম্যানেজার')->placeholder('—')->url(fn (Order $record) => Links::shahidar($record->shahidar_id)),
                 TextEntry::make('post.title')->label('পোস্ট')->placeholder('—')->url(fn (Order $record) => Links::post($record->post_id)),
                 TextEntry::make('address')->label('ঠিকানা')->state(fn (Order $record) => $record->recipientAddress())->placeholder('—')->columnSpanFull(),
             ]),

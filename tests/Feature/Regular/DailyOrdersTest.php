@@ -200,7 +200,7 @@ class DailyOrdersTest extends TestCase
         $this->regular([], 'রিনা');
 
         $this->actingAs($this->kitchen->user, 'sanctum')->postJson('/api/v1/my/bookings/off', ['meal_slot' => 'lunch'])
-            ->assertOk()->assertJsonPath('message', '২ জন গ্রাহককে জানানো হচ্ছে। শাহিদার বিকল্প দেখবেন।');
+            ->assertOk()->assertJsonPath('message', '২ জন গ্রাহককে জানানো হচ্ছে। এলাকা ম্যানেজার বিকল্প দেখবেন।');
 
         $this->assertSame(2, Order::where('status', OrderStatus::Cancelled)->where('cancelled_by', 'cook')->count());
         Queue::assertPushed(SendOrderSms::class, fn ($job) => $job->purpose === OtpPurpose::CookOff);

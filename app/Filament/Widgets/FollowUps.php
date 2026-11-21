@@ -36,7 +36,7 @@ class FollowUps extends TableWidget
             ->columns([
                 TextColumn::make('who')->label('কে')->weight('semibold')
                     ->state(fn (Remark $r) => RemarkActions::who($r->user))
-                    ->description(fn (Remark $r) => $r->user->phone.' · '.$r->user->roles->pluck('name')->map(fn ($n) => ['cook' => 'গৃহিণী', 'buyer' => 'ক্রেতা', 'shahidar' => 'শাহিদার', 'admin' => 'অ্যাডমিন'][$n] ?? $n)->implode(', '))
+                    ->description(fn (Remark $r) => $r->user->phone.' · '.$r->user->roles->pluck('name')->map(fn ($n) => ['cook' => 'গৃহিণী', 'buyer' => 'ক্রেতা', 'shahidar' => 'এলাকা ম্যানেজার', 'admin' => 'অ্যাডমিন'][$n] ?? $n)->implode(', '))
                     ->url(fn (Remark $r) => Links::person($r->user)),
                 TextColumn::make('body')->label('রিমার্কস')->wrap(),
                 TextColumn::make('follow_up_on')->label('কবে')->date('j M')

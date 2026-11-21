@@ -44,7 +44,7 @@ class CallOnboardingTest extends TestCase
         $this->assertSame('cook', CallOnboarding::guessRole($r));
         $this->assertSame($this->area->id, CallOnboarding::guessArea($r));
         $this->assertSame('customer', CallOnboarding::guessRole($this->req('অফিসে দুপুরে নিয়মিত খাবার নিতে চান', '01711111111')));
-        $this->assertSame('shahidar', CallOnboarding::guessRole($this->req('বাইক আছে, শাহিদার হতে চান', '01722222222')));
+        $this->assertSame('shahidar', CallOnboarding::guessRole($this->req('বাইক আছে, এলাকা ম্যানেজার হতে চান', '01722222222')));
         $this->assertSame('account', CallOnboarding::guessRole($this->req('কিছু প্রশ্ন আছে', '01733333333')));
     }
 
@@ -104,7 +104,7 @@ class CallOnboardingTest extends TestCase
 
     public function test_a_shahidar_or_just_an_account(): void
     {
-        $r = $this->req('শাহিদার হতে চান', '01722222222', 'করিম');
+        $r = $this->req('এলাকা ম্যানেজার হতে চান', '01722222222', 'করিম');
         $r->forceFill(['status' => CallRequestStatus::Done])->save();
         Livewire::test(CallOnboardingPending::class)
             ->callTableAction('onboard', $r, ['onboard_role' => 'shahidar', 'onboard_name' => 'করিম', 'area_ids' => [$this->area->id]])

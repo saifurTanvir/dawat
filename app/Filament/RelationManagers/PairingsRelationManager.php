@@ -31,7 +31,7 @@ class PairingsRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('customer.user.name')->label('গ্রাহক')->url(fn (Pairing $p) => CustomerResource::getUrl('view', ['record' => $p->customer_id])),
                 TextColumn::make('kitchen.display_name')->label('গৃহিণী')->url(fn (Pairing $p) => Links::kitchen($p->kitchen_id)),
-                TextColumn::make('shahidar.name')->label('শাহিদার')->url(fn (Pairing $p) => Links::shahidar($p->shahidar_id)),
+                TextColumn::make('shahidar.name')->label('এলাকা ম্যানেজার')->url(fn (Pairing $p) => Links::shahidar($p->shahidar_id)),
                 TextColumn::make('started_at')->label('শুরু')->date('j M Y'),
                 TextColumn::make('ended_at')->label('শেষ')->date('j M Y')->placeholder('চলছে'),
                 // F55: did the admin take the platform's suggestion?
@@ -54,7 +54,7 @@ class PairingsRelationManager extends RelationManager
             ->headerActions([CsvDownload::make('pairings', [
                 'গ্রাহক' => fn (Pairing $p) => $p->customer?->user?->name,
                 'গৃহিণী' => fn (Pairing $p) => $p->kitchen?->display_name,
-                'শাহিদার' => fn (Pairing $p) => $p->shahidar?->name,
+                'এলাকা ম্যানেজার' => fn (Pairing $p) => $p->shahidar?->name,
                 'শুরু' => fn (Pairing $p) => $p->started_at?->toDateString(),
                 'শেষ' => fn (Pairing $p) => $p->ended_at?->toDateString(),
                 'কারণ' => fn (Pairing $p) => $p->end_reason,

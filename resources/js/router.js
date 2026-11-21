@@ -26,7 +26,8 @@ const routes = [
     },
     {
         // F53: apply to work as a shahidar (public)
-        path: '/join/shahidar',
+        path: '/join/area-manager',
+        alias: '/join/shahidar', // older link, already sent to many people
         name: 'shahidar-apply',
         component: () => import('./pages/ShahidarApplyPage.vue'),
     },

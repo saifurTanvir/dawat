@@ -47,9 +47,9 @@ class ShahidarResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'নিয়মিত খাবার';
 
-    protected static ?string $modelLabel = 'শাহিদার';
+    protected static ?string $modelLabel = 'এলাকা ম্যানেজার';
 
-    protected static ?string $pluralModelLabel = 'শাহিদার';
+    protected static ?string $pluralModelLabel = 'এলাকা ম্যানেজার';
 
     protected static ?int $navigationSort = 30;
 
@@ -72,7 +72,7 @@ class ShahidarResource extends Resource
     {
         return [
             PhoneField::make()
-                ->helperText('এই নম্বর দিয়ে OTP-তে লগইন করবেন। আগে থেকে অ্যাকাউন্ট থাকলে সেটাতেই শাহিদার রোল যোগ হবে।'),
+                ->helperText('এই নম্বর দিয়ে OTP-তে লগইন করবেন। আগে থেকে অ্যাকাউন্ট থাকলে সেটাতেই এলাকা ম্যানেজার রোল যোগ হবে।'),
             TextInput::make('name')->label('নাম')->required()->maxLength(60),
             Select::make('area_ids')->label('কোন এলাকায় কাজ করবেন')
                 ->options(fn () => Area::active()->orderBy('sort_order')->pluck('name', 'id'))
@@ -102,7 +102,7 @@ class ShahidarResource extends Resource
     {
         return $schema->components([
             Section::make('সারাংশ')->columnSpanFull()->schema([ViewEntry::make('history_summary')->hiddenLabel()->view('filament.history.summary-shahidar')]),
-            Section::make('শাহিদার')->columns(3)->schema([
+            Section::make('এলাকা ম্যানেজার')->columns(3)->schema([
                 TextEntry::make('name')->label('নাম'),
                 TextEntry::make('phone')->label('ফোন')->copyable(),
                 TextEntry::make('status')->label('অবস্থা')->badge(),
@@ -124,7 +124,7 @@ class ShahidarResource extends Resource
 
     public static function getGlobalSearchResultTitle(Model $record): string
     {
-        return 'শাহিদার: '.($record->name ?: $record->phone);
+        return 'এলাকা ম্যানেজার: '.($record->name ?: $record->phone);
     }
 
     public static function table(Table $table): Table

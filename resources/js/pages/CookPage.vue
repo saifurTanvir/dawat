@@ -65,10 +65,10 @@
                     <!-- F38: tell the shahidar the food is ready -->
                     <div v-if="slot.can_ready" class="mt-3 rounded-xl bg-leaf-soft p-3">
                         <p v-if="slot.ready_at" class="text-sm">
-                            ✅ শাহিদারকে জানানো হয়েছে {{ clockText(slot.ready_at) }}<template v-if="slot.ready_note"> · “{{ slot.ready_note }}”</template>
+                            ✅ এলাকা ম্যানেজারকে জানানো হয়েছে {{ clockText(slot.ready_at) }}<template v-if="slot.ready_note"> · “{{ slot.ready_note }}”</template>
                         </p>
                         <template v-if="readySlot === slot.meal_slot">
-                            <label :for="`ready-${slot.meal_slot}`" class="mb-1 block text-sm font-semibold">শাহিদারের জন্য কিছু বলবেন? (ঐচ্ছিক)</label>
+                            <label :for="`ready-${slot.meal_slot}`" class="mb-1 block text-sm font-semibold">এলাকা ম্যানেজারের জন্য কিছু বলবেন? (ঐচ্ছিক)</label>
                             <input
                                 :id="`ready-${slot.meal_slot}`"
                                 v-model="readyNote"
@@ -82,7 +82,7 @@
                             </div>
                         </template>
                         <button v-else type="button" class="btn-primary mt-1" :disabled="busy" @click="openReady(slot)">
-                            {{ slot.ready_at ? 'আবার জানান' : `${placeOf(slot.label)} খাবার রেডি — শাহিদারকে জানান` }}
+                            {{ slot.ready_at ? 'আবার জানান' : `${placeOf(slot.label)} খাবার রেডি — এলাকা ম্যানেজারকে জানান` }}
                         </button>
                     </div>
                     <button

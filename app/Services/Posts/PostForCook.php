@@ -54,7 +54,7 @@ class PostForCook
 
         $who = match ($source) {
             'auto' => 'আপনার প্রতিদিনের মেনু থেকে',
-            'shahidar' => 'শাহিদার '.($by?->name ?: '').' আপনার হয়ে',
+            'shahidar' => 'এলাকা ম্যানেজার '.($by?->name ?: '').' আপনার হয়ে',
             default => 'দাওয়াত টিম আপনার হয়ে',
         };
         Push::toUser($kitchen->user_id, 'আজকের '.$post->meal_slot->label().' পোস্ট হয়েছে',

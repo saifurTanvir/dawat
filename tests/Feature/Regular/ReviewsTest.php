@@ -157,7 +157,7 @@ class ReviewsTest extends TestCase
         $this->assertSame('বাকি', $rows[0]['payment']); // no cash marked yet
         app(Settlements::class)->markPaid($this->regular->fresh(), $this->shahidar);
         $this->assertSame('পরিশোধ হয়েছে', $this->getJson('/api/v1/my/history')->json('data.0.payment'));
-        $this->assertSame('শাহিদার করিম', $rows[0]['delivered_by']);
+        $this->assertSame('এলাকা ম্যানেজার করিম', $rows[0]['delivered_by']);
         $this->assertTrue($rows[0]['can_review']);
         $this->assertSame('গ্রাহক: আজ না', $rows[1]['reason']);
         $this->assertNull($rows[1]['payment']);

@@ -128,7 +128,7 @@
         <template v-if="!showIntro">
         <aside class="mt-12 border-t border-rule pt-6">
             <p class="font-semibold">প্রতিদিন ঘরের খাবার চান?</p>
-            <p class="mt-1 text-muted">পাড়ার একজন গৃহিণী রোজ রান্না করবেন, শাহিদার বাসায় পৌঁছে দেবেন।</p>
+            <p class="mt-1 text-muted">পাড়ার একজন গৃহিণী রোজ রান্না করবেন, এলাকা ম্যানেজার বাসায় পৌঁছে দেবেন।</p>
             <RouterLink to="/regular" class="btn-quiet -ml-4 mt-1">নিয়মিত খাবারের অনুরোধ করুন</RouterLink>
         </aside>
         <aside class="mt-6 border-t border-rule pt-6">
@@ -153,7 +153,7 @@
                 <li v-if="!install.standalone"><RouterLink to="/app" class="text-leaf underline-offset-2 hover:underline">📲 অ্যাপ ইনস্টল করুন</RouterLink></li>
                 <li><a href="/lunch" class="text-leaf underline-offset-2 hover:underline">প্রতিদিনের লাঞ্চ</a></li>
                 <li><a href="/rannaghor" class="text-leaf underline-offset-2 hover:underline">গৃহিণীদের জন্য</a></li>
-                <li><RouterLink to="/join/shahidar" class="text-leaf underline-offset-2 hover:underline">শাহিদার হতে চাই</RouterLink></li>
+                <li><RouterLink to="/join/area-manager" class="text-leaf underline-offset-2 hover:underline">এলাকা ম্যানেজার হতে চাই</RouterLink></li>
                 <li><a href="/about" class="text-leaf underline-offset-2 hover:underline">দাওয়াত সম্পর্কে</a></li>
                 <li><a :href="CONTACT.facebook" class="text-leaf underline-offset-2 hover:underline" rel="noopener">ফেসবুক গ্রুপ</a></li>
             </ul>

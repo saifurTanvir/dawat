@@ -86,7 +86,7 @@ const kitchen = ref(null);
 const contact = ref({ allow_order: true, allow_call: false, allow_message: true, allow_comment: true });
 
 const contactOptions = [
-    { key: 'allow_order', label: '"নিতে চাই" বাটন', help: 'ক্রেতা অ্যাপেই প্লেট বুক করবেন। শাহিদার পৌঁছে দেবেন, বা ক্রেতা নিজে নেবেন।' },
+    { key: 'allow_order', label: '"নিতে চাই" বাটন', help: 'ক্রেতা অ্যাপেই প্লেট বুক করবেন। এলাকা ম্যানেজার পৌঁছে দেবেন, বা ক্রেতা নিজে নেবেন।' },
     { key: 'allow_message', label: 'হোয়াটসঅ্যাপে মেসেজ', help: 'ক্রেতা আগে থেকে লেখা একটা মেসেজ পাঠাবেন।' },
     { key: 'allow_comment', label: 'পোস্টে কমেন্ট', help: 'সবাই দেখতে পাবেন। নম্বর দেখা যায় না।' },
     { key: 'allow_call', label: 'ফোন কল', help: 'ক্রেতা সরাসরি কল করবেন। নম্বর তাঁর ফোনে থেকে যাবে।' },

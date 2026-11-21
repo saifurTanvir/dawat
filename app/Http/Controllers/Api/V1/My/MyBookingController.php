@@ -100,7 +100,7 @@ class MyBookingController extends Controller
         ]);
         $n = $actions->ready($kitchen, MealSlot::from($data['meal_slot']), $data['note'] ?? null);
 
-        return response()->json(['message' => 'শাহিদারকে জানানো হয়েছে ('.Order::banglaDigits($n).'টা বক্স)।']);
+        return response()->json(['message' => 'এলাকা ম্যানেজারকে জানানো হয়েছে ('.Order::banglaDigits($n).'টা বক্স)।']);
     }
 
     /** POST /api/v1/my/orders/{order}/decline — F29: can't give this one-off order. */
@@ -138,7 +138,7 @@ class MyBookingController extends Controller
         return response()->json([
             'message' => $orders->isEmpty()
                 ? 'এই বেলায় আজ কারো বুকিং বাকি নেই।'
-                : Order::banglaDigits($orders->count()).' জন গ্রাহককে জানানো হচ্ছে। শাহিদার বিকল্প দেখবেন।',
+                : Order::banglaDigits($orders->count()).' জন গ্রাহককে জানানো হচ্ছে। এলাকা ম্যানেজার বিকল্প দেখবেন।',
         ]);
     }
 

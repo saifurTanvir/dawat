@@ -14,7 +14,7 @@ class ManageShahidars extends ManageRecords
     {
         return [
             CreateAction::make()
-                ->label('নতুন শাহিদার')
+                ->label('নতুন এলাকা ম্যানেজার')
                 ->schema(ShahidarResource::createForm())
                 ->using(fn (array $data) => ShahidarResource::createShahidar($data)),
         ];

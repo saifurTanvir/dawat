@@ -103,7 +103,7 @@ class CustomerResource extends Resource
                 ->searchable()->placeholder('অফিস নয়')
                 ->helperText('অফিস বাছলে এই গ্রাহকের বক্স অফিসের বাকিদের সাথে একসাথে যাবে, অফিসের দায়িত্বপ্রাপ্ত লোক বুঝে নেবেন।'),
             Textarea::make('address')->label('ডেলিভারির ঠিকানা')->required()->maxLength(255)->rows(2)
-                ->helperText('বাসা, রোড, ফ্ল্যাট, চেনার মতো কিছু। শুধু অ্যাডমিন আর এই গ্রাহকের শাহিদার দেখবেন।'),
+                ->helperText('বাসা, রোড, ফ্ল্যাট, চেনার মতো কিছু। শুধু অ্যাডমিন আর এই গ্রাহকের এলাকা ম্যানেজার দেখবেন।'),
             CheckboxList::make('meal_slots')->label('কোন বেলা')->options(MealSlot::options())->required()->columns(4),
             TextInput::make('plates')->label('প্রতি বেলায় কয় প্লেট')->numeric()->minValue(1)->maxValue(10)->default(1)->required(),
             TextInput::make('max_price_taka')->label('প্রতি প্লেট সর্বোচ্চ দাম (৳)')->numeric()->minValue(20)->maxValue(2000)
@@ -114,7 +114,7 @@ class CustomerResource extends Resource
                 ->default(Customer::ALL_WEEKDAYS)->required()->columns(7),
             Textarea::make('note')->label('খাবার নিয়ে কিছু (ঝাল কম, ডায়াবেটিস…)')->maxLength(300)->rows(2),
             Select::make('billing')->label('টাকা কীভাবে দেবেন')->options(Customer::BILLING_LABELS)->default('each')->required()->native(false)
-                ->helperText('সাপ্তাহিক বিল: প্রতি শনিবার সকালে আগের সপ্তাহের বিল। মাসিক: মাসের ১ তারিখে। বিলের গ্রাহকের কাছে শাহিদার টাকা নেবেন না।'),
+                ->helperText('সাপ্তাহিক বিল: প্রতি শনিবার সকালে আগের সপ্তাহের বিল। মাসিক: মাসের ১ তারিখে। বিলের গ্রাহকের কাছে এলাকা ম্যানেজার টাকা নেবেন না।'),
         ];
     }
 
@@ -254,8 +254,8 @@ class CustomerResource extends Resource
                     ->description(fn () => 'সাজেশন ছিল '.self::suggestion($record)['kitchen_name'].'। অন্যজনকে বেছে নেওয়া যায় — ঠিক থাকলে সেভ করুন, জুটির ইতিহাসে লেখা থাকবে।')
                     ->warning()
                     ->visible(fn (Get $get) => ($s = self::suggestion($record)['kitchen_id']) && $get('kitchen_id') && (int) $get('kitchen_id') !== $s),
-                Select::make('shahidar_id')->label('শাহিদার')->options(self::shahidarOptions($record))->required()
-                    ->helperText('এই এলাকার শাহিদার, যার হাতে কম গ্রাহক তিনি আগে। একজন শাহিদার অনেকজনকে দিতে পারেন।'),
+                Select::make('shahidar_id')->label('এলাকা ম্যানেজার')->options(self::shahidarOptions($record))->required()
+                    ->helperText('এই এলাকার ম্যানেজার, যার হাতে কম গ্রাহক তিনি আগে। একজন এলাকা ম্যানেজার অনেকজনকে দিতে পারেন।'),
                 Textarea::make('reason')->label('বদলানোর কারণ')->maxLength(300)->rows(2)
                     ->visible(fn () => $record->pairing !== null)->required(fn () => $record->pairing !== null),
                 // F59: where they came from
@@ -329,7 +329,7 @@ class CustomerResource extends Resource
             ->color('success')
             ->visible(fn (Customer $record) => collect(app(BookingPlanner::class)->todayReasons($record))->contains('can_book', true))
             ->requiresConfirmation()
-            ->modalDescription('গৃহিণীর আজকের চালু পোস্ট থেকে এই গ্রাহকের বক্স বুক হবে। গ্রাহক আর শাহিদার নোটিফিকেশন পাবেন।')
+            ->modalDescription('গৃহিণীর আজকের চালু পোস্ট থেকে এই গ্রাহকের বক্স বুক হবে। গ্রাহক আর এলাকা ম্যানেজার নোটিফিকেশন পাবেন।')
             ->action(function (Customer $record) {
                 $n = app(BookingPlanner::class)->bookLate($record)->count();
                 Notification::make()->title($n ? Order::banglaDigits((string) $n).'টা বক্স বুক হয়েছে' : 'বুক করার মতো প্লেট পাওয়া যায়নি')
@@ -416,7 +416,7 @@ class CustomerResource extends Resource
             Section::make('জুটির ইতিহাস')->schema([
                 RepeatableEntry::make('pairings')->hiddenLabel()->columns(4)->schema([
                     TextEntry::make('kitchen.display_name')->label('রান্নাঘর'),
-                    TextEntry::make('shahidar.name')->label('শাহিদার'),
+                    TextEntry::make('shahidar.name')->label('এলাকা ম্যানেজার'),
                     TextEntry::make('started_at')->label('শুরু')->dateTime('j M Y'),
                     TextEntry::make('ended_at')->label('শেষ')->dateTime('j M Y')->placeholder('চলছে'),
                     TextEntry::make('end_reason')->label('বদলের কারণ')->placeholder('—')->columnSpanFull(),
@@ -436,7 +436,7 @@ class CustomerResource extends Resource
                 TextColumn::make('area.name')->label('এলাকা')->description(fn (Customer $record) => $record->company?->name),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
                 TextColumn::make('pairing.kitchen.display_name')->label('গৃহিণী')->placeholder('—'),
-                TextColumn::make('pairing.shahidar.name')->label('শাহিদার')->placeholder('—'),
+                TextColumn::make('pairing.shahidar.name')->label('এলাকা ম্যানেজার')->placeholder('—'),
                 TextColumn::make('booking')->label('বুকিং')->state(fn (Customer $record) => $record->bookingSummary())->wrap(),
                 TextColumn::make('billing')->label('টাকা')->badge()->color('gray')->formatStateUsing(fn (?string $state) => Customer::BILLING_LABELS[$state] ?? '—'),
                 TextColumn::make('created_at')->label('যোগ')->since()->sortable(),

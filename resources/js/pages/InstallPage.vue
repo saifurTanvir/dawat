@@ -49,7 +49,7 @@
 
         <div class="mt-8 border-t border-rule pt-6 text-center">
             <p class="font-semibold">অন্য কাউকে পাঠান</p>
-            <p class="mt-1 text-sm text-muted">গৃহিণী, শাহিদার বা গ্রাহককে হোয়াটসঅ্যাপে লিংক পাঠান, অথবা তাঁর ফোনের ক্যামেরা দিয়ে নিচের QR স্ক্যান করতে বলুন।</p>
+            <p class="mt-1 text-sm text-muted">গৃহিণী, এলাকা ম্যানেজার বা গ্রাহককে হোয়াটসঅ্যাপে লিংক পাঠান, অথবা তাঁর ফোনের ক্যামেরা দিয়ে নিচের QR স্ক্যান করতে বলুন।</p>
             <a :href="whatsappShare" target="_blank" rel="noopener" class="btn-quiet mt-3 border border-rule">হোয়াটসঅ্যাপে পাঠান</a>
             <img src="/app/qr.svg" alt="dawat.cloud/app-এর QR কোড" width="200" height="200" class="mx-auto mt-4 w-48 rounded-xl bg-white p-2" />
             <p class="mt-1 text-sm text-muted">{{ appUrl.replace('https://', '') }}</p>

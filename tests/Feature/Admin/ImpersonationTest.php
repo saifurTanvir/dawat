@@ -95,7 +95,7 @@ class ImpersonationTest extends TestCase
         $url = $this->actingAs($this->shahidar, 'sanctum')->postJson("/api/v1/shahidar/kitchens/{$this->kitchen->id}/view-as")->assertOk()->json('url');
         $this->app['auth']->forgetGuards();
         $token = $this->claim($url);
-        $this->withToken($token)->getJson('/api/v1/me')->assertJsonPath('data.impersonation.by', 'শাহিদার করিম');
+        $this->withToken($token)->getJson('/api/v1/me')->assertJsonPath('data.impersonation.by', 'এলাকা ম্যানেজার করিম');
         $this->assertSame('shahidar', Impersonation::sole()->actor_role);
     }
 

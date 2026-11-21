@@ -77,7 +77,7 @@ class AreaResource extends Resource
                 TextColumn::make('slug')->label('লিংক'),
                 TextColumn::make('radius_m')->label('ব্যাসার্ধ')->suffix(' মি'),
                 TextColumn::make('kitchens_count')->label('রান্নাঘর')->counts('kitchens'),
-                TextColumn::make('shahidars.name')->label('শাহিদার')->badge()->color('success')->placeholder('—'),
+                TextColumn::make('shahidars.name')->label('এলাকা ম্যানেজার')->badge()->color('success')->placeholder('—'),
                 IconColumn::make('is_active')->label('চালু')->boolean(),
             ])
             ->recordActions([

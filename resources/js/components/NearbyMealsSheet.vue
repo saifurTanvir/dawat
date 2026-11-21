@@ -6,7 +6,7 @@
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <h2 id="nearby-title" class="text-lg font-semibold">আশেপাশে আজ {{ meal.label }}</h2>
-                        <p class="text-sm text-muted">অন্য গৃহিণীরা আজ যা রাঁধছেন। একটা বেছে নিলে আপনার শাহিদারই পৌঁছে দেবেন।</p>
+                        <p class="text-sm text-muted">অন্য গৃহিণীরা আজ যা রাঁধছেন। একটা বেছে নিলে আপনার এলাকা ম্যানেজারই পৌঁছে দেবেন।</p>
                     </div>
                     <button type="button" class="btn-quiet -mr-3 min-h-10 w-auto" @click="$emit('close')">বন্ধ</button>
                 </div>
@@ -45,7 +45,7 @@
                 <p v-if="loading" class="text-muted">খোঁজা হচ্ছে…</p>
                 <p v-else-if="!posts.length" class="rounded-xl bg-steel p-4 text-sm">
                     {{ filtered ? 'এই ফিল্টারে কিছু পাওয়া যায়নি। ফিল্টার একটু কমিয়ে দেখুন।' : 'আশেপাশে আজ এই বেলায় অন্য কারো খাবার এখনো নেই।' }}
-                    <br />না পেলে "কী খেতে চান লিখে জানান" দিয়ে শাহিদারকে বলুন।
+                    <br />না পেলে "কী খেতে চান লিখে জানান" দিয়ে এলাকা ম্যানেজারকে বলুন।
                 </p>
                 <p v-else class="mb-2 text-sm text-muted">{{ bn(posts.length) }}টা খাবার</p>
 

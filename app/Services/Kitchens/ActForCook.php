@@ -42,7 +42,7 @@ class ActForCook
             return $result;
         });
 
-        $who = self::role($by) === 'shahidar' ? 'শাহিদার '.($by->name ?: '') : 'দাওয়াত টিম';
+        $who = self::role($by) === 'shahidar' ? 'এলাকা ম্যানেজার '.($by->name ?: '') : 'দাওয়াত টিম';
         Push::toUser($kitchen->user_id, "{$who} আপনার হয়ে কাজ করেছেন", $details, '/cook', 'acted-'.$kitchen->id.'-'.$action);
 
         return $result;

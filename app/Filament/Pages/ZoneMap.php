@@ -125,7 +125,7 @@ class ZoneMap extends Page
                     return response()->streamDownload(function () use ($report) {
                         $out = fopen('php://output', 'w');
                         fwrite($out, "\xEF\xBB\xBF");
-                        fputcsv($out, ['এলাকা (মূল ঠিকানা)', 'জোন', 'lat', 'lng', 'গৃহিণী (অনুমোদিত)', 'গৃহিণী (অপেক্ষায়)', 'গ্রাহক', 'এলাকার শাহিদার']);
+                        fputcsv($out, ['এলাকা (মূল ঠিকানা)', 'জোন', 'lat', 'lng', 'গৃহিণী (অনুমোদিত)', 'গৃহিণী (অপেক্ষায়)', 'গ্রাহক', 'এলাকার এলাকা ম্যানেজার']);
                         foreach ($report['areas'] as $a) {
                             foreach ($a['zones'] as $z) {
                                 fputcsv($out, [$a['name'], $z['name'], $z['center']->lat, $z['center']->lng, $z['cooks'], $z['pending'], $z['customers'], $a['shahidars']]);

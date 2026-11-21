@@ -51,7 +51,7 @@ class CompanyResource extends Resource
             TextInput::make('name')->label('অফিসের নাম')->required()->maxLength(150),
             Select::make('area_id')->label('এলাকা')->options(fn () => Area::active()->orderBy('sort_order')->pluck('name', 'id'))->required()->searchable(),
             Textarea::make('address')->label('ঠিকানা')->required()->maxLength(300)->rows(2)
-                ->helperText('ভবন, তলা, রিসেপশন — শাহিদার যেখানে খাবার বুঝিয়ে দেবেন।'),
+                ->helperText('ভবন, তলা, রিসেপশন — এলাকা ম্যানেজার যেখানে খাবার বুঝিয়ে দেবেন।'),
             TextInput::make('contact_name')->label('দায়িত্বপ্রাপ্ত লোকের নাম')->required()->maxLength(60)
                 ->afterStateHydrated(fn ($component, ?Company $record) => $component->state($record?->contact?->name)),
             PhoneField::make('contact_phone')->label('দায়িত্বপ্রাপ্ত লোকের মোবাইল')

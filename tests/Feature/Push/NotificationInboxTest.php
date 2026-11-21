@@ -28,7 +28,7 @@ class NotificationInboxTest extends TestCase
             ->assertJsonPath('unread', 1)
             ->assertJsonPath('data.0.title', 'নতুন বক্স ১২ · দুপুর')
             ->assertJsonPath('data.0.section', 'shahidar')
-            ->assertJsonPath('data.0.section_label', 'শাহিদারের কাজ')
+            ->assertJsonPath('data.0.section_label', 'এলাকা ম্যানেজারের কাজ')
             ->assertJsonPath('data.0.url', '/shahidar')
             ->assertJsonPath('data.0.read', false);
     }

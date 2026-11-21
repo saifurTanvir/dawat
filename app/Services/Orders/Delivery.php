@@ -37,7 +37,7 @@ class Delivery
         self::BY_CUSTOMER_SCAN => 'গ্রাহক স্ক্যান',
         self::BY_CUSTOMER_CODE => 'গ্রাহক কোড',
         self::BY_SHAHIDAR_CODE => 'কোড দিয়ে',
-        self::BY_SHAHIDAR_SCAN => 'শাহিদার স্ক্যান',
+        self::BY_SHAHIDAR_SCAN => 'এলাকা ম্যানেজার স্ক্যান',
         self::BY_SHAHIDAR_TAP => 'যাচাই বাকি',
         'cook_tap' => 'গৃহিণী নিজে',
         // F68
@@ -78,7 +78,7 @@ class Delivery
 
             // F45: the customer learns the food is on its way.
             Push::toUser($order->recipient(), "আপনার {$order->meal_slot->label()}র খাবার পথে",
-                'শাহিদার '.($shahidar->name ?: '').' খাবার নিয়ে আসছেন · বক্স '.$order->code().'।'
+                'এলাকা ম্যানেজার '.($shahidar->name ?: '').' খাবার নিয়ে আসছেন · বক্স '.$order->code().'।'
                     .($order->drop_row ? ' অফিসে আপনার বক্স থাকবে '.BoxLabels::spot($order).'-এ।' : ' ডেলিভারি কোড হাতের কাছে রাখুন।'),
                 $order->isOneOff() ? '/orders' : '/regular', 'order-'.$order->id);
 
@@ -150,7 +150,7 @@ class Delivery
                 $order = $this->lock($order);
                 $this->expect($order, OrderStatus::PickedUp, 'এই বক্স এখনো পথে নেই, বা আগেই নিশ্চিত হয়েছে।');
                 if ($order->code_failures >= self::MAX_CODE_FAILURES) {
-                    throw ValidationException::withMessages(['code' => 'অনেকবার ভুল কোড দেওয়া হয়েছে। কোডটা শাহিদারকে বলুন।']);
+                    throw ValidationException::withMessages(['code' => 'অনেকবার ভুল কোড দেওয়া হয়েছে। কোডটা এলাকা ম্যানেজারকে বলুন।']);
                 }
                 if (! $order->delivery_code_hash || ! Hash::check(trim($code), $order->delivery_code_hash)) {
                     $wrong = true;
@@ -196,7 +196,7 @@ class Delivery
             $order = $this->lock($order);
             $this->expect($order, OrderStatus::PickedUp, 'শুধু পিকআপ হওয়া বক্সই "পৌঁছানো যায়নি" হতে পারে।');
             $order->forceFill(['status' => OrderStatus::Failed, 'failure_reason' => $reason, 'confirmed_by' => $shahidar->id])->save();
-            Push::toUser($order->recipient(), 'খাবার পৌঁছানো যায়নি', "বক্স {$order->code()}: {$reason}। দরকার হলে শাহিদারকে ফোন করুন।",
+            Push::toUser($order->recipient(), 'খাবার পৌঁছানো যায়নি', "বক্স {$order->code()}: {$reason}। দরকার হলে এলাকা ম্যানেজারকে ফোন করুন।",
                 $order->isOneOff() ? '/orders' : '/regular', 'order-'.$order->id);
 
             // F29: two no-shows in 30 days pause "নিতে চাই" for that buyer.

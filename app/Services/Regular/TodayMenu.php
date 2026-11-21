@@ -103,12 +103,12 @@ class TodayMenu
             $existing = MealChoice::where('customer_id', $customer->id)->whereDate('service_date', $today)->where('meal_slot', $slot->value)->first();
 
             if ($choice === 'eat' && $existing?->choice === 'pick') {
-                throw ValidationException::withMessages(['meal_slot' => 'আজ এই বেলায় আপনি অন্য গৃহিণীর খাবার নিয়েছেন। বদলাতে শাহিদারকে ফোন করুন।']);
+                throw ValidationException::withMessages(['meal_slot' => 'আজ এই বেলায় আপনি অন্য গৃহিণীর খাবার নিয়েছেন। বদলাতে এলাকা ম্যানেজারকে ফোন করুন।']);
             }
             if ($choice === 'eat') {
                 // A box cancelled by an earlier "no" cannot come back from here.
                 if ($order && $order->status === OrderStatus::Cancelled && $existing && $existing->choice !== 'eat') {
-                    throw ValidationException::withMessages(['meal_slot' => 'আজকের বক্স আগেই বাতিল হয়েছে। খেতে চাইলে শাহিদারকে ফোন করুন।']);
+                    throw ValidationException::withMessages(['meal_slot' => 'আজকের বক্স আগেই বাতিল হয়েছে। খেতে চাইলে এলাকা ম্যানেজারকে ফোন করুন।']);
                 }
                 if ($order && ! in_array($order->status, [OrderStatus::Booked, OrderStatus::Asking, OrderStatus::Cancelled], true)) {
                     return $existing; // already on the way: nothing to say
@@ -116,7 +116,7 @@ class TodayMenu
             }
 
             if ($choice !== 'eat' && $order && ! in_array($order->status, [OrderStatus::Booked, OrderStatus::Asking, OrderStatus::Cancelled], true)) {
-                throw ValidationException::withMessages(['meal_slot' => 'খাবার আগেই রওনা হয়ে গেছে। শাহিদারকে ফোন করুন।']);
+                throw ValidationException::withMessages(['meal_slot' => 'খাবার আগেই রওনা হয়ে গেছে। এলাকা ম্যানেজারকে ফোন করুন।']);
             }
             if ($choice !== 'eat' && $order && $order->status !== OrderStatus::Cancelled) {
                 $this->planner->cancel($order, 'customer', $choice === 'skip' ? 'গ্রাহক: আজ খাবেন না' : 'গ্রাহক: এই খাবার খাবেন না');
@@ -195,7 +195,7 @@ class TodayMenu
             $orders = Order::where('customer_id', $customer->id)->whereDate('service_date', $today)
                 ->where('meal_slot', $slot->value)->lockForUpdate()->get();
             if ($orders->contains(fn (Order $o) => ! in_array($o->status, [OrderStatus::Booked, OrderStatus::Asking, OrderStatus::Cancelled], true))) {
-                throw ValidationException::withMessages(['meal_slot' => 'খাবার আগেই রওনা হয়ে গেছে। শাহিদারকে ফোন করুন।']);
+                throw ValidationException::withMessages(['meal_slot' => 'খাবার আগেই রওনা হয়ে গেছে। এলাকা ম্যানেজারকে ফোন করুন।']);
             }
             foreach ($orders->where('status', '!=', OrderStatus::Cancelled) as $o) {
                 $this->planner->cancel($o, 'customer', 'গ্রাহক: অন্য গৃহিণীর খাবার নিয়েছেন');
@@ -218,7 +218,7 @@ class TodayMenu
         $name = $customer->user->name ?: $customer->user->phone;
         Push::toUser($pairing->shahidar_id, "{$name} আজ অন্য রান্নাঘর থেকে নিচ্ছেন",
             "{$slot->label()}: {$post->title} — {$post->kitchen->display_name} থেকে তুলবেন (বক্স {$order->code()})।", '/shahidar', 'meal-choice-'.$choice->id);
-        Push::toUser($post->kitchen->user_id, "নতুন বক্স {$order->code()} · {$slot->label()}", "আপনার \"{$post->title}\" থেকে একজন নিয়মিত গ্রাহক নিলেন। শাহিদার এসে নেবেন।", '/cook', 'order-'.$order->id);
+        Push::toUser($post->kitchen->user_id, "নতুন বক্স {$order->code()} · {$slot->label()}", "আপনার \"{$post->title}\" থেকে একজন নিয়মিত গ্রাহক নিলেন। এলাকা ম্যানেজার এসে নেবেন।", '/cook', 'order-'.$order->id);
 
         return $choice;
     }
@@ -249,7 +249,7 @@ class TodayMenu
             Push::toUser($choice->shahidar_id, 'ব্যবস্থা হয়ে গেছে', ($choice->customer->user->name ?? '').': '.($note ?: 'দাওয়াত টিম ব্যবস্থা করেছে।'), '/shahidar', 'meal-choice-'.$choice->id);
         }
         if ($by->hasRole(Roles::SHAHIDAR) && ! $by->hasRole(Roles::ADMIN)) {
-            User::role(Roles::ADMIN)->pluck('id')->each(fn ($id) => Push::toUser($id, 'শাহিদার ব্যবস্থা করেছেন', ($choice->customer->user->name ?? '').': '.($note ?: 'ব্যবস্থা হয়েছে।'), '/admin', 'meal-choice-'.$choice->id));
+            User::role(Roles::ADMIN)->pluck('id')->each(fn ($id) => Push::toUser($id, 'এলাকা ম্যানেজার ব্যবস্থা করেছেন', ($choice->customer->user->name ?? '').': '.($note ?: 'ব্যবস্থা হয়েছে।'), '/admin', 'meal-choice-'.$choice->id));
         }
 
         return $choice;

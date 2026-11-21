@@ -34,7 +34,7 @@
                 <label for="guest-note" class="mb-1 block text-sm font-semibold">কিছু বলবেন? <span class="font-normal text-muted">(ইচ্ছে হলে)</span></label>
                 <input id="guest-note" v-model.trim="form.note" class="field text-base" maxlength="300" placeholder="যেমন: ঝাল কম, একজন বাচ্চা" />
             </div>
-            <p class="text-xs text-muted">দাম গৃহিণীর পোস্টের দামে, প্লেট প্রতি। আলাদা বক্সে আসবে, টাকা ডেলিভারির সময় নগদে। গৃহিণী না পারলে আপনার শাহিদার অন্য রান্নাঘর থেকে ব্যবস্থা করবেন।</p>
+            <p class="text-xs text-muted">দাম গৃহিণীর পোস্টের দামে, প্লেট প্রতি। আলাদা বক্সে আসবে, টাকা ডেলিভারির সময় নগদে। গৃহিণী না পারলে আপনার এলাকা ম্যানেজার অন্য রান্নাঘর থেকে ব্যবস্থা করবেন।</p>
             <div class="flex gap-2">
                 <button type="submit" class="btn-primary min-h-11 w-auto px-5" :disabled="busy || !form.meal_slot">অনুরোধ পাঠান</button>
                 <button type="button" class="btn-quiet min-h-11 px-3" @click="open = false">থাক</button>

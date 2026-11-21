@@ -57,7 +57,7 @@ class Money extends Page
             ->label('টাকা বুঝে পেয়েছি')
             ->color('success')
             ->requiresConfirmation()
-            ->modalDescription('এই শাহিদারের কাছে জমা সব নগদ টাকা দাওয়াত বুঝে পেল।')
+            ->modalDescription('এই এলাকা ম্যানেজারের কাছে জমা সব নগদ টাকা দাওয়াত বুঝে পেল।')
             ->schema([TextInput::make('note')->label('নোট (ইচ্ছা হলে)')->maxLength(200)])
             ->action(function (array $arguments, array $data) {
                 app(Settlements::class)->receiveFromShahidar(User::findOrFail($arguments['shahidar']), auth()->user(), $data['note'] ?? null);

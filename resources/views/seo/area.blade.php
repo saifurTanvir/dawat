@@ -4,7 +4,7 @@
     <h1 class="mt-3 font-serif text-3xl font-bold">{{ \App\Support\Seo::in($area->name) }} ঘরের খাবার</h1>
     <p class="mt-3 text-lg leading-relaxed">
         {{ $area->name }} আর আশেপাশের গৃহিণীরা নিজের বাসার রান্না থেকে কয়েক প্লেট বিক্রি করেন।
-        দাওয়াতে আজকের রান্না দেখে "নিতে চাই" চাপলেই অর্ডার — শাহিদার পৌঁছে দেন, টাকা দেবেন খাবার হাতে পেয়ে।
+        দাওয়াতে আজকের রান্না দেখে "নিতে চাই" চাপলেই অর্ডার — এলাকা ম্যানেজার পৌঁছে দেন, টাকা দেবেন খাবার হাতে পেয়ে।
     </p>
 
     <section class="mt-8" aria-labelledby="today">
@@ -32,7 +32,7 @@
     <section class="mt-10" aria-labelledby="daily">
         <h2 id="daily" class="font-serif text-xl font-bold">{{ \App\Support\Seo::in($area->name) }} প্রতিদিন দুপুরের খাবার</h2>
         <p class="mt-2 leading-relaxed">
-            অফিসে বা বাসায় রোজ ঘরের রান্না চাইলে একবার অনুরোধ করুন। দাওয়াত টিম পাড়ার একজন গৃহিণী আর একজন শাহিদার ঠিক করে দেবে,
+            অফিসে বা বাসায় রোজ ঘরের রান্না চাইলে একবার অনুরোধ করুন। দাওয়াত টিম পাড়ার একজন গৃহিণী আর একজন এলাকা ম্যানেজার ঠিক করে দেবে,
             তারপর প্রতিদিন নিজে থেকেই বুক হবে।
             @if ($area->delivery_fee_paisa > 0)
                 ডেলিভারি চার্জ ৳{{ \App\Models\Order::banglaDigits(intdiv($area->delivery_fee_paisa, 100)) }}।

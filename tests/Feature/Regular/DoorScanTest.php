@@ -114,7 +114,7 @@ class DoorScanTest extends TestCase
             $this->postJson('/api/v1/stickers/AAAA2222/confirm', ['code' => '000'.$i])->assertStatus(422);
         }
         $this->postJson('/api/v1/stickers/AAAA2222/confirm', ['code' => '4321'])
-            ->assertStatus(422)->assertJsonFragment(['code' => ['অনেকবার ভুল কোড দেওয়া হয়েছে। কোডটা শাহিদারকে বলুন।']]);
+            ->assertStatus(422)->assertJsonFragment(['code' => ['অনেকবার ভুল কোড দেওয়া হয়েছে। কোডটা এলাকা ম্যানেজারকে বলুন।']]);
         $this->getJson('/api/v1/stickers/AAAA2222')->assertJsonPath('data.can_confirm_with_code', false);
 
         // The shahidar can still finish with the code.

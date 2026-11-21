@@ -49,7 +49,7 @@ class MealRequests extends TableWidget
                 TextColumn::make('meal_slot')->label('বেলা')->formatStateUsing(fn ($state) => $state->label()),
                 TextColumn::make('menu_title')->label('রান্না ছিল')->description(fn (MealChoice $c) => $c->kitchen?->display_name)->placeholder('—')->wrap(),
                 TextColumn::make('wish')->label('কী চান')->wrap(),
-                TextColumn::make('shahidar.name')->label('শাহিদার')->placeholder('—'),
+                TextColumn::make('shahidar.name')->label('এলাকা ম্যানেজার')->placeholder('—'),
                 TextColumn::make('status')->label('অবস্থা')->badge()
                     ->formatStateUsing(fn (string $state, MealChoice $c) => $state === 'handled' ? 'ব্যবস্থা হয়েছে'.($c->handler ? ' ('.$c->handler->name.')' : '') : 'ব্যবস্থা বাকি')
                     ->color(fn (string $state) => $state === 'handled' ? 'success' : 'danger')

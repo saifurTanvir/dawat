@@ -41,12 +41,12 @@ class BoxReview extends Model
         return $this->order?->isOneOff() ? 'ফিডের ক্রেতা' : 'একজন নিয়মিত গ্রাহক';
     }
 
-    /** "গৃহিণী", "শাহিদার করিম", "দাওয়াত টিম" */
+    /** "গৃহিণী", "এলাকা ম্যানেজার করিম", "দাওয়াত টিম" */
     public function replyLabel(): ?string
     {
         return match ($this->reply_role) {
             'cook' => 'গৃহিণী',
-            'shahidar' => 'শাহিদার '.($this->replier?->name ?? ''),
+            'shahidar' => 'এলাকা ম্যানেজার '.($this->replier?->name ?? ''),
             'admin' => 'দাওয়াত টিম',
             default => null,
         };
