@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Web\AdLeadController;
 use App\Http\Controllers\Web\BillController;
 use App\Http\Controllers\Web\BoxLabelController;
 use App\Http\Controllers\Web\CallListController;
@@ -47,7 +48,7 @@ Route::get('/admin-tools/login-qr', function (Request $request) {
 // F71: back to the admin's own login after looking at the panel as a staff member.
 Route::get('/admin-tools/staff-view/stop', fn () => StaffView::stop())->name('admin.staff-view.stop');
 
-// F93: a zone's cooks without a pin, to call (admins only — carries each cook's own location link).
+// F94: a zone's cooks without a pin, to call (admins only — carries each cook's own location link).
 Route::get('/admin-tools/pinless-calls.csv', function (Request $request, PinlessCallList $list) {
     abort_unless($request->user()?->isAdmin(), 403);
     $rows = $list->rows($request->user());
@@ -86,6 +87,8 @@ Route::get('/admin-tools/messenger/connect/callback', [MessengerConnectControlle
 // F87: work through the call list from the admin's browser.
 Route::get('/admin-tools/call-list', [CallListController::class, 'index'])->middleware('throttle:30,1')->name('admin.call-list.json');
 Route::post('/admin-tools/call-list/{callRequest}/note', [CallListController::class, 'note'])->middleware('throttle:120,1')->name('admin.call-list.note');
+// F94: WhatsApp people who came from a Badda ad.
+Route::post('/admin-tools/ad-leads', [AdLeadController::class, 'store'])->middleware('throttle:60,1')->name('admin.ad-leads');
 Route::get('/admin-tools/pinless-outside-messenger', PinlessOutsideMessengerController::class)
     ->middleware('throttle:20,1')->name('admin.pinless-outside-messenger');
 

@@ -10,7 +10,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-/** F93: Badda's cooks without a pin, as a call list with each cook's own link. */
+/** F94: Badda's cooks without a pin, as a call list with each cook's own link. */
 class PinlessCallListTest extends TestCase
 {
     use RefreshDatabase;

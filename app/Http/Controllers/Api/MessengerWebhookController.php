@@ -44,11 +44,21 @@ class MessengerWebhookController extends Controller
         $echo = (bool) ($message['is_echo'] ?? false);
         // For an echo (sent from the page) the person is the recipient.
         $psid = (string) ($echo ? ($event['recipient']['id'] ?? '') : ($event['sender']['id'] ?? ''));
-        if ($psid === '' || (! $message && ! isset($event['postback']))) {
+        if ($psid === '' && isset($event['referral'])) {
+            $psid = (string) ($event['sender']['id'] ?? '');
+        }
+        if ($psid === '' || (! $message && ! isset($event['postback']) && ! isset($event['referral']))) {
             return;
         }
 
         $thread = MessengerThread::firstOrCreate(['psid' => $psid]);
+
+        // F93: a chat started from an ad carries the ad id — remember it for the ads report.
+        $referral = $event['referral'] ?? $event['postback']['referral'] ?? $message['referral'] ?? null;
+        if (! $echo && is_array($referral) && filled($referral['ad_id'] ?? null)) {
+            $thread->facts = [...($thread->facts ?? []), 'ad_id' => (string) $referral['ad_id'], 'ad_at' => now()->toIso8601String()];
+            $thread->save();
+        }
         if (! $thread->name && Graph::configured() && ! $echo) {
             $thread->forceFill(['name' => $graph->name($psid)])->save();
         }
@@ -67,6 +77,10 @@ class MessengerWebhookController extends Controller
             }
 
             return;
+        }
+
+        if (! $message && ! isset($event['postback'])) {
+            return; // only a referral: noted above
         }
 
         $saved = $message

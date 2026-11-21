@@ -94,7 +94,7 @@ class ZoneMap extends Page
                 ->label(fn () => $this->onlyBusy ? 'সব এলাকা দেখুন' : 'শুধু যেখানে কেউ আছে')
                 ->color('gray')
                 ->action(fn () => $this->onlyBusy = ! $this->onlyBusy),
-            // F93: Badda's cooks without a pin, to call one by one (name, number, WhatsApp, plates, remark, her link).
+            // F94: Badda's cooks without a pin, to call one by one (name, number, WhatsApp, plates, remark, her link).
             Action::make('baddaPinCalls')
                 ->visible(fn () => (bool) auth()->user()?->isAdmin())
                 ->label('বাড্ডার পিন বাকি — কলের তালিকা (CSV)')
