@@ -29,6 +29,7 @@ class ManageMessengerThreads extends ManageRecords
 
         return match (true) {
             ! Graph::configured() => 'Messenger এখনো সার্ভারের সাথে যুক্ত হয়নি। "যুক্ত করার তথ্য" দেখুন।',
+            Graph::tokenProblem() !== null => '⛔ Meta পেজের টোকেন বাতিল করেছে (পাসওয়ার্ড বদল বা নিরাপত্তা) — উত্তর যাচ্ছে না। "Facebook দিয়ে আবার যুক্ত করুন" চাপুন।',
             ! $on => 'বট বন্ধ: মেসেজ এখানে জমা হচ্ছে, কিন্তু সার্ভার উত্তর দিচ্ছে না।',
             ! Brain::available() => 'বট চালু, কিন্তু AI-এর key নেই — শুধু প্রথম মেসেজ যাচ্ছে, বাকিগুলো "মানুষ লাগবে"-তে।',
             default => 'বট চালু: মেসেজ এলে কয়েক সেকেন্ডে সার্ভার উত্তর দেয়।',
@@ -176,6 +177,13 @@ class ManageMessengerThreads extends ManageRecords
                         ->{$r['error'] ? 'warning' : 'success'}()
                         ->send();
                 }),
+            // F85: one click — Facebook Login gets a fresh page token, nobody copies it.
+            Action::make('connect')
+                ->visible($admin)
+                ->label(Graph::tokenProblem() ? '⚠️ পেজ বিচ্ছিন্ন — Facebook দিয়ে আবার যুক্ত করুন' : 'Facebook দিয়ে আবার যুক্ত করুন')
+                ->icon(Heroicon::OutlinedLink)
+                ->color(Graph::tokenProblem() ? 'danger' : 'gray')
+                ->url(route('admin.messenger.connect')),
             Action::make('token')
                 ->visible($admin)
                 ->label('পেজ টোকেন বদলান')

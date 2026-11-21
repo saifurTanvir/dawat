@@ -7,6 +7,7 @@ use App\Filament\Support\FeatureGate;
 use App\Models\Kitchen;
 use App\Models\OpsHeartbeat;
 use App\Services\Geo\Zones;
+use App\Services\Messenger\Graph;
 use App\Support\DhakaTime;
 use BackedEnum;
 use Filament\Pages\Page;
@@ -45,6 +46,7 @@ class OpsStatus extends Page
 
         return [
             'channels' => $channels,
+            'tokenProblem' => Graph::tokenProblem(), // F85
             'recent' => OpsHeartbeat::query()->latest('id')->limit(15)->get(),
             // F83: the WhatsApp checks of the last two days, each with what was found and done.
             'waChecks' => OpsHeartbeat::query()->where('channel', 'whatsapp')->where('created_at', '>=', $today->copy()->subDay())->latest('id')->limit(40)->get(),
