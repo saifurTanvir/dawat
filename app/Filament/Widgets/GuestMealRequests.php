@@ -80,7 +80,7 @@ class GuestMealRequests extends TableWidget
                     ->action(fn (GuestMeal $g, array $data) => $this->done(fn () => app(GuestMeals::class)->arrangeFromPost($g, Post::findOrFail($data['post_id']), auth()->user()), 'বুক হয়েছে, গ্রাহককে জানানো হলো')),
                 Action::make('other')->label('অন্যভাবে')->icon(Heroicon::OutlinedHandThumbUp)->color('gray')
                     ->visible(fn (GuestMeal $g) => $g->isOpen())
-                    ->schema([TextInput::make('note')->label('কী ব্যবস্থা হলো')->maxLength(300)->placeholder('যেমন: রাহেলা আপা ২ প্লেট বিরিয়ানি দেবেন, ৳৩০০')])
+                    ->schema([TextInput::make('note')->label('কী ব্যবস্থা হলো')->maxLength(300)->placeholder('যেমন: রাহেলা ২ প্লেট বিরিয়ানি দেবেন, ৳৩০০')])
                     ->action(fn (GuestMeal $g, array $data) => $this->done(fn () => app(GuestMeals::class)->close($g, auth()->user(), $data['note'] ?? null), 'গ্রাহককে জানানো হলো')),
                 Action::make('decline')->label('হচ্ছে না')->icon(Heroicon::OutlinedXMark)->color('danger')
                     ->visible(fn (GuestMeal $g) => $g->isOpen())

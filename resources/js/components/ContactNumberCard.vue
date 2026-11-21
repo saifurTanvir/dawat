@@ -48,7 +48,7 @@
             <form v-if="open" class="mt-3 space-y-3" novalidate @submit.prevent>
                 <div>
                     <label for="contact_name" class="mb-1 block text-sm font-semibold">নাম</label>
-                    <input id="contact_name" v-model="form.contact_name" class="field" type="text" maxlength="60" placeholder="যেমন: করিম ভাই (এলাকা ম্যানেজার)" />
+                    <input id="contact_name" v-model="form.contact_name" class="field" type="text" maxlength="60" placeholder="যেমন: করিম (এলাকা ম্যানেজার)" />
                     <p v-if="err('contact_name')" class="error-text" role="alert">{{ err('contact_name') }}</p>
                 </div>
                 <div>

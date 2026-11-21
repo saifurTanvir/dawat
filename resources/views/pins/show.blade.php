@@ -32,7 +32,7 @@
         <img src="/brand/wordmark.png" alt="দাওয়াত" width="100" height="32" class="h-8 w-auto">
     </header>
 
-    <h1 class="mt-5 font-serif text-2xl font-bold">{{ $k->user?->name ? $k->user->name.' আপু, ' : '' }}আপনার বাসার লোকেশন দিন</h1>
+    <h1 class="mt-5 font-serif text-2xl font-bold">{{ $k->user?->name ? $k->user->name.', ' : '' }}আপনার বাসার লোকেশন দিন</h1>
     <p class="mt-1 text-sm text-gray-600">{{ $k->display_name }}{{ $k->area ? ' · '.$k->area->name : '' }}</p>
 
     <section class="pin-why mt-4">

@@ -49,7 +49,7 @@
                 </ul>
 
                 <form v-if="noting === g.id" class="mt-2" @submit.prevent>
-                    <input v-model.trim="notes[g.id]" class="field text-base" maxlength="300" placeholder="গ্রাহককে কী জানাবেন, যেমন: রাহেলা আপা বিরিয়ানি দেবেন" aria-label="গ্রাহককে কী জানাবেন" />
+                    <input v-model.trim="notes[g.id]" class="field text-base" maxlength="300" placeholder="গ্রাহককে কী জানাবেন, যেমন: রাহেলা বিরিয়ানি দেবেন" aria-label="গ্রাহককে কী জানাবেন" />
                     <div class="mt-2 grid grid-cols-2 gap-2">
                         <button type="button" class="btn-primary min-h-10 px-2 text-sm" :disabled="busy" @click="act(g, 'close', { note: notes[g.id] || null })">ব্যবস্থা হয়েছে</button>
                         <button type="button" class="min-h-10 rounded-xl border border-chili bg-plate px-2 text-sm font-semibold text-chili" :disabled="busy" @click="act(g, 'close', { note: notes[g.id] || null, cancel: true })">হচ্ছে না</button>
