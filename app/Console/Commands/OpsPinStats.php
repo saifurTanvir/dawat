@@ -6,6 +6,7 @@ use App\Enums\KitchenStatus;
 use App\Models\Kitchen;
 use App\Models\MessengerThread;
 use App\Models\PinLink;
+use App\Services\Geo\FocusSplit;
 use App\Support\DhakaTime;
 use App\Support\PinReach;
 use Illuminate\Console\Command;
@@ -37,6 +38,13 @@ class OpsPinStats extends Command
         $this->line('no pin, reachable on Messenger now: '.$open.' (reminded in last 12h: '.$remindedRecently.')');
         $this->line('no pin, Messenger chat older than 7 days: '.$old);
         $this->line('no pin, no Messenger chat: '.$none);
+
+        // F92: Badda (the focus) and the rest, separately.
+        foreach (app(FocusSplit::class)->counts() as $side => $c) {
+            $this->line(($side === 'badda' ? 'BADDA' : 'REST').': cooks '.$c['cooks'].' (+'.$c['cooks_today'].' today), pending '.$c['pending']
+                .', pinned '.$c['pinned'].' (+'.$c['pins_today'].' today), no pin '.$c['pinless'].', plates '.$c['plates']
+                .', customers '.$c['customers'].' (+'.$c['customers_today'].' today), area-manager applications '.$c['managers'].' (+'.$c['managers_today'].' today)');
+        }
 
         return self::SUCCESS;
     }
