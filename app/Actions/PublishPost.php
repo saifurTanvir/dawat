@@ -23,7 +23,7 @@ class PublishPost
     ) {}
 
     /** Who can post: the cook herself, or for her the admin, her shahidar or her daily menu (F43). */
-    public const SOURCES = ['cook' => 'গৃহিণী নিজে', 'admin' => 'দাওয়াত টিম', 'shahidar' => 'শাহিদার', 'auto' => 'প্রতিদিনের মেনু'];
+    public const SOURCES = ['cook' => 'গৃহিণী নিজে', 'admin' => 'দাওয়াত টিম', 'shahidar' => 'এলাকা ম্যানেজার', 'auto' => 'প্রতিদিনের মেনু'];
 
     /**
      * @param  array<string, mixed>  $data  validated StorePostRequest data

@@ -92,8 +92,8 @@ class RegularController extends Controller
         return RegularResource::make($customer->fresh(self::WITH))->additional(['message' => match ($data['choice']) {
             'eat' => 'ঠিক আছে, আজ খাবার আসবে।',
             'skip' => 'আজ এই বেলার খাবার আসবে না।',
-            'change' => 'জানানো হয়েছে। আপনার শাহিদার শিগগিরই ফোন করে অন্য খাবারের ব্যবস্থা করবেন।',
-            'pick' => 'বুক হয়েছে। আজ এই খাবারটাই আপনার শাহিদার পৌঁছে দেবেন।',
+            'change' => 'জানানো হয়েছে। আপনার এলাকা ম্যানেজার শিগগিরই ফোন করে অন্য খাবারের ব্যবস্থা করবেন।',
+            'pick' => 'বুক হয়েছে। আজ এই খাবারটাই আপনার এলাকা ম্যানেজার পৌঁছে দেবেন।',
         }]);
     }
 
@@ -179,7 +179,7 @@ class RegularController extends Controller
         $customer = Customer::where('user_id', $user->id)->first();
 
         if ($customer?->pairing && (int) $data['area_id'] !== $customer->area_id) {
-            throw ValidationException::withMessages(['area_id' => 'এলাকা বদলাতে আপনার শাহিদার বা দাওয়াত টিমকে বলুন।']);
+            throw ValidationException::withMessages(['area_id' => 'এলাকা বদলাতে আপনার এলাকা ম্যানেজার বা দাওয়াত টিমকে বলুন।']);
         }
 
         $customer = DB::transaction(function () use ($user, $customer, $data) {
@@ -216,7 +216,7 @@ class RegularController extends Controller
         return RegularResource::make($customer->fresh(self::WITH))
             ->additional([
                 'message' => $customer->wasRecentlyCreated || $customer->status === CustomerStatus::Waiting
-                    ? 'দাওয়াত টিম আপনার এলাকার একজন গৃহিণী আর শাহিদার ঠিক করে ফোন দেবে।'
+                    ? 'দাওয়াত টিম আপনার এলাকার একজন গৃহিণী আর এলাকা ম্যানেজার ঠিক করে ফোন দেবে।'
                     : 'বুকিং বদলানো হয়েছে।',
                 // F54: a new regular customer is what the customer ads are paid for.
                 'meta_event' => $customer->wasRecentlyCreated

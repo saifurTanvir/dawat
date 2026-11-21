@@ -216,7 +216,7 @@ class GuestMeals
     public function cancelByCustomer(GuestMeal $guest): void
     {
         if (! $guest->isOpen()) {
-            throw ValidationException::withMessages(['guest' => 'ব্যবস্থা হয়ে গেছে; বাতিল করতে শাহিদারকে ফোন করুন।']);
+            throw ValidationException::withMessages(['guest' => 'ব্যবস্থা হয়ে গেছে; বাতিল করতে এলাকা ম্যানেজারকে ফোন করুন।']);
         }
         $before = $guest->status;
         $guest->update(['status' => 'cancelled', 'handled_note' => 'গ্রাহক নিজে বাতিল করেছেন']);

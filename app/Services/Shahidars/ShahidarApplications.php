@@ -38,7 +38,7 @@ class ShahidarApplications
                 $areas = $application->areas()->pluck('name')->implode(', ');
                 User::role(Roles::ADMIN)->pluck('id')->each(fn ($id) => Push::toUser(
                     $id,
-                    'নতুন শাহিদার আবেদন',
+                    'নতুন এলাকা ম্যানেজার আবেদন',
                     "{$application->name} · {$areas}",
                     '/admin/shahidar-applications/'.$application->id,
                     'shahidar-application-'.$application->id,

@@ -75,11 +75,11 @@ class ActForCookTest extends TestCase
         $log = KitchenAction::sole();
         $this->assertSame('shahidar', $log->role);
         $this->assertStringContainsString('রেডি', $log->details);
-        Queue::assertPushed(SendWebPush::class, fn ($j) => $j->userId === $this->kitchen->user_id && str_contains($j->title, 'শাহিদার করিম'));
+        Queue::assertPushed(SendWebPush::class, fn ($j) => $j->userId === $this->kitchen->user_id && str_contains($j->title, 'এলাকা ম্যানেজার করিম'));
 
         // The cook sees it in her app, without customers' names.
         $this->actingAs($this->kitchen->user, 'sanctum')->getJson('/api/v1/my/bookings')
-            ->assertJsonPath('data.acted_for.0.who', 'শাহিদার করিম');
+            ->assertJsonPath('data.acted_for.0.who', 'এলাকা ম্যানেজার করিম');
     }
 
     public function test_shahidar_off_needs_a_reason_and_plates_name_soldout_menu_work(): void

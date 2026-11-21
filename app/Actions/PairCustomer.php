@@ -43,7 +43,7 @@ class PairCustomer
                 throw ValidationException::withMessages(['kitchen_id' => 'এই রান্নাঘর এখন অনুমোদিত নয়।']);
             }
             if (! $shahidar->isShahidar() || ! $shahidar->shahidarAreas()->whereKey($customer->area_id)->exists()) {
-                throw ValidationException::withMessages(['shahidar_id' => 'এই শাহিদার গ্রাহকের এলাকায় কাজ করেন না।']);
+                throw ValidationException::withMessages(['shahidar_id' => 'এই এলাকা ম্যানেজার গ্রাহকের এলাকায় কাজ করেন না।']);
             }
             $sameCook = $current && $current->kitchen_id === $kitchen->id;
             // F55: one cook, one customer. The kitchen row is locked above, so two admins cannot both take her.

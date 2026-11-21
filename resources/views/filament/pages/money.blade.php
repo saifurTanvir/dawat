@@ -2,12 +2,12 @@
 <x-filament-panels::page>
     {{-- Inside the page root: a Livewire component must have a single root element. --}}
     <style>.dawat-money th, .dawat-money td { padding: 8px 12px 8px 0; text-align: left; vertical-align: middle; } .dawat-money .r { text-align: right; } .dawat-money tbody tr { border-top: 1px solid rgb(229 231 235); } .dawat-money .muted { color: rgb(107 114 128); }</style>
-    <x-filament::section heading="শাহিদারের কাছে নগদ" description="ডেলিভারিতে তোলা টাকা, এখনো দাওয়াতকে জমা দেওয়া হয়নি।">
+    <x-filament::section heading="এলাকা ম্যানেজারের কাছে নগদ" description="ডেলিভারিতে তোলা টাকা, এখনো দাওয়াতকে জমা দেওয়া হয়নি।">
         @if ($shahidars->isEmpty())
             <p class="text-sm text-gray-500">কারো কাছে জমা টাকা নেই।</p>
         @else
             <table class="dawat-money w-full text-sm">
-                <thead><tr class="text-left text-gray-500"><th class="py-2">শাহিদার</th><th>বক্স</th><th class="r">টাকা</th><th></th></tr></thead>
+                <thead><tr class="text-left text-gray-500"><th class="py-2">এলাকা ম্যানেজার</th><th>বক্স</th><th class="r">টাকা</th><th></th></tr></thead>
                 <tbody>
                     @foreach ($shahidars as $row)
                         <tr class="border-t border-gray-200 dark:border-white/10">
@@ -78,7 +78,7 @@
             <p class="text-sm text-gray-500">কারো বাকি নেই।</p>
         @else
             <table class="dawat-money w-full text-sm">
-                <thead><tr class="text-left text-gray-500"><th class="py-2">বক্স</th><th>গ্রাহক</th><th>শাহিদার</th><th>অবস্থা</th><th class="r">টাকা</th></tr></thead>
+                <thead><tr class="text-left text-gray-500"><th class="py-2">বক্স</th><th>গ্রাহক</th><th>এলাকা ম্যানেজার</th><th>অবস্থা</th><th class="r">টাকা</th></tr></thead>
                 <tbody>
                     @foreach ($owing as $o)
                         <tr class="border-t border-gray-200 dark:border-white/10">

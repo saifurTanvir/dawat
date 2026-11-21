@@ -1,4 +1,4 @@
-// F48: which role the app is being used as — গ্রাহক, গৃহিণী, শাহিদার or অ্যাডমিন —
+// F48: which role the app is being used as — গ্রাহক, গৃহিণী, এলাকা ম্যানেজার or অ্যাডমিন —
 // and the pages of each. Someone with several roles switches between them.
 import { ref } from 'vue';
 
@@ -28,7 +28,7 @@ export const MODES = {
         ],
     },
     shahidar: {
-        label: 'শাহিদার',
+        label: 'এলাকা ম্যানেজার',
         icon: '🛵',
         home: '/shahidar',
         links: [{ to: '/shahidar', label: 'আজকের তালিকা' }],

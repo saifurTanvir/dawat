@@ -39,7 +39,7 @@
                         <label v-if="post.order.delivery" class="flex cursor-pointer items-start gap-3 rounded-xl border p-3" :class="receive === 'delivery' ? 'border-leaf bg-leaf-soft' : 'border-rule'">
                             <input v-model="receive" type="radio" value="delivery" class="mt-1 size-5 accent-leaf" />
                             <span>
-                                <span class="block font-semibold">শাহিদার পৌঁছে দেবেন</span>
+                                <span class="block font-semibold">এলাকা ম্যানেজার পৌঁছে দেবেন</span>
                                 <span class="text-sm text-muted">ডেলিভারি চার্জ {{ post.order.delivery_fee_paisa ? taka(post.order.delivery_fee_paisa) : 'নেই' }}</span>
                             </span>
                         </label>

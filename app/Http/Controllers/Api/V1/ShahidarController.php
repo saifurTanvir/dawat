@@ -183,7 +183,7 @@ class ShahidarController extends Controller
         $this->mine($request, $order);
         $data = $request->validate(['reason' => ['nullable', 'string', 'max:200']]);
 
-        return $this->done($this->planner->cancel($order, 'shahidar', $data['reason'] ?? 'গ্রাহক শাহিদারকে জানিয়েছেন'), 'আজকের জন্য বাদ দেওয়া হয়েছে।');
+        return $this->done($this->planner->cancel($order, 'shahidar', $data['reason'] ?? 'গ্রাহক এলাকা ম্যানেজারকে জানিয়েছেন'), 'আজকের জন্য বাদ দেওয়া হয়েছে।');
     }
 
     /** The customer said yes on the phone to today's higher price (F30). */

@@ -21,7 +21,7 @@ enum ShahidarApplicationStatus: string implements HasColor, HasLabel
         return match ($this) {
             self::New => 'নতুন',
             self::Contacted => 'কথা হয়েছে',
-            self::Onboarded => 'শাহিদার হয়েছেন',
+            self::Onboarded => 'এলাকা ম্যানেজার হয়েছেন',
             self::Rejected => 'বাদ',
         };
     }

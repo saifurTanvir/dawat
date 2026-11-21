@@ -55,7 +55,7 @@ class ReadyTest extends TestCase
         $this->actingAs($cook, 'sanctum')
             ->postJson('/api/v1/my/bookings/ready', ['meal_slot' => 'lunch', 'note' => '২টা পর্যন্ত বাসায়, তারপর দারোয়ানের কাছে'])
             ->assertOk()
-            ->assertJsonPath('message', 'শাহিদারকে জানানো হয়েছে (১টা বক্স)।');
+            ->assertJsonPath('message', 'এলাকা ম্যানেজারকে জানানো হয়েছে (১টা বক্স)।');
 
         $order = Order::firstOrFail();
         $this->assertNotNull($order->ready_at);

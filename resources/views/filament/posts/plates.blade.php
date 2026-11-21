@@ -14,7 +14,7 @@
         <p style="color:rgb(107 114 128);font-size:.875rem;margin-top:6px">এই পোস্ট থেকে এখনো কোনো বক্স হয়নি।</p>
     @else
         <table class="dw-pl" style="width:100%;margin-top:8px">
-            <thead><tr><th>বক্স</th><th>কে</th><th>কীভাবে</th><th>প্লেট</th><th>অবস্থা</th><th>শাহিদার</th></tr></thead>
+            <thead><tr><th>বক্স</th><th>কে</th><th>কীভাবে</th><th>প্লেট</th><th>অবস্থা</th><th>এলাকা ম্যানেজার</th></tr></thead>
             <tbody>
                 @foreach ($people as $p)
                     <tr><td>{{ $p['code'] }}</td><td>{{ $p['name'] }}</td><td>{{ $p['kind'] }}</td><td>{{ $p['plates'] }}</td><td>{{ $p['status'] }}</td><td>{{ $p['shahidar'] ?? '—' }}</td></tr>

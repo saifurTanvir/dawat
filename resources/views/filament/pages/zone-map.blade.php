@@ -48,7 +48,7 @@
         <div class="dz-stat"><span class="muted">৩+ গৃহিণী (কর্পোরেটের জন্য তৈরি)</span><b>{{ $bn($totals['zones_ready']) }}</b></div>
         <div class="dz-stat"><span class="muted">গৃহিণী (অনুমোদিত / অপেক্ষায়)</span><b>{{ $bn($totals['cooks']) }} / {{ $bn($totals['pending']) }}</b></div>
         <div class="dz-stat"><span class="muted">গ্রাহক</span><b>{{ $bn($totals['customers']) }}</b></div>
-        <div class="dz-stat"><span class="muted">শাহিদার</span><b>{{ $bn($totals['shahidars']) }}</b></div>
+        <div class="dz-stat"><span class="muted">এলাকা ম্যানেজার</span><b>{{ $bn($totals['shahidars']) }}</b></div>
     </div>
 
 
@@ -157,7 +157,7 @@
     @foreach ($areas as $a)
         @php($shown = $onlyBusy ? collect($a['zones'])->filter(fn ($z) => $z['cooks'] + $z['pending'] + $z['customers'] > 0)->values() : collect($a['zones']))
         @php($hidden = count($a['zones']) - $shown->count())
-        <x-filament::section :heading="$a['name']" :description="'গৃহিণী '.$bn($a['cooks']).' (অপেক্ষায় '.$bn($a['pending']).') · প্লেট '.$bn($a['plates']).' · গ্রাহক '.$bn($a['customers']).' · এলাকার শাহিদার '.$bn($a['shahidars'])" collapsible :collapsed="$a['cooks'] + $a['pending'] + $a['customers'] === 0">
+        <x-filament::section :heading="$a['name']" :description="'গৃহিণী '.$bn($a['cooks']).' (অপেক্ষায় '.$bn($a['pending']).') · প্লেট '.$bn($a['plates']).' · গ্রাহক '.$bn($a['customers']).' · এলাকার এলাকা ম্যানেজার '.$bn($a['shahidars'])" collapsible :collapsed="$a['cooks'] + $a['pending'] + $a['customers'] === 0">
             <div class="dz-cards">
                 @foreach ($shown as $z)
                     <div class="dz-card">

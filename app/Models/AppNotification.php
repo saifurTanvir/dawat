@@ -17,7 +17,7 @@ class AppNotification extends Model
 
     /** Which part of the app a notification is about, by where it opens. */
     public const SECTIONS = [
-        '/shahidar' => ['key' => 'shahidar', 'label' => 'শাহিদারের কাজ', 'icon' => '🛵'],
+        '/shahidar' => ['key' => 'shahidar', 'label' => 'এলাকা ম্যানেজারের কাজ', 'icon' => '🛵'],
         '/cook' => ['key' => 'cook', 'label' => 'রান্নাঘর', 'icon' => '🍳'],
         '/regular' => ['key' => 'regular', 'label' => 'নিয়মিত খাবার', 'icon' => '🍱'],
         '/orders' => ['key' => 'orders', 'label' => 'আমার অর্ডার', 'icon' => '🛍️'],

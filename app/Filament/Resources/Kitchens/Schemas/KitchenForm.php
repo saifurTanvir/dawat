@@ -25,7 +25,7 @@ class KitchenForm
                         Select::make('area_id')->label('এলাকা')->relationship('area', 'name'),
                         Select::make('daily_plates')->label('দিনে কত প্লেট দেবেন (F77)')->options([1 => '১ প্লেট', 2 => '২ প্লেট'])->placeholder('এখনো জানাননি'),
                         TextInput::make('pickup_address')->label('পিকআপের ঠিকানা')->maxLength(255)
-                            ->helperText('শাহিদার এই ঠিকানা থেকে নিয়মিত গ্রাহকের খাবার তুলবেন। ক্রেতারা কখনো দেখেন না।'),
+                            ->helperText('এলাকা ম্যানেজার এই ঠিকানা থেকে নিয়মিত গ্রাহকের খাবার তুলবেন। ক্রেতারা কখনো দেখেন না।'),
                         TextInput::make('bfsa_reg_no')->label('BFSA রেজিস্ট্রেশন নম্বর')->maxLength(50),
                         // F62: the home pin — link, current location, or address search
                         LocationField::make('where', 'বাসার লোকেশন')
@@ -51,7 +51,7 @@ class KitchenForm
                             ->tel()
                             ->regex(PhoneNumber::PATTERN)
                             ->dehydrateStateUsing(fn (?string $state) => PhoneNumber::normalize($state)),
-                        TextInput::make('contact_name')->label('যোগাযোগের নাম (যেমন শাহিদারের নাম)')->maxLength(60),
+                        TextInput::make('contact_name')->label('যোগাযোগের নাম (যেমন এলাকা ম্যানেজারের নাম)')->maxLength(60),
                     ]),
             ]);
     }

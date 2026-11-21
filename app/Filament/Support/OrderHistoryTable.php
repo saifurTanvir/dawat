@@ -38,7 +38,7 @@ final class OrderHistoryTable
                     ->url(fn (Order $o) => Links::recipient($o)),
                 in_array('kitchen', $hide, true) ? null : TextColumn::make('kitchen.display_name')->label('গৃহিণী')
                     ->url(fn (Order $o) => Links::kitchen($o->kitchen_id)),
-                in_array('shahidar', $hide, true) ? null : TextColumn::make('shahidar.name')->label('শাহিদার')->placeholder('—')
+                in_array('shahidar', $hide, true) ? null : TextColumn::make('shahidar.name')->label('এলাকা ম্যানেজার')->placeholder('—')
                     ->url(fn (Order $o) => Links::shahidar($o->shahidar_id)),
                 TextColumn::make('plates')->label('প্লেট'),
                 TextColumn::make('total')->label('টাকা')->state(fn (Order $o) => '৳'.number_format($o->totalPaisa() / 100))
@@ -75,7 +75,7 @@ final class OrderHistoryTable
                     'গ্রাহক' => fn (Order $o) => $o->recipient()?->name,
                     'ফোন' => fn (Order $o) => $o->recipient()?->phone,
                     'গৃহিণী' => fn (Order $o) => $o->kitchen?->display_name,
-                    'শাহিদার' => fn (Order $o) => $o->shahidar?->name,
+                    'এলাকা ম্যানেজার' => fn (Order $o) => $o->shahidar?->name,
                     'প্লেট' => fn (Order $o) => $o->plates,
                     'খাবারের দাম' => fn (Order $o) => intdiv($o->food_paisa, 100),
                     'ডেলিভারি' => fn (Order $o) => intdiv($o->delivery_fee_paisa, 100),

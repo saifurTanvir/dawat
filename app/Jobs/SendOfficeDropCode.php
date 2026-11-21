@@ -31,7 +31,7 @@ class SendOfficeDropCode implements ShouldQueue
         $slot = $drop->meal_slot->label();
 
         if ($this->attempts() === 1) {
-            Push::toUser($contact, "আজ {$slot}: অফিসের খাবার আসছে", "শাহিদার এলে সব বক্স বুঝে নিয়ে কোড বলবেন: {$this->code}", '/', 'drop-'.$drop->id);
+            Push::toUser($contact, "আজ {$slot}: অফিসের খাবার আসছে", "এলাকা ম্যানেজার এলে সব বক্স বুঝে নিয়ে কোড বলবেন: {$this->code}", '/', 'drop-'.$drop->id);
         }
         if (! config('dawat.orders.sms')) {
             return;

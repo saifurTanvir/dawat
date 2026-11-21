@@ -21,7 +21,7 @@ class BotFact extends Model
         'all' => 'সবার জন্য',
         'cook' => 'গৃহিণী',
         'customer' => 'ক্রেতা',
-        'shahidar' => 'শাহিদার',
+        'shahidar' => 'এলাকা ম্যানেজার',
     ];
 
     private const AUDIENCE_EN = ['all' => 'anyone', 'cook' => 'cooks', 'customer' => 'customers', 'shahidar' => 'delivery (shahidar) applicants'];

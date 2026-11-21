@@ -11,7 +11,7 @@ class MenuNotice extends Model
 {
     protected $guarded = ['id'];
 
-    public const SOURCES = ['cook' => 'গৃহিণী', 'shahidar' => 'শাহিদার', 'admin' => 'দাওয়াত টিম', 'daily_menu' => 'রোজকার মেনু'];
+    public const SOURCES = ['cook' => 'গৃহিণী', 'shahidar' => 'এলাকা ম্যানেজার', 'admin' => 'দাওয়াত টিম', 'daily_menu' => 'রোজকার মেনু'];
 
     protected function casts(): array
     {

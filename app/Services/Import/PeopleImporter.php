@@ -33,7 +33,7 @@ class PeopleImporter
     private const ROLE_WORDS = [
         'customer' => ['গ্রাহক', 'কাস্টমার', 'ক্রেতা', 'customer', 'buyer', 'client'],
         'cook' => ['গৃহিণী', 'গৃহিনী', 'রাঁধুনি', 'রাধুনি', 'রাঁধুনী', 'cook', 'kitchen', 'chef', 'home cook'],
-        'shahidar' => ['শাহিদার', 'সাহিদার', 'shahidar', 'rider', 'delivery'],
+        'shahidar' => ['এলাকা ম্যানেজার', 'সাহিদার', 'shahidar', 'rider', 'delivery'],
     ];
 
     private const MEAL_WORDS = [
@@ -92,7 +92,7 @@ class PeopleImporter
             $errors[] = 'নাম নেই';
         }
         if (! $role) {
-            $errors[] = filled($v['role'] ?? '') ? 'ভূমিকা বোঝা যায়নি (গ্রাহক / গৃহিণী / শাহিদার)' : 'ভূমিকা নেই';
+            $errors[] = filled($v['role'] ?? '') ? 'ভূমিকা বোঝা যায়নি (গ্রাহক / গৃহিণী / এলাকা ম্যানেজার)' : 'ভূমিকা নেই';
         }
 
         $areaIds = [];

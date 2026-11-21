@@ -70,7 +70,7 @@ final class ActForCookActions
             ->schema(fn (Kitchen $record) => [
                 Select::make('meal_slot')->label('কোন বেলা')->options(self::readySlots($record))->required()->native(false)
                     ->default(array_key_first(self::readySlots($record))),
-                TextInput::make('note')->label('শাহিদারের জন্য (ইচ্ছা হলে)')->maxLength(200)->placeholder('যেমন: ২টা পর্যন্ত বাসায়, তারপর দারোয়ানের কাছে'),
+                TextInput::make('note')->label('এলাকা ম্যানেজারের জন্য (ইচ্ছা হলে)')->maxLength(200)->placeholder('যেমন: ২টা পর্যন্ত বাসায়, তারপর দারোয়ানের কাছে'),
             ])
             ->action(function (Kitchen $record, array $data, Action $action) {
                 $slot = MealSlot::from($data['meal_slot']);

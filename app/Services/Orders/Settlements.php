@@ -29,7 +29,7 @@ class Settlements
                 throw ValidationException::withMessages(['order' => 'আগে খাবার পৌঁছানো চিহ্নিত করুন।']);
             }
             if ($order->customer?->paysByBill()) {
-                throw ValidationException::withMessages(['order' => 'এই গ্রাহক বিলে টাকা দেন; শাহিদার টাকা নেবেন না।']);
+                throw ValidationException::withMessages(['order' => 'এই গ্রাহক বিলে টাকা দেন; এলাকা ম্যানেজার টাকা নেবেন না।']);
             }
             if ($order->paid_at === null) {
                 $order->forceFill(['paid_at' => now(), 'collected_by' => $collector->id, 'payment_method' => 'cash'])->save();
@@ -141,7 +141,7 @@ class Settlements
             $orders = Order::whereNotNull('paid_at')->where('collected_by', $shahidar->id)
                 ->whereNull('shahidar_settlement_id')->lockForUpdate()->get();
             if ($orders->isEmpty()) {
-                throw ValidationException::withMessages(['shahidar' => 'এই শাহিদারের কাছে জমা টাকা নেই।']);
+                throw ValidationException::withMessages(['shahidar' => 'এই এলাকা ম্যানেজারের কাছে জমা টাকা নেই।']);
             }
             $cash = (int) $orders->sum(fn (Order $o) => $o->totalPaisa());
 

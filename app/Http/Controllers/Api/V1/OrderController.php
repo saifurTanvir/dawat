@@ -37,7 +37,7 @@ class OrderController extends Controller
             'data' => $this->row($order->load(['kitchen', 'shahidar'])),
             'message' => $order->isSelfPickup()
                 ? 'বুক হয়েছে। গৃহিণী ফোন করে জানাবেন কোথায় নেবেন।'
-                : 'বুক হয়েছে। শাহিদার পৌঁছে দেবেন; ডেলিভারি কোড SMS-এ আসছে।',
+                : 'বুক হয়েছে। এলাকা ম্যানেজার পৌঁছে দেবেন; ডেলিভারি কোড SMS-এ আসছে।',
             'meta_event' => $meta->record('Purchase', 'order-'.$order->id, $request, $request->user(), custom: [
                 'value' => intdiv($order->totalPaisa(), 100),
                 'currency' => 'BDT',

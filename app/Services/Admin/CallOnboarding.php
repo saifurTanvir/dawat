@@ -25,7 +25,7 @@ class CallOnboarding
     public const ROLES = [
         'cook' => 'গৃহিণী (রাঁধুনি)',
         'customer' => 'নিয়মিত গ্রাহক',
-        'shahidar' => 'শাহিদার',
+        'shahidar' => 'এলাকা ম্যানেজার',
         'account' => 'শুধু অ্যাকাউন্ট (অ্যাপে ঢুকতে পারবেন)',
         'skip' => 'এখন যোগ করব না',
     ];
@@ -33,14 +33,14 @@ class CallOnboarding
     public const RESULTS = [
         'cook' => 'গৃহিণী হিসেবে যোগ হয়েছে',
         'customer' => 'গ্রাহক হিসেবে যোগ হয়েছে',
-        'shahidar' => 'শাহিদার হিসেবে যোগ হয়েছে',
+        'shahidar' => 'এলাকা ম্যানেজার হিসেবে যোগ হয়েছে',
         'account' => 'অ্যাকাউন্ট খোলা হয়েছে',
         'existing' => 'আগে থেকেই সিস্টেমে',
         'skip' => 'যোগ করা হয়নি',
     ];
 
     private const WORDS = [
-        'shahidar' => ['শাহিদার', 'সাহিদার', 'ডেলিভারি দিতে', 'ডেলিভারির কাজ', 'ডেলিভারি ম্যান', 'রাইডার', 'বাইক', 'সাইকেল', 'rider', 'delivery'],
+        'shahidar' => ['এলাকা ম্যানেজার', 'সাহিদার', 'ডেলিভারি দিতে', 'ডেলিভারির কাজ', 'ডেলিভারি ম্যান', 'রাইডার', 'বাইক', 'সাইকেল', 'rider', 'delivery'],
         'cook' => ['রান্না', 'রাঁধ', 'রাধ', 'গৃহিণী', 'গৃহিনী', 'রাঁধুনি', 'রাধুনি', 'kitchen', 'cook'],
         'customer' => ['খাবার নিতে', 'খাবার নেব', 'খাবার চাই', 'খেতে', 'নিয়মিত খাবার', 'লাঞ্চ', 'টিফিন', 'অর্ডার দিতে', 'গ্রাহক', 'কাস্টমার'],
     ];
@@ -71,7 +71,7 @@ class CallOnboarding
         $as = array_filter([
             $user->kitchen ? 'গৃহিণী — '.$user->kitchen->display_name : null,
             $user->customer ? 'নিয়মিত গ্রাহক' : null,
-            $user->isShahidar() ? 'শাহিদার' : null,
+            $user->isShahidar() ? 'এলাকা ম্যানেজার' : null,
         ]);
 
         return $as ? implode(', ', $as) : null;

@@ -17,7 +17,7 @@ class PeopleImportRow extends Model
         return ['data' => 'array'];
     }
 
-    public const ROLES = ['customer' => 'গ্রাহক', 'cook' => 'গৃহিণী', 'shahidar' => 'শাহিদার'];
+    public const ROLES = ['customer' => 'গ্রাহক', 'cook' => 'গৃহিণী', 'shahidar' => 'এলাকা ম্যানেজার'];
 
     public const PLANS = ['new' => 'নতুন যোগ হবে', 'add_role' => 'আগে থেকে আছেন, ভূমিকা যোগ হবে', 'exists' => 'আগে থেকেই আছেন, বাদ', 'error' => 'ভুল আছে'];
 

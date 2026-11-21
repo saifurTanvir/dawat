@@ -58,7 +58,7 @@ class PlaceOrder
             if ($receive === 'delivery') {
                 $shahidarId = self::shahidarFor($post);
                 if (! $shahidarId) {
-                    throw ValidationException::withMessages(['receive' => 'এই এলাকায় এখনো শাহিদার নেই। "নিজে নেব" বেছে নিন।']);
+                    throw ValidationException::withMessages(['receive' => 'এই এলাকায় এখনো এলাকা ম্যানেজার নেই। "নিজে নেব" বেছে নিন।']);
                 }
             }
 
@@ -109,7 +109,7 @@ class PlaceOrder
         });
     }
 
-    /** Whether "শাহিদার পৌঁছে দেবেন" is offered for this post. */
+    /** Whether "এলাকা ম্যানেজার পৌঁছে দেবেন" is offered for this post. */
     public static function deliveryAvailable(Post $post): bool
     {
         return $post->kitchen?->area_id !== null

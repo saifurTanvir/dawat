@@ -622,6 +622,6 @@ class MessengerBotTest extends TestCase
         $this->hook([$this->text('PC', 'thanks', 'mid.c2')]);
         $this->answer('PC');
         $this->assertSame(1, CallRequest::count());
-        $this->assertStringContainsString('dawat.cloud/join/shahidar', BotFact::promptText());
+        $this->assertStringContainsString('dawat.cloud/join/area-manager', BotFact::promptText());
     }
 }

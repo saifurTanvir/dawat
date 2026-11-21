@@ -36,11 +36,11 @@ class Impersonation extends Model
         return $this->ended_at === null && $this->ends_at->isFuture();
     }
 
-    /** "দাওয়াত টিম (রাশেদ)" or "শাহিদার করিম" */
+    /** "দাওয়াত টিম (রাশেদ)" or "এলাকা ম্যানেজার করিম" */
     public function actorLabel(): string
     {
         return $this->actor_role === 'shahidar'
-            ? 'শাহিদার '.($this->actor?->name ?? '')
+            ? 'এলাকা ম্যানেজার '.($this->actor?->name ?? '')
             : 'দাওয়াত টিম'.($this->actor?->name ? " ({$this->actor->name})" : '');
     }
 }

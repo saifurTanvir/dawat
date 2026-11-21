@@ -40,7 +40,7 @@ class CookActions
             ->get();
 
         if ($orders->isEmpty()) {
-            throw ValidationException::withMessages(['meal_slot' => 'এই বেলায় শাহিদারের তোলার মতো কোনো বক্স নেই।']);
+            throw ValidationException::withMessages(['meal_slot' => 'এই বেলায় এলাকা ম্যানেজারের তোলার মতো কোনো বক্স নেই।']);
         }
 
         Order::whereKey($orders->modelKeys())->update(['ready_at' => now(), 'ready_note' => $note]);
@@ -115,7 +115,7 @@ class CookActions
     {
         abort_unless($order->isOneOff(), 404);
         if ($timeLimit && $order->created_at->lte(now()->subMinutes(self::DECLINE_MINUTES))) {
-            throw ValidationException::withMessages(['order' => '১০ মিনিট পেরিয়ে গেছে। দিতে না পারলে দাওয়াত টিম বা শাহিদারকে জানান।']);
+            throw ValidationException::withMessages(['order' => '১০ মিনিট পেরিয়ে গেছে। দিতে না পারলে দাওয়াত টিম বা এলাকা ম্যানেজারকে জানান।']);
         }
 
         $this->planner->cancel($order, 'cook', 'গৃহিণী দিতে পারছেন না');

@@ -41,7 +41,7 @@ class UserInfolist
                         ->url(fn (User $record) => Links::kitchen($record->kitchen?->id))->placeholder('—'),
                     TextEntry::make('customer_link')->label('নিয়মিত গ্রাহক')->state(fn (User $record) => $record->customer ? 'গ্রাহকের পাতা →' : null)
                         ->url(fn (User $record) => $record->customer ? CustomerResource::getUrl('view', ['record' => $record->customer]) : null)->placeholder('—'),
-                    TextEntry::make('shahidar_link')->label('শাহিদার')->state(fn (User $record) => $record->isShahidar() ? 'শাহিদারের পাতা →' : null)
+                    TextEntry::make('shahidar_link')->label('এলাকা ম্যানেজার')->state(fn (User $record) => $record->isShahidar() ? 'এলাকা ম্যানেজারের পাতা →' : null)
                         ->url(fn (User $record) => $record->isShahidar() ? Links::shahidar($record->id) : null)->placeholder('—'),
                 ]),
                 Section::make('গ্রাহক হিসেবে সারাংশ')->columnSpanFull()->schema([ViewEntry::make('history_summary')->hiddenLabel()->view('filament.history.summary-customer')]),

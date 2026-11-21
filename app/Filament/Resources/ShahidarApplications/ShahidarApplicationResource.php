@@ -44,9 +44,9 @@ class ShahidarApplicationResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'নিয়মিত খাবার';
 
-    protected static ?string $modelLabel = 'শাহিদার আবেদন';
+    protected static ?string $modelLabel = 'এলাকা ম্যানেজার আবেদন';
 
-    protected static ?string $pluralModelLabel = 'শাহিদার আবেদন';
+    protected static ?string $pluralModelLabel = 'এলাকা ম্যানেজার আবেদন';
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -71,7 +71,7 @@ class ShahidarApplicationResource extends Resource
 
     public static function getGlobalSearchResultTitle(Model $record): string
     {
-        return 'শাহিদার আবেদন: '.$record->name;
+        return 'এলাকা ম্যানেজার আবেদন: '.$record->name;
     }
 
     private static function yesNo(?bool $value): string
@@ -144,7 +144,7 @@ class ShahidarApplicationResource extends Resource
                 TextEntry::make('created_at')->label('আবেদনের সময়')->dateTime('j M Y, g:i a', config('app.display_timezone')),
                 TextEntry::make('admin_note')->label('অ্যাডমিনের নোট')->placeholder('—'),
                 TextEntry::make('handledBy.name')->label('কে দেখেছেন')->placeholder('—'),
-                TextEntry::make('user.name')->label('শাহিদার অ্যাকাউন্ট')->placeholder('—')
+                TextEntry::make('user.name')->label('এলাকা ম্যানেজার অ্যাকাউন্ট')->placeholder('—')
                     ->url(fn (ShahidarApplication $record) => $record->user_id ? ShahidarResource::getUrl('view', ['record' => $record->user_id]) : null),
             ]),
         ]);
@@ -166,7 +166,7 @@ class ShahidarApplicationResource extends Resource
             ->icon(Heroicon::OutlinedChatBubbleLeftRight)
             ->color('success')
             ->url(fn (ShahidarApplication $record) => 'https://wa.me/'.PhoneNumber::international($record->phone).'?text='.rawurlencode(
-                "আসসালামু আলাইকুম {$record->name}, দাওয়াত থেকে বলছি। আপনি শাহিদার হিসেবে কাজ করতে আবেদন করেছেন — কথা বলার জন্য কখন সময় হবে?"
+                "আসসালামু আলাইকুম {$record->name}, দাওয়াত থেকে বলছি। আপনি এলাকা ম্যানেজার হিসেবে কাজ করতে আবেদন করেছেন — কথা বলার জন্য কখন সময় হবে?"
             ), shouldOpenInNewTab: true);
     }
 
@@ -187,11 +187,11 @@ class ShahidarApplicationResource extends Resource
     public static function onboardAction(): Action
     {
         return Action::make('onboard')
-            ->label('শাহিদার বানান')
+            ->label('এলাকা ম্যানেজার বানান')
             ->icon(Heroicon::OutlinedUserPlus)
             ->color('primary')
             ->visible(fn (ShahidarApplication $record) => $record->status->isOpen())
-            ->modalDescription('এই নম্বরে শাহিদার অ্যাকাউন্ট খুলবে (আগে অ্যাকাউন্ট থাকলে সেটাতেই রোল যোগ হবে)। OTP দিয়ে লগইন করবেন।')
+            ->modalDescription('এই নম্বরে এলাকা ম্যানেজার অ্যাকাউন্ট খুলবে (আগে অ্যাকাউন্ট থাকলে সেটাতেই রোল যোগ হবে)। OTP দিয়ে লগইন করবেন।')
             ->fillForm(fn (ShahidarApplication $record) => ['name' => $record->name, 'area_ids' => $record->areas->pluck('id')->all()])
             ->schema([
                 TextInput::make('name')->label('নাম')->required()->maxLength(60),
@@ -201,7 +201,7 @@ class ShahidarApplicationResource extends Resource
             ])
             ->action(function (ShahidarApplication $record, array $data, $livewire) {
                 $user = app(ShahidarApplications::class)->onboard($record, auth()->user(), $data['area_ids'], $data['name']);
-                Notification::make()->title("{$user->name} এখন শাহিদার")->success()->send();
+                Notification::make()->title("{$user->name} এখন এলাকা ম্যানেজার")->success()->send();
                 $livewire->redirect(ShahidarResource::getUrl('view', ['record' => $user]));
             });
     }

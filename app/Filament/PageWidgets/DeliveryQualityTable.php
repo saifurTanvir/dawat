@@ -29,7 +29,7 @@ class DeliveryQualityTable extends TableWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    protected static ?string $heading = 'শাহিদার ধরে পিকআপ ও ডেলিভারি';
+    protected static ?string $heading = 'এলাকা ম্যানেজার ধরে পিকআপ ও ডেলিভারি';
 
     public const PERIODS = [1 => 'আজ', 7 => 'শেষ ৭ দিন', 30 => 'শেষ ৩০ দিন'];
 
@@ -72,7 +72,7 @@ class DeliveryQualityTable extends TableWidget
                     ->query(fn (Builder $query) => $query),
             ])
             ->columns([
-                TextColumn::make('name')->label('শাহিদার')->weight('semibold')
+                TextColumn::make('name')->label('এলাকা ম্যানেজার')->weight('semibold')
                     ->formatStateUsing(fn ($state, User $u) => $state ?: $u->phone)->description(fn (User $u) => $u->phone),
                 TextColumn::make('picked')->label('পিকআপ')->sortable(),
                 TextColumn::make('picked_bare')->label('স্টিকার ছাড়া পিকআপ')->sortable()

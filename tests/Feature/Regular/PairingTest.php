@@ -85,7 +85,7 @@ class PairingTest extends TestCase
 
         // The same customer may still change only their shahidar.
         $other = $this->makeShahidar($this->area);
-        app(PairCustomer::class)($first, $kitchen, $other, $this->admin, 'শাহিদার বদল');
+        app(PairCustomer::class)($first, $kitchen, $other, $this->admin, 'এলাকা ম্যানেজার বদল');
         $this->assertSame($other->id, $first->fresh()->pairing->shahidar_id);
     }
 

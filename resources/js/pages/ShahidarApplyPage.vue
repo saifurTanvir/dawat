@@ -3,18 +3,18 @@
     <section aria-labelledby="apply-title" class="pt-2">
         <template v-if="!done">
             <div class="rounded-[var(--radius-plate)] bg-leaf p-5 text-white">
-                <h1 id="apply-title" class="font-serif text-2xl leading-snug font-bold">শাহিদার হয়ে আয় করুন</h1>
+                <h1 id="apply-title" class="font-serif text-2xl leading-snug font-bold">এলাকা ম্যানেজার হয়ে আয় করুন</h1>
                 <p class="mt-3 text-[1.375rem] leading-snug font-bold text-turmeric-soft">
                     মাসে {{ incomeText }} পর্যন্ত আয়ের সুযোগ
                 </p>
                 <p class="mt-3 leading-relaxed opacity-95">
-                    নিজের পাড়াতেই গৃহিণীদের রান্না করা খাবার বাসা আর অফিসে পৌঁছে দিন। পুরুষ-মহিলা সবাই আবেদন করতে পারেন।
+                    নিজের পাড়ার দায়িত্ব নিন — গৃহিণীদের রান্না করা খাবার বাসা আর অফিসে পৌঁছানোর কাজ সামলান। পুরুষ-মহিলা সবাই আবেদন করতে পারেন।
                 </p>
                 <p class="mt-2 text-sm opacity-80">আয় নির্ভর করে সপ্তাহে কত দিন আর কতগুলো ডেলিভারি করেন তার ওপর।</p>
             </div>
 
             <div class="mt-6">
-                <h2 class="text-lg font-bold">শাহিদার কী করেন</h2>
+                <h2 class="text-lg font-bold">এলাকা ম্যানেজার কী করেন</h2>
                 <ul class="mt-2 space-y-2 leading-relaxed">
                     <li v-for="line in whatTheyDo" :key="line" class="flex gap-2.5">
                         <svg viewBox="0 0 24 24" class="mt-1 size-5 shrink-0 text-leaf" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
@@ -186,8 +186,9 @@ const YES_NO = [{ value: true, label: 'আছে' }, { value: false, label: 'ন
 const DAYS = [1, 2, 3, 4, 5, 6, 7].map((d) => ({ value: d, label: d === 7 ? 'প্রতিদিন' : `${bn(d)} দিন` }));
 
 const whatTheyDo = [
-    'গৃহিণীর বাসা থেকে খাবারের বক্স নিয়ে গ্রাহকের বাসা বা অফিসে পৌঁছে দেন।',
-    'নিজের এলাকাতেই কাজ, অনেক দূরে যেতে হয় না।',
+    'নিজের এলাকার দায়িত্বে থাকেন: সকালে গৃহিণী আর গ্রাহকদের সাথে আজকের খাবার মিলিয়ে নেন।',
+    'খাবার নেওয়া ও পৌঁছানো — গৃহিণীর বাসা থেকে বক্স নিয়ে গ্রাহকের বাসা বা অফিসে দেন (হেঁটে, সাইকেলে বা বাইকে)।',
+    'নিজের বাসার এলাকাতেই কাজ, অনেক দূরে যেতে হয় না। এলাকায় গ্রাহক বাড়লে আয়ও বাড়ে।',
     'অ্যাপে দেখবেন কার কাছ থেকে নেবেন, কাকে দেবেন; দাওয়াত টিম শুরুতে সব শিখিয়ে দেবে।',
 ];
 

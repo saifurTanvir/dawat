@@ -45,7 +45,7 @@ class GuestMealController extends Controller
 
         return response()->json([
             'data' => self::forCustomer($customer),
-            'message' => 'অনুরোধ পাঠানো হয়েছে। গৃহিণী ও শাহিদারকে জানানো হলো; ব্যবস্থা হলে আপনাকে জানাব।',
+            'message' => 'অনুরোধ পাঠানো হয়েছে। গৃহিণী ও এলাকা ম্যানেজারকে জানানো হলো; ব্যবস্থা হলে আপনাকে জানাব।',
         ]);
     }
 
@@ -94,7 +94,7 @@ class GuestMealController extends Controller
 
         return response()->json([
             'data' => $this->cookRows($request),
-            'message' => $data['yes'] ? 'ধন্যবাদ! পোস্টে এই প্লেটগুলো বাড়তি রাখবেন।' : 'ঠিক আছে, শাহিদার অন্য ব্যবস্থা করবেন।',
+            'message' => $data['yes'] ? 'ধন্যবাদ! পোস্টে এই প্লেটগুলো বাড়তি রাখবেন।' : 'ঠিক আছে, এলাকা ম্যানেজার অন্য ব্যবস্থা করবেন।',
         ]);
     }
 

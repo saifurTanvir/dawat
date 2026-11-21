@@ -78,7 +78,7 @@ class Removal
     {
         $reasons = [];
         if ($n = $this->settled(Order::where('customer_id', $customer->id))) {
-            $reasons[] = "{$this->bn($n)}টা বক্সের টাকার হিসাব (গৃহিণীকে দেওয়া বা শাহিদার থেকে জমা) হয়ে গেছে।";
+            $reasons[] = "{$this->bn($n)}টা বক্সের টাকার হিসাব (গৃহিণীকে দেওয়া বা এলাকা ম্যানেজার থেকে জমা) হয়ে গেছে।";
         }
         if (BillPayment::whereHas('bill', fn ($q) => $q->where('customer_id', $customer->id))->exists()) {
             $reasons[] = 'বিলের টাকা নেওয়া হয়েছে।';
@@ -169,7 +169,7 @@ class Removal
         $held = Order::whereNotNull('paid_at')->where('payment_method', 'cash')
             ->where('collected_by', $shahidar->id)->whereNull('shahidar_settlement_id')->count();
 
-        return $held ? ["এই শাহিদারের কাছে {$this->bn($held)}টা বক্সের নগদ টাকা জমা আছে, আগে \"টাকার হিসাব\" থেকে জমা নিন।"] : [];
+        return $held ? ["এই এলাকা ম্যানেজারের কাছে {$this->bn($held)}টা বক্সের নগদ টাকা জমা আছে, আগে \"টাকার হিসাব\" থেকে জমা নিন।"] : [];
     }
 
     public function shahidarSummary(User $shahidar): string
@@ -177,8 +177,8 @@ class Removal
         $open = Pairing::where('shahidar_id', $shahidar->id)->whereNull('ended_at')->count();
 
         return $open
-            ? "{$this->bn($open)} জন নিয়মিত গ্রাহক এই শাহিদারের। তাঁদের জুটি খুলে যাবে, আজ থেকে বুক করা বক্স বাতিল হবে — পরে নতুন শাহিদার দিয়ে আবার জুটি বাঁধুন।"
-            : 'এই শাহিদারের কোনো চলমান গ্রাহক নেই।';
+            ? "{$this->bn($open)} জন নিয়মিত গ্রাহক এই এলাকা ম্যানেজারের। তাঁদের জুটি খুলে যাবে, আজ থেকে বুক করা বক্স বাতিল হবে — পরে নতুন এলাকা ম্যানেজার দিয়ে আবার জুটি বাঁধুন।"
+            : 'এই এলাকা ম্যানেজারের কোনো চলমান গ্রাহক নেই।';
     }
 
     /** Stop being a shahidar; past deliveries keep their name. */
@@ -187,7 +187,7 @@ class Removal
         $this->refuse($this->shahidarBlockers($shahidar));
 
         DB::transaction(function () use ($shahidar, $by) {
-            $this->releasePairings(Pairing::where('shahidar_id', $shahidar->id), $by, 'শাহিদার সরানো হয়েছে');
+            $this->releasePairings(Pairing::where('shahidar_id', $shahidar->id), $by, 'এলাকা ম্যানেজার সরানো হয়েছে');
             $shahidar->shahidarAreas()->detach();
             $shahidar->removeRole(Roles::SHAHIDAR);
         });

@@ -242,7 +242,7 @@ class BookingPlanner
                 $pairing === null => 'জুটি বাঁধা হয়নি',
                 ! in_array($weekday, array_map('intval', $customer->weekdays ?? []), true) => 'আজ বুকিংয়ের দিন না',
                 CustomerPause::where('customer_id', $customer->id)->covering($today)->exists() => 'আজ বিরতিতে আছেন',
-                ($choice = MealChoice::where('customer_id', $customer->id)->whereDate('service_date', $today)->where('meal_slot', $slot->value)->whereIn('choice', ['skip', 'change'])->first()) !== null => $choice->choice === 'skip' ? 'আজ খাবেন না বলেছেন' : 'এই খাবার খাবেন না বলেছেন'.($choice->status === 'handled' ? ' — অন্য খাবারের ব্যবস্থা হয়েছে' : ' — শাহিদার ব্যবস্থা করছেন'),
+                ($choice = MealChoice::where('customer_id', $customer->id)->whereDate('service_date', $today)->where('meal_slot', $slot->value)->whereIn('choice', ['skip', 'change'])->first()) !== null => $choice->choice === 'skip' ? 'আজ খাবেন না বলেছেন' : 'এই খাবার খাবেন না বলেছেন'.($choice->status === 'handled' ? ' — অন্য খাবারের ব্যবস্থা হয়েছে' : ' — এলাকা ম্যানেজার ব্যবস্থা করছেন'),
                 KitchenDayOff::where('kitchen_id', $pairing->kitchen_id)->whereDate('date', $today)->where('meal_slot', $slot->value)->exists() => 'গৃহিণী আজ এই বেলায় রাঁধছেন না',
                 $post !== null && $post->plates_left < $customer->plates => 'পোস্ট এসেছে, কিন্তু ফিডে যথেষ্ট প্লেট বাকি নেই ('.Order::banglaDigits((string) $post->plates_left).' বাকি)',
                 $post !== null => (function () use (&$canBook) {

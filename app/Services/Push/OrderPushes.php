@@ -24,7 +24,7 @@ class OrderPushes
 
         if ($to === 'cook') {
             if ($purpose === OtpPurpose::CookNewOrder) {
-                Push::toUser($o->kitchen->user_id, "নতুন অর্ডার: {$plates} প্লেট", "{$title} · বক্স {$box}। ".($o->isSelfPickup() ? 'ক্রেতা নিজে নেবেন।' : 'শাহিদার নিতে আসবেন।'), '/cook', "order-{$o->id}");
+                Push::toUser($o->kitchen->user_id, "নতুন অর্ডার: {$plates} প্লেট", "{$title} · বক্স {$box}। ".($o->isSelfPickup() ? 'ক্রেতা নিজে নেবেন।' : 'এলাকা ম্যানেজার নিতে আসবেন।'), '/cook', "order-{$o->id}");
             }
 
             return;

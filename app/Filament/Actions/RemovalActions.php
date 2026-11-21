@@ -81,7 +81,7 @@ final class RemovalActions
             ->icon(Heroicon::OutlinedLinkSlash)
             ->color('warning')
             ->visible(fn (Customer $record) => $record->pairing !== null)
-            ->modalDescription('গৃহিণী আর শাহিদারের সাথে জুটি শেষ হবে, গ্রাহক "অপেক্ষায়" যাবেন। আজ থেকে বুক করা বক্স বাতিল হবে। পরে আবার জুটি বাঁধা যাবে।')
+            ->modalDescription('গৃহিণী আর এলাকা ম্যানেজারের সাথে জুটি শেষ হবে, গ্রাহক "অপেক্ষায়" যাবেন। আজ থেকে বুক করা বক্স বাতিল হবে। পরে আবার জুটি বাঁধা যাবে।')
             ->schema([Textarea::make('reason')->label('কারণ')->required()->maxLength(300)->rows(2)->default('ভুল করে জুটি বাঁধা হয়েছিল')])
             ->action(function (Customer $record, array $data) {
                 $n = self::removal()->unpair($record, auth()->user(), $data['reason']);
@@ -118,7 +118,7 @@ final class RemovalActions
             ->modalSubmitAction(fn (Customer $record) => self::removal()->customerBlockers($record) ? false : null)
             ->schema(fn (Customer $record) => self::removal()->customerBlockers($record) ? [] : [
                 Checkbox::make('with_account')->label('ফোন নম্বরের অ্যাকাউন্টও মুছুন (টেস্টের জন্য বানানো হলে)')
-                    ->helperText('ব্যক্তি গৃহিণী/শাহিদার হলে অ্যাকাউন্ট থেকে যাবে।'),
+                    ->helperText('ব্যক্তি গৃহিণী/এলাকা ম্যানেজার হলে অ্যাকাউন্ট থেকে যাবে।'),
                 self::confirmField(),
             ])
             ->action(fn (Customer $record, array $data, Action $action, $livewire) => self::attempt(
@@ -162,10 +162,10 @@ final class RemovalActions
     {
         return Action::make('removeRole')
             ->authorize(fn () => auth()->user()?->isAdmin() ?? false)
-            ->label('শাহিদার থেকে বাদ')
+            ->label('এলাকা ম্যানেজার থেকে বাদ')
             ->icon(Heroicon::OutlinedUserMinus)
             ->color('danger')
-            ->modalHeading(fn (User $record) => ($record->name ?: $record->phone).' — শাহিদার থেকে বাদ দেবেন?')
+            ->modalHeading(fn (User $record) => ($record->name ?: $record->phone).' — এলাকা ম্যানেজার থেকে বাদ দেবেন?')
             ->modalDescription(fn (User $record) => ($b = self::removal()->shahidarBlockers($record))
                 ? '⛔ '.implode(' ', $b)
                 : self::removal()->shahidarSummary($record).' পুরোনো ডেলিভারির হিসাবে নাম থেকে যাবে।')
@@ -175,7 +175,7 @@ final class RemovalActions
             ->action(fn (User $record, Action $action, $livewire) => self::attempt(
                 $action,
                 fn () => self::removal()->removeShahidar($record, auth()->user()),
-                'শাহিদার থেকে বাদ দেওয়া হয়েছে',
+                'এলাকা ম্যানেজার থেকে বাদ দেওয়া হয়েছে',
                 null,
                 $livewire,
             ));
@@ -235,7 +235,7 @@ final class RemovalActions
             ->visible(fn (User $record) => $record->id !== auth()->id())
             ->modalHeading(fn (User $record) => ($record->name ?: $record->phone).' — অ্যাকাউন্ট মুছবেন?')
             ->modalDescription(fn (User $record) => self::describe(
-                'অ্যাকাউন্ট, এর রান্নাঘর/নিয়মিত বুকিং, অর্ডার আর শাহিদারের কাজ সব মুছে যাবে।',
+                'অ্যাকাউন্ট, এর রান্নাঘর/নিয়মিত বুকিং, অর্ডার আর এলাকা ম্যানেজারের কাজ সব মুছে যাবে।',
                 self::removal()->accountBlockers($record),
                 'অ্যাকাউন্ট ব্লক করুন।',
             ))

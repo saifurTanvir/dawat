@@ -59,14 +59,14 @@
                     </div>
                     <button v-if="o.can_skip" type="button" class="btn-quiet -ml-4 mt-1 text-chili" :disabled="busy" @click="skip(o)">আজ লাগবে না</button>
                 </div>
-                <p class="mt-3 text-sm text-muted">খাবার হাতে পেলে SMS-এ পাওয়া ৪ অঙ্কের কোডটা শাহিদারকে বলবেন।</p>
+                <p class="mt-3 text-sm text-muted">খাবার হাতে পেলে SMS-এ পাওয়া ৪ অঙ্কের কোডটা এলাকা ম্যানেজারকে বলবেন।</p>
             </div>
 
             <div v-if="booking.shahidar" class="rounded-[var(--radius-plate)] bg-plate p-5">
-                <p class="text-sm text-muted">আপনার শাহিদার (খাবার পৌঁছে দেবেন)</p>
+                <p class="text-sm text-muted">আপনার এলাকা ম্যানেজার · খাবার নেওয়া ও পৌঁছানো</p>
                 <p class="mt-1 text-lg font-semibold">{{ booking.shahidar.name }}</p>
                 <a :href="`tel:${booking.shahidar.phone}`" class="btn-primary mt-3">কল করুন · {{ bn(booking.shahidar.phone) }}</a>
-                <p class="mt-3 text-sm text-muted">খাবার ভালো না লাগলে বা গৃহিণী বদলাতে চাইলে শাহিদারকে বলুন।</p>
+                <p class="mt-3 text-sm text-muted">খাবার ভালো না লাগলে বা গৃহিণী বদলাতে চাইলে এলাকা ম্যানেজারকে বলুন।</p>
             </div>
 
             <!-- F26: days off -->
@@ -100,7 +100,7 @@
         <!-- Ask / change -->
         <form v-else class="mt-4 space-y-5" novalidate @submit.prevent="save">
             <p v-if="!booking" class="text-muted">
-                আপনার এলাকার একজন গৃহিণী প্রতিদিন রান্না করবেন, আর একজন শাহিদার বাসায় পৌঁছে দেবেন। দাম দেবেন খাবার হাতে পেয়ে।
+                আপনার এলাকার একজন গৃহিণী প্রতিদিন রান্না করবেন, আর একজন এলাকা ম্যানেজার বাসায় পৌঁছে দেবেন। দাম দেবেন খাবার হাতে পেয়ে।
             </p>
 
             <div>
@@ -121,7 +121,7 @@
             <div>
                 <label for="r-address" class="mb-1 block font-semibold">ডেলিভারির ঠিকানা</label>
                 <textarea id="r-address" v-model="form.address" class="field min-h-20" rows="2" maxlength="255" placeholder="বাসা, রোড, ফ্ল্যাট, চেনার মতো কিছু"></textarea>
-                <p class="mt-1 text-sm text-muted">শুধু দাওয়াত টিম আর আপনার শাহিদার দেখবেন।</p>
+                <p class="mt-1 text-sm text-muted">শুধু দাওয়াত টিম আর আপনার এলাকা ম্যানেজার দেখবেন।</p>
                 <p v-if="err('address')" class="error-text">{{ err('address') }}</p>
             </div>
 
@@ -182,7 +182,7 @@
                         @update:model-value="toggle(form.weekdays, i)"
                     >{{ day }}</ChoiceChip>
                 </div>
-                <p class="mt-2 text-sm text-muted">কোনো দিন লাগবে না হলে আগে থেকে শাহিদারকে জানাবেন, ওই দিনের জন্য বন্ধ থাকবে।</p>
+                <p class="mt-2 text-sm text-muted">কোনো দিন লাগবে না হলে আগে থেকে এলাকা ম্যানেজারকে জানাবেন, ওই দিনের জন্য বন্ধ থাকবে।</p>
                 <p v-if="err('weekdays')" class="error-text">{{ err('weekdays') }}</p>
             </fieldset>
 
@@ -317,7 +317,7 @@ function unpause(p) {
 const form = reactive({ name: '', area_id: null, address: '', note: '', meal_slots: ['lunch'], plates: 1, max_price_taka: null, weekdays: [0, 1, 2, 3, 4, 5, 6] });
 
 const statusMessage = computed(() => ({
-    waiting: 'দাওয়াত টিম আপনার এলাকার একজন গৃহিণী আর শাহিদার ঠিক করে ফোন দেবে।',
+    waiting: 'দাওয়াত টিম আপনার এলাকার একজন গৃহিণী আর এলাকা ম্যানেজার ঠিক করে ফোন দেবে।',
     active: 'বুকিংয়ের দিনগুলোতে খাবার নিজে থেকেই আসবে। দাম দেবেন খাবার হাতে পেয়ে।',
     stopped: 'নিয়মিত খাবার এখন বন্ধ আছে।',
 })[booking.value?.status] ?? '');

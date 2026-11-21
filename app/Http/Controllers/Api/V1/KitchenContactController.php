@@ -32,7 +32,7 @@ class KitchenContactController extends Controller
             'contact_phone' => ['required', 'string', 'regex:'.PhoneNumber::PATTERN, 'not_in:'.$request->user()->phone],
             'method' => ['required', 'in:otp,admin'],
         ], [
-            'contact_name.required' => 'এই নম্বরটা কার, সেই নাম দিন (যেমন শাহিদারের নাম)।',
+            'contact_name.required' => 'এই নম্বরটা কার, সেই নাম দিন (যেমন এলাকা ম্যানেজারের নাম)।',
             'contact_phone.required' => 'মোবাইল নম্বর দিন।',
             'contact_phone.regex' => 'সঠিক মোবাইল নম্বর দিন, যেমন 017XXXXXXXX।',
             'contact_phone.not_in' => 'এটা আপনার নিজের নম্বর। নিজের নম্বরের জন্য কিছু করতে হবে না।',
