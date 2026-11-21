@@ -76,6 +76,7 @@ class Brain
             'area_place' => $str($input['area_place'] ?? null, 150),
             'home_address' => $str($input['home_address'] ?? null, 300),
             'cook' => (bool) ($input['cook'] ?? false),
+            'customer' => (bool) ($input['customer'] ?? false),
             'plates' => in_array($input['plates'] ?? null, [1, 2], true) ? $input['plates'] : null,
             'send_pin_link' => (bool) ($input['send_pin_link'] ?? false),
             'wants_call' => (bool) ($input['wants_call'] ?? false),
@@ -104,6 +105,7 @@ class Brain
                     'area_place' => $nullable('string', 'Only when area_id is null: her area for a map search in English, with district (e.g. "Korail, Dhaka" or "Chandina, Cumilla"), else null.'),
                     'home_address' => $nullable('string', 'Her full home address if she wrote one (house, road, landmark), else null.'),
                     'cook' => ['type' => 'boolean', 'description' => 'True if she wants to cook and sell with Dawat (join as a home cook).'],
+                    'customer' => ['type' => 'boolean', 'description' => 'True if this person wants to BUY / eat home food from Dawat (a customer), not cook.'],
                     'plates' => $nullable('integer', 'If she answered how many plates a day she can give: 1 or 2. Else null.'),
                     'send_pin_link' => ['type' => 'boolean', 'description' => 'True if she is already added, has no home location yet and asks for or lost the location link.'],
                     'wants_call' => ['type' => 'boolean', 'description' => 'True only if she insists on talking on the phone even after you offered to help here.'],
@@ -111,7 +113,7 @@ class Brain
                     'needs_human' => ['type' => 'boolean', 'description' => 'True if the owner must look: a complaint, money owed, a problem with an order, a business (not a home cook), anything you cannot answer from the facts.'],
                     'human_reason' => $nullable('string', 'One short Bangla line for the owner, else null.'),
                 ],
-                'required' => ['replies', 'name', 'phone', 'area_id', 'area_text', 'area_name_bn', 'area_place', 'home_address', 'cook', 'plates', 'send_pin_link', 'wants_call', 'call_reason', 'needs_human', 'human_reason'],
+                'required' => ['replies', 'name', 'phone', 'area_id', 'area_text', 'area_name_bn', 'area_place', 'home_address', 'cook', 'customer', 'plates', 'send_pin_link', 'wants_call', 'call_reason', 'needs_human', 'human_reason'],
                 'additionalProperties' => false,
             ],
         ];
@@ -188,6 +190,12 @@ class Brain
         "jatrabari" count). If her area is not in the list, see the Areas rule below — never turn anyone away,
         inside or outside Dhaka. A number must be a
         Bangladeshi mobile (01XXXXXXXXX); if it looks wrong, ask again politely.
+
+        CUSTOMERS (people who want to buy/eat food, not cook): set customer true (cook false). Ask in one go for their
+        name, mobile number and full address (area, road, house), and which days/meals they want — follow the
+        [customers] facts. Once name + number + address are known, just thank them; the team adds them and confirms.
+        SHAHIDARS (people who want delivery work): follow the [shahidars] facts; the only link you may give is the
+        one written in those facts.
 
         FACTS (say only these, never invent more). They come from the owner's list and are written in Bangla
         for the owner; you still reply ONLY in Banglish. A fact marked [cooks] is for cooks, [customers] for buyers:

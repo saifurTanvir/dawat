@@ -16,6 +16,7 @@ use App\Models\MessengerThread;
 use App\Models\OpsHeartbeat;
 use App\Models\PinLink;
 use App\Models\User;
+use App\Services\Admin\CallOnboarding;
 use App\Services\Messenger\Agent;
 use App\Services\Messenger\Backfill;
 use App\Services\Messenger\Graph;
@@ -73,7 +74,7 @@ class MessengerBotTest extends TestCase
         Http::fake([
             'graph.test/*' => Http::response(['first_name' => 'Rina', 'last_name' => 'Akter', 'message_id' => 'm']),
             'api.anthropic.com/*' => Http::response(['content' => [['type' => 'tool_use', 'name' => 'answer', 'input' => $answer + [
-                'replies' => ['dhonnobad apu 😊'], 'name' => null, 'phone' => null, 'area_id' => null, 'area_text' => null, 'area_name_bn' => null, 'area_place' => null, 'home_address' => null, 'cook' => false,
+                'replies' => ['dhonnobad apu 😊'], 'name' => null, 'phone' => null, 'area_id' => null, 'area_text' => null, 'area_name_bn' => null, 'area_place' => null, 'home_address' => null, 'cook' => false, 'customer' => false,
                 'plates' => null, 'send_pin_link' => false, 'wants_call' => false, 'call_reason' => null, 'needs_human' => false, 'human_reason' => null,
             ]]]]),
         ]);
@@ -400,7 +401,7 @@ class MessengerBotTest extends TestCase
     {
         return ['content' => [['type' => 'tool_use', 'name' => 'answer', 'input' => $answer + [
             'replies' => ['dhonnobad apu 😊'], 'name' => null, 'phone' => null, 'area_id' => null, 'area_text' => null, 'area_name_bn' => null, 'area_place' => null,
-            'home_address' => null, 'cook' => false, 'plates' => null, 'send_pin_link' => false, 'wants_call' => false, 'call_reason' => null, 'needs_human' => false, 'human_reason' => null,
+            'home_address' => null, 'cook' => false, 'customer' => false, 'plates' => null, 'send_pin_link' => false, 'wants_call' => false, 'call_reason' => null, 'needs_human' => false, 'human_reason' => null,
         ]]]];
     }
 
@@ -604,5 +605,23 @@ class MessengerBotTest extends TestCase
         // Not for anyone else.
         $this->actingAs(User::factory()->create());
         $this->get('/admin-tools/messenger/connect')->assertForbidden();
+    }
+
+    public function test_a_would_be_customer_goes_on_the_call_list_once_and_is_never_made_a_cook(): void
+    {
+        $this->hook([$this->text('PC', 'Ami lunch nite chai. Rafi, 01822334455, Middle Badda, road 5, house 12', 'mid.c1')]);
+        $this->fake(['name' => 'Rafi', 'phone' => '01822334455', 'area_text' => 'Middle Badda', 'home_address' => 'Middle Badda, road 5, house 12', 'customer' => true]);
+
+        $t = $this->answer('PC');
+        $this->assertSame(0, Kitchen::count());
+        $call = CallRequest::firstOrFail();
+        $this->assertStringContainsString('নতুন গ্রাহক', $call->reason);
+        $this->assertStringContainsString('road 5', $call->reason);
+        $this->assertSame('customer', CallOnboarding::guessRole($call));
+
+        $this->hook([$this->text('PC', 'thanks', 'mid.c2')]);
+        $this->answer('PC');
+        $this->assertSame(1, CallRequest::count());
+        $this->assertStringContainsString('dawat.cloud/join/shahidar', BotFact::promptText());
     }
 }
