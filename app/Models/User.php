@@ -43,6 +43,12 @@ class User extends Authenticatable implements FilamentUser, HasName
     }
 
     /** F37: devices that get Dawat notifications. */
+    /** F88: call-list entries this person closed. */
+    public function closedCallRequests(): HasMany
+    {
+        return $this->hasMany(CallRequest::class, 'done_by');
+    }
+
     public function pushSubscriptions(): HasMany
     {
         return $this->hasMany(PushSubscription::class);

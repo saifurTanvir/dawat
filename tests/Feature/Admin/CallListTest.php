@@ -77,6 +77,7 @@ class CallListTest extends TestCase
         // F88: a finished one leaves the list; it shows only when asked for.
         Livewire::test(ManageCallRequests::class)->assertCanNotSeeTableRecords([$r])
             ->filterTable('status', CallRequestStatus::Done->value)->assertCanSeeTableRecords([$r]);
+        Livewire::test(ManageCallRequests::class)->filterTable('done_by', $this->admin->id)->assertCanSeeTableRecords([$r]);
     }
 
     public function test_bad_phone_is_refused_and_non_admins_cannot_open_the_page(): void
