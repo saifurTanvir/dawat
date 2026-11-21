@@ -10,6 +10,7 @@ use App\Http\Controllers\Web\PinlessOutsideMessengerController;
 use App\Http\Controllers\Web\SeoController;
 use App\Http\Controllers\Web\SpaController;
 use App\Services\Admin\StaffView;
+use App\Services\Kitchens\PinlessCallList;
 use App\Support\Geo\Geocoder;
 use App\Support\QrImage;
 use Illuminate\Http\Request;
@@ -45,6 +46,26 @@ Route::get('/admin-tools/login-qr', function (Request $request) {
 
 // F71: back to the admin's own login after looking at the panel as a staff member.
 Route::get('/admin-tools/staff-view/stop', fn () => StaffView::stop())->name('admin.staff-view.stop');
+
+// F93: a zone's cooks without a pin, to call (admins only — carries each cook's own location link).
+Route::get('/admin-tools/pinless-calls.csv', function (Request $request, PinlessCallList $list) {
+    abort_unless($request->user()?->isAdmin(), 403);
+    $rows = $list->rows($request->user());
+    $csv = function () use ($rows) {
+        $out = fopen('php://output', 'w');
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, PinlessCallList::HEADERS);
+        foreach ($rows as $r) {
+            fputcsv($out, $r);
+        }
+        fclose($out);
+    };
+    $name = 'dawat-badda-pin-baki-'.now(config('app.display_timezone'))->format('Y-m-d').'.csv';
+
+    return $request->boolean('view')
+        ? response()->stream($csv, 200, ['Content-Type' => 'text/plain; charset=UTF-8', 'Cache-Control' => 'no-store'])
+        : response()->streamDownload($csv, $name, ['Content-Type' => 'text/csv; charset=UTF-8']);
+})->name('admin.pinless-calls');
 
 // F62: admins look up a home pin from an address or a map link (the panel's location box). F69: staff too.
 Route::get('/admin-tools/geocode', function (Request $request, Geocoder $geocoder) {
