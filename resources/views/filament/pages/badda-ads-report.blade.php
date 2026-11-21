@@ -14,6 +14,11 @@
         .ba-ok { color: rgb(21 128 61); font-size: .8rem; }
         .ba-wait { color: rgb(180 83 9); font-size: .8rem; }
         .ba-muted { color: rgb(107 114 128); font-size: .8rem; }
+        .ba-link { color: rgb(37 99 235); font-weight: 600; font-size: .9rem; }
+        .ba-chat summary { cursor: pointer; color: rgb(37 99 235); font-size: .85rem; margin-top: 4px; }
+        .ba-msg { margin: 6px 0; padding: 6px 8px; border-radius: 8px; font-size: .85rem; }
+        .ba-in { background: rgba(59, 130, 246, .12); margin-right: 1.5rem; }
+        .ba-out { background: rgba(34, 197, 94, .12); margin-left: 1.5rem; }
     </style>
 
     <div class="ba-grid">
@@ -43,6 +48,9 @@
                     @endforeach
                 </table>
 
+                @if ($a['messenger'])
+                    <p class="mt-3"><a class="ba-link" href="{{ \App\Filament\Resources\MessengerThreads\MessengerThreadResource::getUrl('index', ['tableFilters' => ['badda_ad' => ['value' => $key]]]) }}">Messenger-এর সব চ্যাট পড়ুন ({{ $bn($a['messenger']) }}) →</a></p>
+                @endif
                 @if ($a['recent'])
                     <p class="mt-4 mb-1 text-sm font-semibold">সবশেষে যাঁরা এসেছেন</p>
                     <table class="ba-t">
@@ -52,6 +60,21 @@
                                     {{ $r['name'] }}
                                     @if ($r['phone']) <span class="ba-muted">· {{ $r['phone'] }}</span> @endif
                                     <div class="ba-muted">{{ $r['channel'] }} · {{ $r['at']?->timezone('Asia/Dhaka')->diffForHumans() }}</div>
+                                    @php($last = collect($r['chat'])->where('in', true)->last())
+                                    @if ($last)
+                                        <div style="font-size:.85rem">“{{ \Illuminate\Support\Str::limit($last['text'], 90) }}”</div>
+                                    @endif
+                                    @if ($r['chat'])
+                                        <details class="ba-chat">
+                                            <summary>কী বলেছেন — দেখুন ({{ $bn(count($r['chat'])) }})</summary>
+                                            @foreach ($r['chat'] as $m)
+                                                <div class="ba-msg {{ $m['in'] ? 'ba-in' : 'ba-out' }}">
+                                                    <b>{{ $m['who'] }}</b>@if ($m['at']) <span class="ba-muted">· {{ $m['at']->timezone('Asia/Dhaka')->format('g:i a') }}</span>@endif
+                                                    <div style="white-space:pre-line">{{ $m['text'] }}</div>
+                                                </div>
+                                            @endforeach
+                                        </details>
+                                    @endif
                                 </td>
                                 <td class="{{ $r['answered'] ? 'ba-ok' : 'ba-wait' }}" style="text-align:right">{{ $r['answered'] ? 'উত্তর গেছে' : 'উত্তর বাকি' }}</td>
                             </tr>

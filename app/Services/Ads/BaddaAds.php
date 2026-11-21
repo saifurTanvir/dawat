@@ -84,12 +84,15 @@ class BaddaAds
         return null;
     }
 
-    /** @return array<string, array<string, mixed>> per ad: counts by channel, answers, and results */
-    public function report(): array
+    /**
+     * Messenger chats that came from each Badda ad since launch.
+     *
+     * @return array<string, list<MessengerThread>>
+     */
+    public function threadsByAd(): array
     {
         $since = self::launch();
         $badda = app(FocusSplit::class)->focusAreaIds();
-
         $threads = MessengerThread::query()->where('created_at', '>=', $since->copy()->subDay())
             ->where(fn ($q) => $q->where('last_in_at', '>=', $since)->orWhere('created_at', '>=', $since))
             ->with(['kitchen:id,area_id,status,location', 'messages' => fn ($q) => $q->select(['id', 'messenger_thread_id', 'direction', 'by', 'text', 'created_at'])])
@@ -103,6 +106,26 @@ class BaddaAds
                 $byAd[$key][] = $t;
             }
         }
+
+        return $byAd;
+    }
+
+    /** F95: ids of the Messenger chats from one Badda ad (or from any of them when $ad is null) — for the Messenger page filter. */
+    public function threadIds(?string $ad = null): array
+    {
+        $byAd = $this->threadsByAd();
+        $lists = $ad ? [$byAd[$ad] ?? []] : array_values($byAd);
+
+        return collect($lists)->flatten(1)->pluck('id')->unique()->values()->all();
+    }
+
+    /** @return array<string, array<string, mixed>> per ad: counts by channel, answers, and results */
+    public function report(): array
+    {
+        $since = self::launch();
+        $badda = app(FocusSplit::class)->focusAreaIds();
+
+        $byAd = $this->threadsByAd();
 
         $leads = AdLead::query()->where('first_at', '>=', $since)->get()->groupBy('ad');
         $kitchens = Kitchen::query()->where('created_at', '>=', $since)->whereIn('area_id', $badda)
@@ -151,17 +174,36 @@ class BaddaAds
                 ],
             };
             $row['recent'] = $th->sortByDesc('last_in_at')->take(8)->map(fn ($t) => [
-                'channel' => 'Messenger', 'name' => $t->name ?: 'নাম জানা নেই', 'phone' => ($t->facts ?? [])['phone'] ?? null,
+                'channel' => 'Messenger', 'name' => $t->name ?: (($t->facts ?? [])['name'] ?? 'নাম জানা নেই'), 'phone' => ($t->facts ?? [])['phone'] ?? null,
                 'at' => $t->last_in_at, 'answered' => $answered->contains('id', $t->id), 'thread' => $t->id,
+                'chat' => self::chatLines($t->messages),
             ])->concat($wa->concat($cm)->sortByDesc('first_at')->take(8)->map(fn ($l) => [
                 'channel' => $l->channel === 'whatsapp' ? 'WhatsApp' : 'কমেন্ট', 'name' => $l->name ?: '—', 'phone' => $l->phone,
                 'at' => $l->first_at, 'answered' => $l->replied_at !== null, 'thread' => null,
+                'chat' => filled($l->text) ? [['who' => 'সারাংশ', 'in' => true, 'text' => $l->text, 'at' => null]] : [],
             ]))->sortByDesc('at')->take(10)->values()->all();
 
             $out[$key] = $row;
         }
 
         return $out;
+    }
+
+    /**
+     * F94: the conversation itself, oldest first, so the admin can read what the person asked and what we sent.
+     *
+     * @return list<array{who: string, in: bool, text: string, at: ?Carbon}>
+     */
+    public static function chatLines(Collection $messages, int $max = 20): array
+    {
+        return $messages->sortBy('id')->filter(fn ($m) => filled($m->text))->take(-$max)->map(fn ($m) => [
+            'who' => $m->direction === 'in' ? 'উনি' : match ($m->by) {
+                'bot' => 'বট', 'admin' => 'আমরা', default => 'অ্যাডের শুভেচ্ছা',
+            },
+            'in' => $m->direction === 'in',
+            'text' => mb_substr(preg_replace('#https://dawat\.cloud/pin/\S+#u', '[পিন লিংক]', (string) $m->text), 0, 600),
+            'at' => $m->created_at,
+        ])->values()->all();
     }
 
     /** WhatsApp lead noted by whoever answers WhatsApp (the hourly pass). */

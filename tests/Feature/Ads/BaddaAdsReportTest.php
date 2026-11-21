@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Ads;
 
+use App\Filament\Resources\MessengerThreads\Pages\ManageMessengerThreads;
 use App\Models\AdLead;
 use App\Models\MessengerThread;
 use App\Models\User;
@@ -11,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class BaddaAdsReportTest extends TestCase
@@ -72,9 +74,23 @@ class BaddaAdsReportTest extends TestCase
         $this->assertSame([1, 0], [$r['manager']['messenger'], $r['manager']['messenger_answered']]);
         $this->assertSame([0, 1, 1], [$r['cook']['messenger'], $r['cook']['whatsapp'], $r['cook']['whatsapp_answered']]);
 
-        $this->actingAs($admin)->get('/admin/badda-ads')->assertOk()->assertSee('বাড্ডা অ্যাডের রিপোর্ট')->assertSee('Karim');
+        $this->actingAs($admin)->get('/admin/badda-ads')->assertOk()->assertSee('বাড্ডা অ্যাডের রিপোর্ট')->assertSee('Karim')
+            ->assertSee('ami korte chai')->assertSee('কী বলেছেন')->assertSee('কোন কোন এলাকায় দেন?');
         $this->actingAs($admin)->get('/admin')->assertOk()->assertSee('বাড্ডা অ্যাড — আজকের হিসাব');
         $this->actingAs(User::factory()->cook()->create())->postJson('/admin-tools/ad-leads', ['leads' => []])->assertForbidden();
+
+        // F95: the Messenger page can show only the Badda ad chats; reading one changes nothing for the bot.
+        $ids = app(BaddaAds::class)->threadIds('manager');
+        $this->assertSame([$t2->id], $ids);
+        $this->assertEqualsCanonicalizing([$t1->id, $t2->id, $t4->id], app(BaddaAds::class)->threadIds());
+        $before = $t2->fresh()->only(['needs_human', 'bot_off', 'paused_until', 'last_out_at']);
+        $this->actingAs($admin);
+        Livewire::test(ManageMessengerThreads::class)
+            ->filterTable('badda_ad', 'manager')
+            ->assertCanSeeTableRecords([$t2])->assertCanNotSeeTableRecords([$t1, $t3, $t4])
+            ->mountTableAction('chat', $t2)->assertSee('ami korte chai');
+        $this->assertSame($before, $t2->fresh()->only(['needs_human', 'bot_off', 'paused_until', 'last_out_at']));
+        $this->get('/admin/badda-ads')->assertSee('Messenger-এর সব চ্যাট পড়ুন');
     }
 
     public function test_comments_on_the_ad_posts_are_read_with_the_page_token(): void
