@@ -127,6 +127,12 @@ class Agent
         if ($out['cook']) {
             $facts['cook'] = true;
         }
+        if ($out['customer'] ?? false) {
+            $facts['customer'] = true;
+            if (filled($out['home_address'] ?? null)) {
+                $facts['customer_address'] = $out['home_address'];
+            }
+        }
         $thread->facts = $facts;
         $thread->save();
 
@@ -163,6 +169,13 @@ class Agent
 
         if ($out['wants_call']) {
             $this->callList($thread, $out['call_reason']);
+        }
+        // F89: a would-be customer with name, number and address goes on the call list once, to be added as a customer.
+        if (($facts['customer'] ?? false) && ! ($facts['cook'] ?? false) && ! ($facts['customer_listed'] ?? false)
+            && filled($facts['phone'] ?? null) && filled($facts['customer_address'] ?? null)) {
+            $this->callList($thread, 'নতুন গ্রাহক — নিয়মিত খাবার নিতে চান। ঠিকানা: '.$facts['customer_address'].($facts['area_text'] ?? null ? ' ('.$facts['area_text'].')' : ''));
+            $thread->facts = [...$thread->facts, 'customer_listed' => true];
+            $thread->save();
         }
 
         return $replies;
