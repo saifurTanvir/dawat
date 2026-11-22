@@ -11,6 +11,7 @@ use App\Models\MessengerThread;
 use App\Models\OpsHeartbeat;
 use App\Models\PinLink;
 use App\Models\User;
+use App\Services\Ads\BaddaAds;
 use App\Services\Ai\AssistantUnavailableException;
 use App\Services\Kitchens\PinLinks;
 use App\Support\Geo\Geocoder;
@@ -328,6 +329,44 @@ class Agent
             ]);
             if ($sent) {
                 $t->facts = [...($t->facts ?? []), 'pin_reminded_at' => now()->toIso8601String()];
+                $t->save();
+                $n++;
+            }
+        }
+
+        return $n;
+    }
+
+    /**
+     * F100: one morning nudge (10:30) to would-be customers from the customer ad who wrote within the
+     * last 24 hours (Messenger's reply window), were answered, and have not given an address yet.
+     */
+    public function customerFollowUps(): int
+    {
+        $n = 0;
+        $threads = MessengerThread::query()
+            ->where('last_in_at', '>', now()->subHours(23))
+            ->where('last_in_at', '<', now()->subHours(2))
+            ->where('bot_off', false)
+            ->get();
+        foreach ($threads as $t) {
+            $facts = $t->facts ?? [];
+            if (($facts['customer_followup_at'] ?? null) || filled($facts['customer_address'] ?? null) || ($facts['cook'] ?? false) || $t->kitchen_id) {
+                continue;
+            }
+            if (BaddaAds::kindOf($t) !== 'customer' && ! ($facts['customer'] ?? false)) {
+                continue;
+            }
+            if ($t->messages()->latest('id')->value('direction') !== 'out') {
+                continue; // they wrote last: the bot answers that, not this nudge
+            }
+            $menu = Brain::customerMenu();
+            $sent = $this->send($t, [
+                'shuvo sokal 😊'.($menu ? ' ajkal Badda-r grihinira ranna korchen: '.$menu.'.' : ''),
+                'ghorer dupurer khabar e agrohi hole apnar office ba basar thikana ar mobile number ta likhe din — team apnar sathe kotha bolbe 🙏',
+            ]);
+            if ($sent) {
+                $t->facts = [...($t->facts ?? []), 'customer_followup_at' => now()->toIso8601String()];
                 $t->save();
                 $n++;
             }
