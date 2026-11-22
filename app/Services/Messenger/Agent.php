@@ -363,7 +363,7 @@ class Agent
             $menu = Brain::customerMenu();
             $sent = $this->send($t, [
                 'shuvo sokal 😊'.($menu ? ' ajkal Badda-r grihinira ranna korchen: '.$menu.'.' : ''),
-                'ghorer dupurer khabar nite chaile shudhu apnar office ba basar thikana ta likhe din 🙏',
+                'ghorer dupurer khabar e agrohi hole apnar office ba basar thikana ar mobile number ta likhe din — team apnar sathe kotha bolbe 🙏',
             ]);
             if ($sent) {
                 $t->facts = [...($t->facts ?? []), 'customer_followup_at' => now()->toIso8601String()];

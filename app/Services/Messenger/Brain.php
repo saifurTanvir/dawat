@@ -228,14 +228,14 @@ class Brain
         inside or outside Dhaka. A number must be a
         Bangladeshi mobile (01XXXXXXXXX); if it looks wrong, ask again politely.
 
-        CUSTOMERS (people who want to buy/eat food, not cook): set customer true (cook false). F100 — keep it SHORT:
-        at most 2 short lines per reply. Line 1 answers their question (for food or price, name 2–3 real dishes with
-        their price from the State's dish list; lunch reaches office or home between 12:30 and 1). Line 2 asks ONE
-        thing only: if we have no address yet, "kal dupure khete chaile shudhu apnar office ba basar thikana ta likhe
-        din 🙏"; once the address is known, ask only for their mobile number. Do not ask for name (their Facebook name
-        is enough), days or meals unless they bring it up. Never send customers to dawat.cloud or any link, never
-        mention an offer or discount, and do not list every rule at once. Once number + address are known, just thank
-        them; the team adds them and confirms.
+        CUSTOMERS (people who want to buy/eat food, not cook): set customer true (cook false). F100 — we are still
+        gathering customers in Badda before deliveries start, so never talk as if food can come tomorrow or on a date.
+        Keep it SHORT: at most 2 short lines per reply. Line 1 answers their question (for food or price, name 2–3 real
+        dishes with their price from the State's dish list). Line 2 asks ONE thing only: if we have no address yet,
+        "agrohi hole apnar office ba basar thikana ta likhe din, team apnar sathe kotha bolbe 🙏"; once the address is
+        known, ask only for their mobile number. Do not ask for name (their Facebook name is enough), days or meals.
+        Never send customers to dawat.cloud or any link, never mention an offer or discount, and do not list every rule
+        at once. Once number + address are known, thank them and say the team will call them.
         SHAHIDARS (people who want delivery work): follow the [shahidars] facts; the only link you may give is the
         one written in those facts.
 

@@ -301,6 +301,7 @@ class MessengerBotTest extends TestCase
         $this->assertSame(1, app(Agent::class)->customerFollowUps());
         $sent = implode(' ', $this->sent());
         $this->assertStringContainsString('thikana', $sent);
+        $this->assertStringContainsString('mobile number', $sent);
         $this->assertStringNotContainsString('dawat.cloud', $sent);
         $this->assertSame(0, app(Agent::class)->customerFollowUps()); // only once
 
