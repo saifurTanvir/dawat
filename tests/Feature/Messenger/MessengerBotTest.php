@@ -203,6 +203,30 @@ class MessengerBotTest extends TestCase
         $this->assertFalse(MessengerThread::where('psid', 'OLD')->exists());
     }
 
+    public function test_a_person_meta_will_not_deliver_to_is_not_counted_as_waiting_or_as_a_bot_fault(): void
+    {
+        Queue::fake();
+        $this->fake([]);
+        $this->hook([$this->text('GONE', 'bujhlam na', 'mid.g1')])->assertOk();
+        $gone = MessengerThread::where('psid', 'GONE')->firstOrFail();
+        $gone->forceFill(['last_in_at' => now()->subMinutes(30), 'send_error' => "Meta: (#551) This person isn't available right now."])->save();
+        $other = MessengerThread::create(['psid' => 'SLOW', 'last_in_at' => now()->subMinutes(30), 'send_error' => 'Meta: (#2) Service temporarily unavailable']);
+
+        $this->assertFalse(MessengerThread::query()->answerable()->whereKey($gone->id)->exists());
+        $this->assertTrue(MessengerThread::query()->answerable()->whereKey($other->id)->exists()); // a passing error still counts
+        $this->assertTrue($gone->unreachable());
+
+        $other->delete();
+        $this->artisan('messenger:heartbeat')->assertSuccessful();
+        $beat = OpsHeartbeat::where('channel', 'messenger')->latest('id')->firstOrFail();
+        $this->assertSame(0, (int) $beat->pending);
+        $this->assertFalse((bool) $beat->problem);
+
+        $this->hook([$this->text('GONE', 'ekhon bolen', 'mid.g2')])->assertOk(); // she wrote again: try her again
+        $this->assertNull($gone->fresh()->send_error);
+        $this->assertSame(2, Queue::pushed(AnswerMessenger::class)->count());
+    }
+
     public function test_an_admin_can_save_a_new_page_token_from_the_panel(): void
     {
         Http::swap(new HttpFactory);

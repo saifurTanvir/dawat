@@ -89,7 +89,8 @@ class MessengerWebhookController extends Controller
         if (! $saved) {
             return; // Meta sent the same message twice
         }
-        $thread->forceFill(['last_in_at' => now()])->save();
+        // A new message from her: try again even if Meta refused the last reply.
+        $thread->forceFill(['last_in_at' => now(), 'send_error' => null])->save();
 
         if (Graph::botOn() && Graph::configured()) {
             AnswerMessenger::dispatch($thread->id, $saved)->delay(now()->addSeconds((int) config('services.messenger.wait', 6)));
