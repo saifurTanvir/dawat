@@ -28,7 +28,7 @@ class SmsOutsideCooksTest extends TestCase
         Kitchen::factory()->approved()->create(['area_id' => $badda->id]);
         $out = Kitchen::factory()->approved()->create(['area_id' => $other->id]);
 
-        $this->artisan('ops:sms-outside-cooks')->expectsOutputToContain('To send: 1 numbers')->assertSuccessful();
+        $this->artisan('ops:sms-outside-cooks')->expectsOutputToContain('2 SMS parts each')->expectsOutputToContain('To send: 1 numbers')->assertSuccessful();
         Http::assertNotSent(fn (Request $r) => str_contains($r->url(), '/api/smsapi'));
 
         $this->artisan('ops:sms-outside-cooks --send')->expectsOutputToContain('Sent 1, failed 0')->assertSuccessful();

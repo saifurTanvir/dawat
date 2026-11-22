@@ -20,15 +20,16 @@ class OpsSmsOutsideCooks extends Command
 {
     public const CAMPAIGN = 'outside-thanks-1';
 
-    public const TEXT = 'দাওয়াতে যোগ দেওয়ায় আন্তরিক ধন্যবাদ। আমরা আগে বাড্ডায় শুরু করেছি; ইনশাআল্লাহ শিগগিরই আপনার এলাকায় আসব, তখন আমরাই যোগাযোগ করব। — দাওয়াত';
+    public const TEXT = 'দাওয়াতে যোগ দেওয়ায় ধন্যবাদ। আমরা আগে বাড্ডায় শুরু করেছি; ইনশাআল্লাহ শিগগিরই আপনার এলাকায় আসব, তখন আমরাই যোগাযোগ করব। — দাওয়াত';
 
+    /** Bangla SMS: 70 characters in one part, 67 in each part of a longer one. */
     protected $signature = 'ops:sms-outside-cooks {--test= : send only to this number} {--send : send to everyone not yet sent} {--limit=1000}';
 
     protected $description = 'Thank-you SMS to cooks outside Badda (counts only unless --send or --test)';
 
     public function handle(BulkSmsBdSender $sms): int
     {
-        $parts = (int) ceil(mb_strlen(self::TEXT) / 67);
+        $parts = mb_strlen(self::TEXT) <= 70 ? 1 : (int) ceil(mb_strlen(self::TEXT) / 67);
         $this->line('Text: '.mb_strlen(self::TEXT).' chars, '.$parts.' SMS parts each');
         try {
             $this->line('Balance: '.($sms->balance() ?? 'unknown'));
