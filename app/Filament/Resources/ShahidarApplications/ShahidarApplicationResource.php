@@ -119,13 +119,13 @@ class ShahidarApplicationResource extends Resource
                 TextEntry::make('name')->label('নাম'),
                 TextEntry::make('phone')->label('ফোন')->copyable(),
                 TextEntry::make('status')->label('অবস্থা')->badge(),
-                TextEntry::make('gender')->label('লিঙ্গ')->formatStateUsing($opt(Options::GENDER)),
+                TextEntry::make('gender')->label('লিঙ্গ')->formatStateUsing($opt(Options::GENDER))->placeholder('—'),
                 TextEntry::make('age')->label('বয়স')->placeholder('—'),
                 TextEntry::make('lives_in')->label('কোথায় থাকেন'),
                 TextEntry::make('areas.name')->label('কাজ করতে চান')->badge()->color('success')->columnSpan(3),
             ]),
             Section::make('কাজ আর যানবাহন')->columns(3)->schema([
-                TextEntry::make('job')->label('এখন কী করেন')->formatStateUsing($opt(Options::JOB)),
+                TextEntry::make('job')->label('এখন কী করেন')->formatStateUsing($opt(Options::JOB))->placeholder('—'),
                 TextEntry::make('job_note')->label('কাজের বিবরণ')->placeholder('—'),
                 TextEntry::make('experience')->label('ডেলিভারির অভিজ্ঞতা')->placeholder('—'),
                 TextEntry::make('vehicle')->label('যানবাহন')->formatStateUsing($opt(Options::VEHICLE)),
@@ -134,9 +134,9 @@ class ShahidarApplicationResource extends Resource
                 TextEntry::make('has_nid')->label('জাতীয় পরিচয়পত্র')->state(fn (ShahidarApplication $record) => self::yesNo($record->has_nid)),
             ]),
             Section::make('সময়')->columns(3)->schema([
-                TextEntry::make('hours')->label('কতক্ষণ')->formatStateUsing($opt(Options::HOURS)),
+                TextEntry::make('hours')->label('কতক্ষণ')->formatStateUsing($opt(Options::HOURS))->placeholder('—'),
                 TextEntry::make('slots')->label('কোন সময়ে')->state(fn (ShahidarApplication $record) => Options::labels(Options::SLOTS, $record->slots)),
-                TextEntry::make('days_per_week')->label('সপ্তাহে কত দিন')->formatStateUsing(fn (int $state) => $state === 7 ? 'প্রতিদিন' : Order::banglaDigits((string) $state).' দিন'),
+                TextEntry::make('days_per_week')->label('সপ্তাহে কত দিন')->formatStateUsing(fn (?int $state) => $state === null ? '—' : ($state === 7 ? 'প্রতিদিন' : Order::banglaDigits((string) $state).' দিন'))->placeholder('—'),
             ]),
             Section::make('অন্যান্য')->columns(3)->schema([
                 TextEntry::make('heard_from')->label('কোথা থেকে জেনেছেন')->formatStateUsing($opt(Options::HEARD_FROM))->placeholder('—'),

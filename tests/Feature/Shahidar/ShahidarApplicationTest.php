@@ -71,17 +71,26 @@ class ShahidarApplicationTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.income.min', 20000)
             ->assertJsonPath('data.income.max', 30000)
+            ->assertJsonPath('data.income.per_parcel', 15)
             ->assertJsonPath('data.gender.1.label', 'মহিলা');
     }
 
-    public function test_required_fields_and_licence_for_motorbikes(): void
+    public function test_only_four_fields_are_required(): void
     {
         $this->postJson('/api/v1/shahidar-applications', ['agree' => false])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['name', 'phone', 'gender', 'lives_in', 'area_ids', 'job', 'vehicle', 'has_smartphone', 'has_nid', 'hours', 'slots', 'days_per_week', 'agree']);
+            ->assertJsonValidationErrors(['name', 'phone', 'lives_in', 'vehicle', 'agree'])
+            ->assertJsonMissingValidationErrors(['gender', 'area_ids', 'job', 'has_smartphone', 'has_nid', 'hours', 'slots', 'days_per_week', 'has_license']);
 
-        $this->postJson('/api/v1/shahidar-applications', $this->form(['vehicle' => 'motorbike', 'has_license' => null]))
-            ->assertUnprocessable()->assertJsonValidationErrors(['has_license']);
+        // F99: the short form — the rest is asked on the phone call.
+        $this->postJson('/api/v1/shahidar-applications', [
+            'name' => 'রফিক', 'phone' => '01812345678', 'lives_in' => 'মধ্য বাড্ডা', 'vehicle' => 'motorbike', 'agree' => true,
+        ])->assertCreated();
+
+        $app = ShahidarApplication::sole();
+        $this->assertNull($app->gender);
+        $this->assertNull($app->days_per_week);
+        $this->assertCount(0, $app->areas);
     }
 
     public function test_second_form_from_same_number_updates_the_open_one(): void
