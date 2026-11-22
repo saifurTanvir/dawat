@@ -2,13 +2,16 @@
 
 namespace App\Services\Messenger;
 
+use App\Enums\PostStatus;
 use App\Models\Area;
 use App\Models\BotFact;
 use App\Models\MessengerMessage;
 use App\Models\MessengerThread;
+use App\Models\Post;
 use App\Services\Ads\BaddaAds;
 use App\Services\Ai\AnthropicFoodAssistant;
 use App\Services\Ai\AssistantUnavailableException;
+use App\Services\Geo\FocusSplit;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -59,6 +62,13 @@ class Brain
             'cook' => ' They came from our COOK ad: treat them as a home cook who may join.',
             default => '',
         };
+        // F100: a would-be customer hears real dishes and prices from Badda kitchens, not a link.
+        if (BaddaAds::kindOf($thread) === 'customer' || ($thread->facts['customer'] ?? false)) {
+            $menu = self::customerMenu();
+            $state .= $menu
+                ? " Real dishes Badda cooks posted lately (per plate, use these when they ask about food or price): {$menu}."
+                : ' No recent dish list: say a full lunch (bhat, torkari, dal) is usually about 100 taka.';
+        }
         $facts = json_encode($thread->facts ?? (object) [], JSON_UNESCAPED_UNICODE);
 
         $transcript = $thread->messages()->latest('id')->limit(14)->get()->reverse()
@@ -173,6 +183,23 @@ class Brain
     }
 
     /** The rules with the owner's fact list (F82, "বটের জ্ঞান") put in. */
+    /**
+     * F100: up to four recent dishes (title — price) posted by kitchens in the focus area, newest first.
+     */
+    public static function customerMenu(): string
+    {
+        return Post::query()
+            ->whereIn('area_id', app(FocusSplit::class)->focusAreaIds())
+            ->where('published_at', '>', now()->subDays(7))
+            ->whereNotIn('status', [PostStatus::Hidden])
+            ->where('price_paisa', '>', 0)
+            ->latest('published_at')->limit(30)->get(['title', 'price_paisa'])
+            ->unique(fn (Post $p) => mb_strtolower(trim($p->title)))
+            ->take(4)
+            ->map(fn (Post $p) => trim($p->title).' — '.intdiv($p->price_paisa, 100).' taka')
+            ->implode('; ');
+    }
+
     public static function system(): string
     {
         return str_replace('{{FACTS}}', BotFact::promptText(), self::SYSTEM);
@@ -201,9 +228,14 @@ class Brain
         inside or outside Dhaka. A number must be a
         Bangladeshi mobile (01XXXXXXXXX); if it looks wrong, ask again politely.
 
-        CUSTOMERS (people who want to buy/eat food, not cook): set customer true (cook false). Ask in one go for their
-        name, mobile number and full address (area, road, house), and which days/meals they want — follow the
-        [customers] facts. Once name + number + address are known, just thank them; the team adds them and confirms.
+        CUSTOMERS (people who want to buy/eat food, not cook): set customer true (cook false). F100 — keep it SHORT:
+        at most 2 short lines per reply. Line 1 answers their question (for food or price, name 2–3 real dishes with
+        their price from the State's dish list; lunch reaches office or home between 12:30 and 1). Line 2 asks ONE
+        thing only: if we have no address yet, "kal dupure khete chaile shudhu apnar office ba basar thikana ta likhe
+        din 🙏"; once the address is known, ask only for their mobile number. Do not ask for name (their Facebook name
+        is enough), days or meals unless they bring it up. Never send customers to dawat.cloud or any link, never
+        mention an offer or discount, and do not list every rule at once. Once number + address are known, just thank
+        them; the team adds them and confirms.
         SHAHIDARS (people who want delivery work): follow the [shahidars] facts; the only link you may give is the
         one written in those facts.
 

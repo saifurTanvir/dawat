@@ -15,10 +15,13 @@ use App\Models\Kitchen;
 use App\Models\MessengerThread;
 use App\Models\OpsHeartbeat;
 use App\Models\PinLink;
+use App\Models\Post;
 use App\Models\User;
 use App\Services\Admin\CallOnboarding;
+use App\Services\Geo\FocusSplit;
 use App\Services\Messenger\Agent;
 use App\Services\Messenger\Backfill;
+use App\Services\Messenger\Brain;
 use App\Services\Messenger\Graph;
 use App\Support\Roles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -279,6 +282,34 @@ class MessengerBotTest extends TestCase
         $this->actingAs(User::role(Roles::ADMIN)->first());
         Livewire::test(ListKitchens::class)->callAction('defaultPlates');
         $this->assertSame(1, $old->fresh()->daily_plates);
+    }
+
+    public function test_customer_ad_chats_without_an_address_get_one_morning_nudge_with_real_dishes(): void
+    {
+        $badda = Area::whereIn('id', app(FocusSplit::class)->focusAreaIds())->firstOrFail();
+        $kitchen = Kitchen::factory()->approved()->create(['area_id' => $badda->id]);
+        Post::factory()->create(['kitchen_id' => $kitchen->id, 'area_id' => $badda->id, 'title' => 'ভাত, ডাল, মুরগি', 'price_paisa' => 13000, 'published_at' => now()->subDay()]);
+        $this->fake([]);
+        $this->hook([$this->text('PC', 'দাম কত?', 'mid.c1')]);
+        $t = MessengerThread::where('psid', 'PC')->firstOrFail();
+        $t->messages()->create(['direction' => 'out', 'by' => 'bot', 'text' => 'ek plate 130 taka']);
+        $t->forceFill(['last_in_at' => now()->subHours(5)])->save();
+        Http::swap(new HttpFactory);
+        Http::fake(['graph.test/*' => Http::response(['message_id' => 'm'])]);
+
+        $this->assertStringContainsString('ভাত, ডাল, মুরগি — 130 taka', Brain::customerMenu() ?: 'none');
+        $this->assertSame(1, app(Agent::class)->customerFollowUps());
+        $sent = implode(' ', $this->sent());
+        $this->assertStringContainsString('thikana', $sent);
+        $this->assertStringNotContainsString('dawat.cloud', $sent);
+        $this->assertSame(0, app(Agent::class)->customerFollowUps()); // only once
+
+        // Someone who already gave an address is not nudged.
+        $this->hook([$this->text('PD', 'কীভাবে খাবার নেব?', 'mid.d1')]);
+        $d = MessengerThread::where('psid', 'PD')->firstOrFail();
+        $d->messages()->create(['direction' => 'out', 'by' => 'bot', 'text' => 'thikana din']);
+        $d->forceFill(['last_in_at' => now()->subHours(5), 'facts' => ['customer' => true, 'customer_address' => 'Merul Badda']])->save();
+        $this->assertSame(0, app(Agent::class)->customerFollowUps());
     }
 
     public function test_she_is_told_about_her_existing_kitchen_only_once(): void
