@@ -26,7 +26,7 @@ class MessengerHeartbeat extends Command
         }
         $pending = MessengerThread::query()->answerable()->count();
         $stuck = MessengerThread::query()->answerable()->where('last_in_at', '<', now()->subMinutes(5))->count();
-        $failing = MessengerThread::query()->whereNotNull('send_error')->where('updated_at', '>', now()->subHour())->first();
+        $failing = MessengerThread::query()->whereNotNull('send_error')->reachable()->where('updated_at', '>', now()->subHour())->first();
         $note = match (true) {
             ! Graph::configured() => 'Messenger-এর টোকেন বা app secret সার্ভারে নেই',
             ! Brain::available() => 'AI-এর key নেই — বট শুধু প্রথম মেসেজ দিচ্ছে',

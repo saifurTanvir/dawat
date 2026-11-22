@@ -473,7 +473,7 @@ class Agent
         OpsHeartbeat::create([
             // One person answered (however many lines); waiting = chats Meta still lets us answer.
             'channel' => 'messenger', 'sent' => $sent ? 1 : 0, 'pending' => MessengerThread::query()->answerable()->count(),
-            'note' => 'সার্ভার (Messenger API)', 'problem' => (bool) $thread->send_error,
+            'note' => 'সার্ভার (Messenger API)', 'problem' => filled($thread->send_error) && ! $thread->unreachable(),
         ]);
 
         return $sent;

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 
 /**
  * F80: one person's Messenger chat with the page. The server answers it; an
@@ -16,6 +17,9 @@ class MessengerThread extends Model
 {
     /** When someone answers from the page itself, the bot keeps quiet this long. */
     public const PAUSE_HOURS = 6;
+
+    /** Meta errors that mean this one person cannot be reached (blocked the page, account gone): not a bot fault. */
+    public const UNREACHABLE = ['(#551)'];
 
     protected $guarded = ['id'];
 
@@ -64,10 +68,25 @@ class MessengerThread extends Model
             ->where(fn ($q) => $q->whereNull('last_out_at')->orWhereColumn('last_out_at', '<', 'last_in_at'));
     }
 
+    /** Not a chat Meta refuses to deliver to (#551): those can never be answered, so they are not counted as waiting. */
+    public function scopeReachable(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q->whereNull('send_error')->orWhere(function (Builder $q) {
+            foreach (self::UNREACHABLE as $code) {
+                $q->where('send_error', 'not like', '%'.$code.'%');
+            }
+        }));
+    }
+
+    public function unreachable(): bool
+    {
+        return filled($this->send_error) && Str::contains($this->send_error, self::UNREACHABLE);
+    }
+
     /** Waiting, still inside Meta's 24-hour reply window, and the bot may answer. */
     public function scopeAnswerable(Builder $query): Builder
     {
-        return $query->waiting()->where('last_in_at', '>', now()->subHours(23))->where('bot_off', false)
+        return $query->waiting()->reachable()->where('last_in_at', '>', now()->subHours(23))->where('bot_off', false)
             ->where(fn ($q) => $q->whereNull('paused_until')->orWhere('paused_until', '<', now()));
     }
 
