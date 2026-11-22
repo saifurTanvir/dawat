@@ -40,6 +40,23 @@ class BulkSmsBdSender implements OtpSender
 
     public function send(string $phone, string $code, OtpPurpose $purpose = OtpPurpose::Login, array $context = []): void
     {
+        $this->sendText($phone, $purpose->message($code, $context));
+    }
+
+    /** F101: balance left on the BulkSMSBD account, in taka (null when the panel does not say). */
+    public function balance(): ?float
+    {
+        $config = config('services.bulksmsbd');
+        $response = Http::acceptJson()->timeout(15)
+            ->get(rtrim($config['base_url'], '/').'/api/getBalanceApi', ['api_key' => $config['api_key']]);
+        $balance = $response->json('balance');
+
+        return is_numeric($balance) ? (float) $balance : null;
+    }
+
+    /** Sends any text (OTP or a notice) to one number; throws when the gateway refuses. */
+    public function sendText(string $phone, string $text): void
+    {
         $config = config('services.bulksmsbd');
         $local = PhoneNumber::normalize($phone);
         if (! $local || blank($config['api_key']) || blank($config['sender_id'])) {
@@ -56,7 +73,7 @@ class BulkSmsBdSender implements OtpSender
                     'senderid' => $config['sender_id'],
                     'type' => 'text',
                     'number' => '88'.$local,
-                    'message' => $purpose->message($code, $context),
+                    'message' => $text,
                 ]);
         } catch (ConnectionException $e) {
             Log::error('BulkSMSBD unreachable: '.$e->getMessage());
