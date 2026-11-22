@@ -1,0 +1,36 @@
+name: Ad funnel
+
+# Prints the Badda ad chat flow (no names, numbers masked).
+on:
+  workflow_dispatch:
+
+jobs:
+  stats:
+    runs-on: ubuntu-24.04
+    environment: production
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/var/www/dawat' }}
+    steps:
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          key="$(printf '%s' "$DEPLOY_SSH_KEY" | tr -d '\r')"
+          case "$key" in
+            *"-----BEGIN"*) printf '%s\n' "$key" > ~/.ssh/deploy_key ;;
+            *) printf '%s' "$key" | tr -d ' \n' | base64 -d > ~/.ssh/deploy_key 2>/dev/null || true ;;
+          esac
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" > ~/.ssh/known_hosts
+          fi
+          chmod 600 ~/.ssh/known_hosts
+      - name: Ad funnel
+        run: ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" -o BatchMode=yes "$DEPLOY_USER@$DEPLOY_HOST" "cd $DEPLOY_PATH/current && php artisan ops:ad-funnel all"
