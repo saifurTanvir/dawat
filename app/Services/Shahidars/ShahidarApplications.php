@@ -32,10 +32,10 @@ class ShahidarApplications
             } else {
                 $application = ShahidarApplication::create([...$fields, 'status' => ShahidarApplicationStatus::New]);
             }
-            $application->areas()->sync($data['area_ids']);
+            $application->areas()->sync($data['area_ids'] ?? []);
 
             if (! $existing) {
-                $areas = $application->areas()->pluck('name')->implode(', ');
+                $areas = $application->areas()->pluck('name')->implode(', ') ?: $application->lives_in;
                 User::role(Roles::ADMIN)->pluck('id')->each(fn ($id) => Push::toUser(
                     $id,
                     'নতুন এলাকা ম্যানেজার আবেদন',

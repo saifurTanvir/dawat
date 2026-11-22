@@ -7,7 +7,7 @@ use App\Support\ShahidarApplicationOptions as Options;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-/** F53: the public "become a shahidar" form. No sign-in needed. */
+/** F53: the public "become a shahidar" form. No sign-in needed. F99: only name, phone, lives_in and vehicle are required. */
 class ApplyRequest extends FormRequest
 {
     public function authorize(): bool
@@ -30,21 +30,21 @@ class ApplyRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'min:2', 'max:60'],
             'phone' => ['required', 'string', 'regex:'.PhoneNumber::PATTERN],
-            'gender' => ['required', $in(Options::GENDER)],
+            'gender' => ['nullable', $in(Options::GENDER)],
             'age' => ['nullable', 'integer', 'between:18,70'],
             'lives_in' => ['required', 'string', 'min:3', 'max:160'],
-            'area_ids' => ['required', 'array', 'min:1', 'max:6'],
+            'area_ids' => ['nullable', 'array', 'max:6'],
             'area_ids.*' => ['distinct', 'integer', Rule::exists('areas', 'id')->where('is_active', true)],
-            'job' => ['required', $in(Options::JOB)],
+            'job' => ['nullable', $in(Options::JOB)],
             'job_note' => ['nullable', 'string', 'max:120'],
             'vehicle' => ['required', $in(Options::VEHICLE)],
-            'has_license' => ['nullable', 'boolean', Rule::requiredIf(fn () => in_array($this->input('vehicle'), Options::NEEDS_LICENSE, true))],
-            'has_smartphone' => ['required', 'boolean'],
-            'has_nid' => ['required', 'boolean'],
-            'hours' => ['required', $in(Options::HOURS)],
-            'slots' => ['required', 'array', 'min:1', 'max:4'],
+            'has_license' => ['nullable', 'boolean'],
+            'has_smartphone' => ['nullable', 'boolean'],
+            'has_nid' => ['nullable', 'boolean'],
+            'hours' => ['nullable', $in(Options::HOURS)],
+            'slots' => ['nullable', 'array', 'max:4'],
             'slots.*' => ['distinct', $in(Options::SLOTS)],
-            'days_per_week' => ['required', 'integer', 'between:1,7'],
+            'days_per_week' => ['nullable', 'integer', 'between:1,7'],
             'experience' => ['nullable', 'string', 'max:160'],
             'heard_from' => ['nullable', $in(Options::HEARD_FROM)],
             'note' => ['nullable', 'string', 'max:500'],

@@ -64,6 +64,8 @@ return [
         'income' => [
             'min' => (int) env('DAWAT_SHAHIDAR_INCOME_MIN', 20000),
             'max' => (int) env('DAWAT_SHAHIDAR_INCOME_MAX', 30000),
+            // F99: pay per parcel delivered, in taka.
+            'per_parcel' => (int) env('DAWAT_SHAHIDAR_PER_PARCEL', 15),
         ],
     ],
 
