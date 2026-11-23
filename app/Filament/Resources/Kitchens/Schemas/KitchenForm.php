@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Kitchens\Schemas;
 use App\Filament\Support\FeeFields;
 use App\Filament\Support\LocationField;
 use App\Filament\Support\ReachFields;
+use App\Models\Kitchen;
 use App\Support\PhoneNumber;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -24,6 +25,10 @@ class KitchenForm
                         TextInput::make('display_name')->label('নাম')->required()->maxLength(60),
                         Select::make('area_id')->label('এলাকা')->relationship('area', 'name'),
                         Select::make('daily_plates')->label('দিনে কত প্লেট দেবেন (F77)')->options([1 => '১ প্লেট', 2 => '২ প্লেট'])->placeholder('এখনো জানাননি'),
+                        // F110: when she is paid on the evening return round (she can change it in her app too)
+                        Select::make('pay_cycle')->label('টাকা কখন নেবেন')->options(['daily' => 'প্রতিদিন', 'weekly' => 'সপ্তাহে একদিন'])->default('daily')->required()->live(),
+                        Select::make('pay_weekday')->label('কোন বারে')->options(Kitchen::WEEKDAYS)
+                            ->visible(fn ($get) => $get('pay_cycle') === 'weekly')->required(fn ($get) => $get('pay_cycle') === 'weekly'),
                         TextInput::make('pickup_address')->label('পিকআপের ঠিকানা')->maxLength(255)
                             ->helperText('এলাকা ম্যানেজার এই ঠিকানা থেকে নিয়মিত গ্রাহকের খাবার তুলবেন। ক্রেতারা কখনো দেখেন না।'),
                         TextInput::make('bfsa_reg_no')->label('BFSA রেজিস্ট্রেশন নম্বর')->maxLength(50),

@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Filament\Support\FeatureGate;
 use App\Models\Kitchen;
+use App\Models\RoundStop;
 use App\Models\Settlement;
 use App\Models\User;
 use App\Services\Money\CookFees;
@@ -46,6 +47,10 @@ class Money extends Page
             'owing' => $money->customersOwing(),
             'dues' => app(Billing::class)->dues()->filter(fn (array $r) => $r['customer']->paysByBill() || $r['billed_due'] > 0)->values(),
             'recent' => Settlement::with(['kitchen', 'shahidar'])->latest('id')->limit(15)->get(),
+            // F110: boxes and money left at a cook's door that she has not confirmed, or says she did not get
+            'returns' => RoundStop::where('kind', 'return')->whereNotNull('picked_at')->whereNull('cook_confirmed_at')
+                ->where('picked_at', '>', now()->subDays(7))->with(['kitchen.user', 'shahidar'])
+                ->orderByDesc('cook_disputed_at')->orderByDesc('picked_at')->limit(50)->get(),
             // F56
             'feesLine' => collect(app(CookFees::class)->rules(null))->map(fn ($r, $part) => CookFees::PART_LABELS[$part].' '.CookFees::ruleText($r))->implode(', ').' (এলাকা বা গৃহিণীভেদে আলাদা হতে পারে)।',
         ];
