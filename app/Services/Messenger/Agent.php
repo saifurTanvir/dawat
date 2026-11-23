@@ -62,6 +62,10 @@ class Agent
         $extra = [];
         $location = $this->sharedLocation($thread);
 
+        if ($this->tappedTalk($thread)) {
+            return $this->send($thread, ['dhonnobad 😊 amader team ekhanei Messenger e apnar sathe kotha bolbe — call ba message dibe 🙏']);
+        }
+
         if (! $location && $this->onlySmallTalk($thread)) {
             return $this->send($thread, ['😊']);
         }
@@ -323,6 +327,11 @@ class Agent
     /** Owner, 21 Nov: cooks found the 12-hourly reminders too many — once every 2–3 days. */
     public const PIN_REMIND_GAP_HOURS = 60;
 
+    /** F107 (owner, 23 Nov): a would-be customer taps this to say "I'm interested, talk to me here". */
+    public const TALK_BUTTON = 'আগ্রহী — কথা বলুন';
+
+    public const TALK_PAYLOAD = 'CUSTOMER_TALK';
+
     /** F103: whether the bot asks cooks for their home pin at all. */
     public static function asksPins(): bool
     {
@@ -497,6 +506,35 @@ class Agent
         return [$result === 'saved' ? 'location peyechi, boshiye dilam ✅ dhonnobad 😊' : 'location peyechi ✅ amader team ekbar mile dekhe nibe 🙏'];
     }
 
+    /**
+     * F107: they tapped "আগ্রহী — কথা বলুন". Flag the chat for the owner (once) as a Badda customer
+     * who wants to talk on Messenger; the owner calls or writes from the page inbox.
+     */
+    private function tappedTalk(MessengerThread $thread): bool
+    {
+        $last = $thread->messages()->latest('id')->first();
+        if (! $last || $last->direction !== 'in' || trim((string) $last->text) !== self::TALK_BUTTON) {
+            return false;
+        }
+        $thread->facts = [...($thread->facts ?? []), 'customer' => true, 'wants_messenger_talk' => now()->toIso8601String()];
+        $thread->save();
+        $this->flag($thread, 'আগ্রহী গ্রাহক — Messenger-এ কথা বলতে চান (নম্বর দেননি)'.(BaddaAds::kindOf($thread) === 'customer' ? ' · বাড্ডা গ্রাহক' : ''));
+
+        return true;
+    }
+
+    /** F107: a would-be customer without a number gets the talk button under our last line. */
+    private function talkButtonFor(MessengerThread $thread): array
+    {
+        $facts = $thread->facts ?? [];
+        $customer = ($facts['customer'] ?? false) || BaddaAds::kindOf($thread) === 'customer';
+        if (! $customer || ($facts['cook'] ?? false) || filled($facts['phone'] ?? null) || ($facts['wants_messenger_talk'] ?? null)) {
+            return [];
+        }
+
+        return [self::TALK_PAYLOAD => self::TALK_BUTTON];
+    }
+
     private function callList(MessengerThread $thread, ?string $reason): void
     {
         $phone = $thread->fact('phone') ?? $thread->kitchen?->user?->phone;
@@ -524,12 +562,11 @@ class Agent
     private function send(MessengerThread $thread, array $messages): int
     {
         $sent = 0;
-        foreach ($messages as $text) {
-            $text = self::clean($text);
-            if ($text === '') {
-                continue;
-            }
-            if ($error = $this->graph->send($thread->psid, $text)) {
+        $messages = array_values(array_filter(array_map(fn ($t) => self::clean((string) $t), $messages), fn ($t) => $t !== ''));
+        $buttons = $this->talkButtonFor($thread);
+        foreach ($messages as $k => $text) {
+            $quick = $k === count($messages) - 1 ? $buttons : [];
+            if ($error = $this->graph->send($thread->psid, $text, $quick)) {
                 $thread->forceFill(['send_error' => $error])->save();
                 break;
             }

@@ -152,9 +152,17 @@ class Graph
     }
 
     /** @return string|null error text, null when sent */
-    public function send(string $psid, string $text): ?string
+    public function send(string $psid, string $text, array $quickReplies = []): ?string
     {
-        return $this->post(['recipient' => ['id' => $psid], 'messaging_type' => 'RESPONSE', 'message' => ['text' => mb_substr($text, 0, 1900), 'metadata' => self::METADATA]]);
+        $message = ['text' => mb_substr($text, 0, 1900), 'metadata' => self::METADATA];
+        if ($quickReplies) {
+            // F107: tap-to-answer buttons under the message (title at most 20 characters).
+            $message['quick_replies'] = collect($quickReplies)->map(fn ($title, $payload) => [
+                'content_type' => 'text', 'title' => mb_substr($title, 0, 20), 'payload' => $payload,
+            ])->values()->all();
+        }
+
+        return $this->post(['recipient' => ['id' => $psid], 'messaging_type' => 'RESPONSE', 'message' => $message]);
     }
 
     /** Marks her chat as read on the page, so Business Suite does not keep it "unread" after we answer. */

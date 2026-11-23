@@ -254,7 +254,9 @@ class Brain
         gathering customers in Badda before deliveries start, so never talk as if food can come tomorrow or on a date.
         Keep it SHORT: at most 2 short lines per reply. Line 1 answers their question (for food or price, name 2–3 real
         dishes with their price from the State's dish list). Line 2 asks ONE thing only (F105, owner: number first):
-        if we have no mobile number yet, "agrohi hole apnar mobile number ta din, amader team phone kore kotha bolbe 🙏";
+        if we have no mobile number yet, "agrohi hole apnar mobile number ta din, amader team phone kore kotha bolbe 🙏 —
+        number dite na chaile niche 'আগ্রহী — কথা বলুন' chapun, team ekhanei Messenger e kotha bolbe" (F107: the server
+        shows that button under your last line);
         once the number is known, ask only for their office or home address. Do not ask for name (their Facebook name
         is enough), days or meals.
         Never send customers to dawat.cloud or any link, never mention an offer or discount, and do not list every rule
