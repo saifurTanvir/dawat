@@ -93,6 +93,8 @@ class CallRequestResource extends Resource
                     ->description(fn (CallRequest $r) => $r->phone.' · '.(CallRequest::SOURCES[$r->source] ?? $r->source))
                     ->url(fn (CallRequest $r) => $r->user ? Links::person($r->user) : null)
                     ->searchable(['name', 'phone']),
+                TextColumn::make('tag')->label('ট্যাগ')->badge()->placeholder('—')
+                    ->color(fn (?string $state) => $state === CallRequest::TAG_BADDA_CUSTOMER ? 'success' : 'gray'),
                 CallRequestActions::reasonColumn(),
                 CallRequestActions::talksColumn(),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
@@ -104,6 +106,17 @@ class CallRequestResource extends Resource
                         null, '' => $query,
                         default => $query->where('status', $data['value']),
                     }),
+                // F106 (owner, 23 Nov): Badda by default; the rest under "বাড্ডার বাইরে".
+                SelectFilter::make('in_badda')->label('এলাকা')
+                    ->options(['badda' => 'বাড্ডা', 'outside' => 'বাড্ডার বাইরে'])->default('badda')
+                    ->query(fn (Builder $query, array $data) => match ($data['value'] ?? null) {
+                        'badda' => $query->where('in_badda', true),
+                        'outside' => $query->where('in_badda', false),
+                        default => $query,
+                    }),
+                // F106: Badda customers apart from the rest.
+                SelectFilter::make('tag')->label('ট্যাগ')
+                    ->options([CallRequest::TAG_BADDA_CUSTOMER => CallRequest::TAG_BADDA_CUSTOMER, CallRequest::TAG_CUSTOMER => CallRequest::TAG_CUSTOMER]),
                 // F88: who closed how many — pick a person to see the ones they finished.
                 SelectFilter::make('done_by')->label('কে বন্ধ করেছেন')
                     ->options(fn () => User::query()
