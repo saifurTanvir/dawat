@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CallRequestStatus;
+use App\Filament\Resources\MessengerThreads\MessengerThreadResource;
 use App\Services\Ads\BaddaAds;
 use App\Services\Geo\FocusSplit;
 use App\Support\PhoneNumber;
@@ -29,6 +30,11 @@ class CallRequest extends Model
 
     public const TAG_CUSTOMER = 'অন্য এলাকার গ্রাহক';
 
+    /** F108: tapped "আগ্রহী — কথা বলুন" on Messenger (maybe without a number). */
+    public const TAG_TALK_BADDA = 'বাড্ডা · কথা বলতে চান (ক্লিক)';
+
+    public const TAG_TALK = 'কথা বলতে চান (ক্লিক)';
+
     protected $guarded = ['id'];
 
     protected function casts(): array
@@ -49,11 +55,11 @@ class CallRequest extends Model
             }
             // F106: Badda entries are what the call list shows by default.
             $kitchenArea = $request->user_id ? Kitchen::where('user_id', $request->user_id)->value('area_id') : null;
-            $request->in_badda = $request->tag === self::TAG_BADDA_CUSTOMER
+            $request->in_badda = in_array($request->tag, [self::TAG_BADDA_CUSTOMER, self::TAG_TALK_BADDA], true)
                 || ($kitchenArea && in_array($kitchenArea, app(FocusSplit::class)->focusAreaIds()))
                 || (bool) preg_match(BaddaAds::BADDA_WORDS, (string) $request->reason);
             if ($request->isDirty('phone') || ! $request->user_id) {
-                $request->user_id = User::where('phone', $request->phone)->value('id');
+                $request->user_id = $request->phone ? User::where('phone', $request->phone)->value('id') : null;
             }
         });
     }
@@ -79,15 +85,34 @@ class CallRequest extends Model
         return $query->where('status', '!=', CallRequestStatus::Done);
     }
 
-    public function telUrl(): string
+    public function messengerThread(): BelongsTo
     {
-        return 'tel:+'.PhoneNumber::international($this->phone);
+        return $this->belongsTo(MessengerThread::class);
+    }
+
+    public function telUrl(): ?string
+    {
+        return $this->phone ? 'tel:+'.PhoneNumber::international($this->phone) : null;
     }
 
     /** Opens the chat in WhatsApp; the call button is right there. */
-    public function whatsappUrl(): string
+    public function whatsappUrl(): ?string
     {
-        return 'https://wa.me/'.PhoneNumber::international($this->phone);
+        return $this->phone ? 'https://wa.me/'.PhoneNumber::international($this->phone) : null;
+    }
+
+    /** F108: the Messenger chat on the admin page (to read and answer), for entries from Messenger. */
+    public function messengerUrl(): ?string
+    {
+        return $this->messenger_thread_id
+            ? MessengerThreadResource::getUrl('index', ['tableAction' => 'chat', 'tableActionRecord' => $this->messenger_thread_id])
+            : null;
+    }
+
+    /** "01XXXXXXXXX" or, without a number, where to reach them. */
+    public function phoneLabel(): string
+    {
+        return $this->phone ?: 'নম্বর দেননি — Messenger-এ কথা বলুন';
     }
 
     /** Adds a note to the history, newest first. */

@@ -31,9 +31,12 @@ final class CallRequestActions
     {
         return [
             Action::make('call')->label('মোবাইলে কল')->icon(Heroicon::OutlinedPhone)->color('success')
-                ->url(fn (CallRequest $r) => $r->telUrl()),
+                ->url(fn (CallRequest $r) => $r->telUrl())->visible(fn (CallRequest $r) => filled($r->phone)),
             Action::make('whatsapp')->label('WhatsApp')->icon(Heroicon::OutlinedChatBubbleOvalLeftEllipsis)->color('success')
-                ->url(fn (CallRequest $r) => $r->whatsappUrl(), shouldOpenInNewTab: true),
+                ->url(fn (CallRequest $r) => $r->whatsappUrl(), shouldOpenInNewTab: true)->visible(fn (CallRequest $r) => filled($r->phone)),
+            // F108: no number yet — talk where they tapped the button.
+            Action::make('messenger')->label('Messenger চ্যাট')->icon(Heroicon::OutlinedChatBubbleLeftRight)->color('info')
+                ->url(fn (CallRequest $r) => $r->messengerUrl(), shouldOpenInNewTab: true)->visible(fn (CallRequest $r) => filled($r->messenger_thread_id)),
             self::note(),
         ];
     }
@@ -42,7 +45,7 @@ final class CallRequestActions
     public static function note(): Action
     {
         return Action::make('note')->label('রিমার্কস')->icon(Heroicon::OutlinedPencilSquare)->color('gray')
-            ->modalHeading(fn (CallRequest $r) => 'রিমার্কস — '.($r->name ?: $r->phone))
+            ->modalHeading(fn (CallRequest $r) => 'রিমার্কস — '.($r->name ?: $r->phoneLabel()))
             ->modalDescription(fn (CallRequest $r) => 'কেন: '.$r->reason)
             ->modalSubmitActionLabel('রাখুন')
             ->fillForm(fn (CallRequest $r) => ['status' => $r->status->value, ...self::onboardDefaults($r)])
@@ -77,7 +80,7 @@ final class CallRequestActions
     public static function onboard(): Action
     {
         return Action::make('onboard')->label('সিস্টেমে যোগ করুন')->icon(Heroicon::OutlinedUserPlus)->color('primary')
-            ->modalHeading(fn (CallRequest $r) => 'সিস্টেমে যোগ — '.($r->name ?: $r->phone))
+            ->modalHeading(fn (CallRequest $r) => 'সিস্টেমে যোগ — '.($r->name ?: $r->phoneLabel()))
             ->modalDescription(fn (CallRequest $r) => 'কেন: '.$r->reason)
             ->modalSubmitActionLabel('যোগ করুন')
             ->fillForm(fn (CallRequest $r) => self::onboardDefaults($r))
@@ -195,7 +198,7 @@ final class CallRequestActions
             ->badge()
             ->color(fn (CallRequest $r) => empty($r->notes) ? 'gray' : 'info')
             ->action(Action::make('talks')
-                ->modalHeading(fn (CallRequest $r) => 'কথা হয়েছে '.Order::banglaDigits(count($r->notes ?? [])).' বার — '.($r->name ?: $r->phone))
+                ->modalHeading(fn (CallRequest $r) => 'কথা হয়েছে '.Order::banglaDigits(count($r->notes ?? [])).' বার — '.($r->name ?: $r->phoneLabel()))
                 ->modalWidth('lg')
                 ->schema(fn (CallRequest $r) => [
                     Placeholder::make('history')->hiddenLabel()
@@ -208,7 +211,7 @@ final class CallRequestActions
     public static function reason(): Action
     {
         return Action::make('reason')
-            ->modalHeading(fn (CallRequest $r) => 'কেন — '.($r->name ?: ($r->user?->name ?: $r->phone)))
+            ->modalHeading(fn (CallRequest $r) => 'কেন — '.($r->name ?: ($r->user?->name ?: $r->phoneLabel())))
             ->modalWidth('lg')
             ->schema(fn (CallRequest $r) => [
                 Placeholder::make('full')->hiddenLabel()->content(fn () => new HtmlString('<div style="white-space:pre-line;line-height:1.6">'.e($r->reason).'</div>')),

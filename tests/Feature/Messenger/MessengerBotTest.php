@@ -704,7 +704,7 @@ class MessengerBotTest extends TestCase
         $this->assertTrue($call->fresh()->in_badda);
     }
 
-    public function test_a_customer_without_a_number_gets_a_talk_button_and_tapping_it_flags_the_chat(): void
+    public function test_a_customer_without_a_number_gets_a_talk_button_and_tapping_it_puts_them_on_the_call_list(): void
     {
         $this->hook([$this->text('PT', 'দাম কত?', 'mid.t1')]);
         $this->fake(['replies' => ['vat mach 90 taka', 'agrohi hole mobile number ta din'], 'customer' => true]);
@@ -717,9 +717,27 @@ class MessengerBotTest extends TestCase
         $this->hook([$this->text('PT', Agent::TALK_BUTTON, 'mid.t2')]);
         $this->fake([]);
         $t = $this->answer('PT');
-        $this->assertTrue($t->needs_human);
-        $this->assertStringContainsString('Messenger-এ কথা বলতে চান', $t->human_reason);
-        $this->assertStringContainsString('বাড্ডা গ্রাহক', $t->human_reason);
+        // F108: not on the Messenger page — on "যোগাযোগ করতে হবে", with no number yet, tagged and Badda.
+        $this->assertStringNotContainsString('কথা বলতে চান', (string) $t->human_reason);
+        $call = CallRequest::sole();
+        $this->assertNull($call->phone);
+        $this->assertSame(CallRequest::TAG_TALK_BADDA, $call->tag);
+        $this->assertTrue($call->in_badda);
+        $this->assertSame($t->id, $call->messenger_thread_id);
+        $this->assertSame($call->id, $t->call_request_id);
+        $this->assertStringContainsString('"কথা বলুন" চেপেছেন', $call->reason);
+        $this->assertStringContainsString('tableActionRecord='.$t->id, $call->messengerUrl());
+
+        // The number that comes later fills the same entry; the tag stays.
+        $this->hook([$this->text('PT', '01822334455', 'mid.t3')]);
+        $this->fake(['replies' => ['dhonnobad'], 'phone' => '01822334455', 'customer' => true]);
+        $this->answer('PT');
+        $this->assertSame(1, CallRequest::count());
+        $this->assertSame('01822334455', $call->fresh()->phone);
+        $this->assertSame(CallRequest::TAG_TALK_BADDA, $call->fresh()->tag);
+
+        $this->actingAs(User::factory()->admin()->create());
+        $this->getJson('/admin-tools/call-list')->assertOk()->assertJsonPath('data.0.tag', CallRequest::TAG_TALK_BADDA);
     }
 
     public function test_a_would_be_customer_goes_on_the_call_list_once_and_is_never_made_a_cook(): void
