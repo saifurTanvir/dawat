@@ -60,6 +60,14 @@ return [
     /*
     | F53: what the shahidar door promises, in taka a month.
     */
+    /*
+    | F103 (owner, 23 Nov): pins are taken by the team on a call while we run in one small
+    | area, so the bot does not ask for them or send reminders unless this is turned on.
+    */
+    'pins' => [
+        'ask_by_bot' => (bool) env('DAWAT_BOT_ASKS_PINS', false),
+    ],
+
     'shahidar' => [
         'income' => [
             'min' => (int) env('DAWAT_SHAHIDAR_INCOME_MIN', 20000),
