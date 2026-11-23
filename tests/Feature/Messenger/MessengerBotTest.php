@@ -692,12 +692,16 @@ class MessengerBotTest extends TestCase
         $call = CallRequest::firstOrFail();
         $this->assertStringContainsString('নতুন গ্রাহক', $call->reason);
         $this->assertStringContainsString('এখনো দেননি', $call->reason);
+        $this->assertSame(CallRequest::TAG_CUSTOMER, $call->tag);
 
         $this->hook([$this->text('PN', 'Merul Badda, DIT road', 'mid.n2')]);
         $this->fake(['phone' => '01822334455', 'home_address' => 'Merul Badda, DIT road', 'customer' => true]);
         $this->answer('PN');
         $this->assertSame(1, CallRequest::count());
         $this->assertStringContainsString('DIT road', $call->fresh()->reason);
+        // F106: a Badda address makes it a Badda customer.
+        $this->assertSame(CallRequest::TAG_BADDA_CUSTOMER, $call->fresh()->tag);
+        $this->assertTrue($call->fresh()->in_badda);
     }
 
     public function test_a_would_be_customer_goes_on_the_call_list_once_and_is_never_made_a_cook(): void

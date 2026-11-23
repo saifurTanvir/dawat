@@ -47,7 +47,7 @@ class BaddaAds
         ],
     ];
 
-    private const BADDA_WORDS = '/বাড্ডা|badda|baddah|শাহজাদপুর|shahjadpur|shahzadpur|মেরুল|merul/iu';
+    public const BADDA_WORDS = '/বাড্ডা|badda|baddah|শাহজাদপুর|shahjadpur|shahzadpur|মেরুল|merul/iu';
 
     public static function launch(): Carbon
     {

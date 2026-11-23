@@ -180,6 +180,10 @@ class Agent
             $reason = 'নতুন গ্রাহক — নিয়মিত খাবার নিতে চান। ঠিকানা: '.($address ?? 'এখনো দেননি');
             if (! ($facts['customer_listed'] ?? false)) {
                 $this->callList($thread, $reason);
+                // F106: the customer ad runs only in Badda, so its chats are Badda customers.
+                if (BaddaAds::kindOf($thread) === 'customer') {
+                    $thread->callRequest?->update(['tag' => CallRequest::TAG_BADDA_CUSTOMER]);
+                }
                 $thread->facts = [...$thread->facts, 'customer_listed' => true, 'customer_listed_address' => (bool) $address];
                 $thread->save();
             } elseif ($address && ! ($facts['customer_listed_address'] ?? false) && $thread->callRequest) {

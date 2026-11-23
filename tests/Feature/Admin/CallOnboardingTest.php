@@ -69,7 +69,7 @@ class CallOnboardingTest extends TestCase
     public function test_closing_a_call_adds_a_customer_and_someone_already_in_is_left_alone(): void
     {
         $r = $this->req('নিয়মিত খাবার নিতে চান', '01711111111', 'রহিম');
-        Livewire::test(ManageCallRequests::class)->callTableAction('note', $r, [
+        Livewire::test(ManageCallRequests::class)->removeTableFilter('in_badda')->callTableAction('note', $r, [
             'body' => 'দুপুরে নেবেন', 'status' => 'pending', 'close' => true,
             'onboard_role' => 'customer', 'onboard_name' => 'রহিম', 'area_id' => $this->area->id, 'address' => 'বাসা ৪, রোড ২',
         ])->assertHasNoTableActionErrors();

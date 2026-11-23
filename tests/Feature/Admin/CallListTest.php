@@ -33,7 +33,7 @@ class CallListTest extends TestCase
 
         $this->assertFalse(CallList::canView());
 
-        Livewire::test(ManageCallRequests::class)
+        Livewire::test(ManageCallRequests::class)->removeTableFilter('in_badda')
             ->callAction('create', ['phone' => '+88'.$phone, 'name' => 'রেহানা', 'reason' => 'খাবার দেওয়ার আগে কিছু প্রশ্ন আছে', 'source' => 'whatsapp'])
             ->assertHasNoActionErrors();
 
@@ -54,7 +54,7 @@ class CallListTest extends TestCase
         $r = CallRequest::create(['phone' => '01713259733', 'reason' => 'আগে কথা বলতে চান']);
         $this->assertNull($r->user_id);
 
-        Livewire::test(ManageCallRequests::class)
+        Livewire::test(ManageCallRequests::class)->removeTableFilter('in_badda')
             ->callTableAction('note', $r, ['body' => 'ফোন ধরেননি', 'status' => 'no_answer'])
             ->assertHasNoTableActionErrors();
         $r->refresh();
@@ -63,7 +63,7 @@ class CallListTest extends TestCase
         $this->assertTrue(CallList::canView());
 
         // F70: the "কথা হয়েছে" button is gone; the remark's "কথা শেষ" tick closes it.
-        Livewire::test(ManageCallRequests::class)
+        Livewire::test(ManageCallRequests::class)->removeTableFilter('in_badda')
             ->assertTableActionDoesNotExist('done')
             ->callTableAction('note', $r, ['body' => 'কথা হয়েছে, কাল থেকে দেবেন', 'status' => 'pending', 'close' => true, 'onboard_role' => 'skip'])
             ->assertHasNoTableActionErrors();
@@ -75,14 +75,14 @@ class CallListTest extends TestCase
         $this->assertFalse(CallList::canView());
 
         // F88: a finished one leaves the list; it shows only when asked for.
-        Livewire::test(ManageCallRequests::class)->assertCanNotSeeTableRecords([$r])
+        Livewire::test(ManageCallRequests::class)->removeTableFilter('in_badda')->assertCanNotSeeTableRecords([$r])
             ->filterTable('status', CallRequestStatus::Done->value)->assertCanSeeTableRecords([$r]);
-        Livewire::test(ManageCallRequests::class)->filterTable('done_by', $this->admin->id)->assertCanSeeTableRecords([$r]);
+        Livewire::test(ManageCallRequests::class)->removeTableFilter('in_badda')->filterTable('done_by', $this->admin->id)->assertCanSeeTableRecords([$r]);
     }
 
     public function test_bad_phone_is_refused_and_non_admins_cannot_open_the_page(): void
     {
-        Livewire::test(ManageCallRequests::class)
+        Livewire::test(ManageCallRequests::class)->removeTableFilter('in_badda')
             ->callAction('create', ['phone' => '12345', 'reason' => 'x', 'source' => 'whatsapp'])
             ->assertHasActionErrors(['phone']);
 
@@ -104,7 +104,7 @@ class CallListTest extends TestCase
             ->callTableAction('reason', $r)
             ->assertHasNoTableActionErrors();
 
-        Livewire::test(ManageCallRequests::class)->assertDontSee('কাল সকালে আবার ফোন দিতে বলেছেন')->assertTableActionVisible('reason', $r);
+        Livewire::test(ManageCallRequests::class)->removeTableFilter('in_badda')->assertDontSee('কাল সকালে আবার ফোন দিতে বলেছেন')->assertTableActionVisible('reason', $r);
     }
 
     public function test_a_remark_with_the_close_tick_takes_it_off_the_list(): void
@@ -136,5 +136,18 @@ class CallListTest extends TestCase
         $this->assertSame(CallRequestStatus::Done, $open->fresh()->status);
         $this->assertSame('মেসেঞ্জারে উত্তর দেওয়া হলো', $open->fresh()->notes[0]['body']);
         $this->getJson('/admin-tools/call-list')->assertJsonCount(0, 'data');
+    }
+
+    public function test_the_list_shows_badda_by_default_and_the_rest_on_a_filter(): void
+    {
+        $badda = CallRequest::create(['phone' => '01811111111', 'name' => 'ক', 'reason' => 'নতুন গ্রাহক — ঠিকানা: Merul Badda', 'source' => 'messenger']);
+        $out = CallRequest::create(['phone' => '01822222222', 'name' => 'খ', 'reason' => 'নতুন গ্রাহক — ঠিকানা: Mirpur 10', 'source' => 'messenger']);
+        $this->assertTrue($badda->in_badda);
+        $this->assertSame(CallRequest::TAG_BADDA_CUSTOMER, $badda->tag);
+        $this->assertFalse($out->in_badda);
+
+        $this->actingAs($this->admin);
+        Livewire::test(ManageCallRequests::class)->assertCanSeeTableRecords([$badda])->assertCanNotSeeTableRecords([$out])
+            ->filterTable('in_badda', 'outside')->assertCanSeeTableRecords([$out])->assertCanNotSeeTableRecords([$badda]);
     }
 }
