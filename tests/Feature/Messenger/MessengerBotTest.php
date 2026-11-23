@@ -704,6 +704,24 @@ class MessengerBotTest extends TestCase
         $this->assertTrue($call->fresh()->in_badda);
     }
 
+    public function test_a_customer_without_a_number_gets_a_talk_button_and_tapping_it_flags_the_chat(): void
+    {
+        $this->hook([$this->text('PT', 'দাম কত?', 'mid.t1')]);
+        $this->fake(['replies' => ['vat mach 90 taka', 'agrohi hole mobile number ta din'], 'customer' => true]);
+        $this->answer('PT');
+        $withButtons = collect(Http::recorded())->map(fn ($pair) => $pair[0])
+            ->filter(fn (Request $r) => str_contains($r->url(), '/me/messages') && isset($r['message']['quick_replies']));
+        $this->assertCount(1, $withButtons); // only under the last line
+        $this->assertSame(Agent::TALK_BUTTON, $withButtons->first()['message']['quick_replies'][0]['title']);
+
+        $this->hook([$this->text('PT', Agent::TALK_BUTTON, 'mid.t2')]);
+        $this->fake([]);
+        $t = $this->answer('PT');
+        $this->assertTrue($t->needs_human);
+        $this->assertStringContainsString('Messenger-এ কথা বলতে চান', $t->human_reason);
+        $this->assertStringContainsString('বাড্ডা গ্রাহক', $t->human_reason);
+    }
+
     public function test_a_would_be_customer_goes_on_the_call_list_once_and_is_never_made_a_cook(): void
     {
         $this->hook([$this->text('PC', 'Ami lunch nite chai. Rafi, 01822334455, Middle Badda, road 5, house 12', 'mid.c1')]);
