@@ -171,12 +171,22 @@ class Agent
         if ($out['wants_call']) {
             $this->callList($thread, $out['call_reason']);
         }
-        // F89: a would-be customer with name, number and address goes on the call list once, to be added as a customer.
-        if (($facts['customer'] ?? false) && ! ($facts['cook'] ?? false) && ! ($facts['customer_listed'] ?? false)
-            && filled($facts['phone'] ?? null) && filled($facts['customer_address'] ?? null)) {
-            $this->callList($thread, 'নতুন গ্রাহক — নিয়মিত খাবার নিতে চান। ঠিকানা: '.$facts['customer_address'].($facts['area_text'] ?? null ? ' ('.$facts['area_text'].')' : ''));
-            $thread->facts = [...$thread->facts, 'customer_listed' => true];
-            $thread->save();
+        // F89/F105: a would-be customer goes on the call list as soon as they give a number (owner,
+        // 23 Nov: number first, the owner calls); an address that comes later is added to that entry.
+        if (($facts['customer'] ?? false) && ! ($facts['cook'] ?? false) && filled($facts['phone'] ?? null)) {
+            $address = filled($facts['customer_address'] ?? null)
+                ? $facts['customer_address'].($facts['area_text'] ?? null ? ' ('.$facts['area_text'].')' : '')
+                : null;
+            $reason = 'নতুন গ্রাহক — নিয়মিত খাবার নিতে চান। ঠিকানা: '.($address ?? 'এখনো দেননি');
+            if (! ($facts['customer_listed'] ?? false)) {
+                $this->callList($thread, $reason);
+                $thread->facts = [...$thread->facts, 'customer_listed' => true, 'customer_listed_address' => (bool) $address];
+                $thread->save();
+            } elseif ($address && ! ($facts['customer_listed_address'] ?? false) && $thread->callRequest) {
+                $thread->callRequest->update(['reason' => $reason.' (Messenger)']);
+                $thread->facts = [...$thread->facts, 'customer_listed_address' => true];
+                $thread->save();
+            }
         }
 
         return $replies;
@@ -354,8 +364,8 @@ class Agent
     }
 
     /**
-     * F100: one morning nudge (10:30) to would-be customers from the customer ad who wrote within the
-     * last 24 hours (Messenger's reply window), were answered, and have not given an address yet.
+     * F100/F105: one morning nudge (10:30) to would-be customers from the customer ad who wrote within the
+     * last 24 hours (Messenger's reply window), were answered, and have not given a mobile number yet.
      */
     public function customerFollowUps(): int
     {
@@ -367,7 +377,7 @@ class Agent
             ->get();
         foreach ($threads as $t) {
             $facts = $t->facts ?? [];
-            if (($facts['customer_followup_at'] ?? null) || filled($facts['customer_address'] ?? null) || ($facts['cook'] ?? false) || $t->kitchen_id) {
+            if (($facts['customer_followup_at'] ?? null) || filled($facts['phone'] ?? null) || ($facts['cook'] ?? false) || $t->kitchen_id) {
                 continue;
             }
             if (BaddaAds::kindOf($t) !== 'customer' && ! ($facts['customer'] ?? false)) {
@@ -379,7 +389,7 @@ class Agent
             $menu = Brain::customerMenu();
             $sent = $this->send($t, [
                 'shuvo sokal 😊'.($menu ? ' ajkal Badda-r grihinira ranna korchen: '.$menu.'.' : ''),
-                'ghorer dupurer khabar e agrohi hole apnar office ba basar thikana ar mobile number ta likhe din — team apnar sathe kotha bolbe 🙏',
+                'ghorer dupurer khabar e agrohi hole apnar mobile number ta likhe din — amader team phone kore kotha bolbe 🙏',
             ]);
             if ($sent) {
                 $t->facts = [...($t->facts ?? []), 'customer_followup_at' => now()->toIso8601String()];
