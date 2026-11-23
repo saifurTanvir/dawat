@@ -81,6 +81,8 @@ class OfficeDrops
             foreach ($orders as $order) {
                 $this->delivery->pickup($order, $shahidar, null);
             }
+            // F95: on a round, the next house is told he is coming.
+            app(OfficeRounds::class)->picked($drop, $kitchen, $shahidar);
 
             return $orders->count();
         });

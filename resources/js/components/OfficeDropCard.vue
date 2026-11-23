@@ -18,6 +18,11 @@
             <CallButtons :phone="drop.contact.phone" :contact="drop.contact.card" />
         </div>
 
+        <!-- F95: go house by house on the map; each cook hears before he comes -->
+        <RouterLink v-if="!inRound && !drop.done && (drop.booked || drop.picked)" :to="`/shahidar/round/${drop.id}`" class="btn-primary mt-3 flex items-center justify-center gap-2">
+            <span aria-hidden="true">🗺️</span> {{ drop.booked ? 'রাউন্ড — ম্যাপ ধরে বাসায় বাসায়' : 'রাউন্ড — অফিসের পথ' }}
+        </RouterLink>
+
         <!-- Pickup, cook by cook: one tap (and one bag sticker) for all her boxes -->
         <div v-for="k in drop.kitchens" :key="k.id" class="mt-3 border-t border-rule pt-3">
             <div class="flex items-start justify-between gap-3">
@@ -73,7 +78,7 @@ import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
 import { taka } from '@/lib/format';
 
-const props = defineProps({ drop: { type: Object, required: true } });
+const props = defineProps({ drop: { type: Object, required: true }, inRound: { type: Boolean, default: false } });
 const emit = defineEmits(['updated', 'notice']);
 
 const hasSpots = computed(() => props.drop.kitchens.some((k) => k.boxes.some((b) => b.spot)));

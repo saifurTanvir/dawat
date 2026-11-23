@@ -7,9 +7,11 @@ use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Pairing;
+use App\Models\RoundStop;
 use App\Services\Kitchens\ActForCook;
 use App\Services\Kitchens\CookActions;
 use App\Services\Orders\BookingPlanner;
+use App\Services\Regular\OfficeRounds;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -145,5 +147,26 @@ class MyBookingController extends Controller
     private static function firstName(?string $name): string
     {
         return $name ? Str::before(trim($name), ' ') : 'গ্রাহক';
+    }
+
+    /** GET /api/v1/my/rounds — F95: the area manager's coming visits today (no office or customer names). */
+    public function rounds(Request $request): JsonResponse
+    {
+        $kitchen = $request->user()->kitchen;
+
+        return response()->json(['data' => $kitchen ? OfficeRounds::forCook($kitchen) : []]);
+    }
+
+    /** POST /api/v1/my/rounds/{stop}/reply {reply: ready|late} — F95. */
+    public function roundReply(Request $request, RoundStop $stop, OfficeRounds $rounds): JsonResponse
+    {
+        abort_unless($stop->kitchen_id === $request->user()->kitchen?->id, 404);
+        $data = $request->validate(['reply' => ['required', Rule::in(['ready', 'late'])]]);
+        $rounds->reply($stop, $data['reply']);
+
+        return response()->json([
+            'data' => OfficeRounds::forCook($request->user()->kitchen),
+            'message' => $data['reply'] === 'late' ? 'এলাকা ম্যানেজারকে জানানো হয়েছে — উনি আগে অন্য বাসায় যাবেন।' : 'এলাকা ম্যানেজারকে জানানো হয়েছে বক্স তৈরি।',
+        ]);
     }
 }

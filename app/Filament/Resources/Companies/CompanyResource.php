@@ -5,9 +5,11 @@ namespace App\Filament\Resources\Companies;
 use App\Actions\EnsurePerson;
 use App\Filament\Resources\Companies\Pages\ManageCompanies;
 use App\Filament\Support\FeatureGate;
+use App\Filament\Support\LocationField;
 use App\Filament\Support\PhoneField;
 use App\Models\Area;
 use App\Models\Company;
+use App\Support\Geo\Geocoder;
 use App\Support\PhoneNumber;
 use App\Support\Roles;
 use BackedEnum;
@@ -57,6 +59,10 @@ class CompanyResource extends Resource
             PhoneField::make('contact_phone')->label('দায়িত্বপ্রাপ্ত লোকের মোবাইল')
                 ->helperText('প্রতিদিন খাবার বুক হলে এই নম্বরে বুঝিয়ে নেওয়ার কোড যাবে।')
                 ->afterStateHydrated(fn ($component, ?Company $record) => $component->state($record?->contact?->phone)),
+            // F95: the round's last stop on the map
+            LocationField::make('where', 'অফিসের লোকেশন (পিন)')
+                ->helperText('এলাকা ম্যানেজারের রাউন্ডে শেষ গন্তব্য — ম্যাপ এখানেই পথ দেখাবে। শুধু অ্যাডমিন আর সেই এলাকা ম্যানেজার দেখেন।')
+                ->afterStateHydrated(fn ($component, ?Company $record) => $component->state($record?->location ? sprintf('%.6f, %.6f', $record->location->lat, $record->location->lng) : null)),
             TextInput::make('drop_note')->label('ডেলিভারির নোট')->maxLength(200)->placeholder('যেমন: দুপুর ১২:৩০-এর মধ্যে, রিসেপশনে'),
             Toggle::make('is_active')->label('চালু')->default(true),
         ]);
@@ -68,6 +74,10 @@ class CompanyResource extends Resource
         $phone = PhoneNumber::normalize((string) ($data['contact_phone'] ?? ''));
         $data['contact_user_id'] = $phone ? app(EnsurePerson::class)($phone, $data['contact_name'] ?? null, Roles::BUYER)->id : null;
         unset($data['contact_phone'], $data['contact_name']);
+        if (array_key_exists('where', $data)) {
+            $data['location'] = app(Geocoder::class)->point($data['where']);
+            unset($data['where']);
+        }
 
         return $data;
     }
@@ -83,6 +93,7 @@ class CompanyResource extends Resource
                 TextColumn::make('contact.name')->label('দায়িত্বপ্রাপ্ত')->description(fn (Company $c) => $c->contact?->phone)->placeholder('—'),
                 TextColumn::make('customers_count')->label('কর্মী (চালু)'),
                 TextColumn::make('drop_note')->label('নোট')->placeholder('—')->wrap(),
+                IconColumn::make('pin')->label('পিন')->state(fn (Company $c) => $c->location !== null)->boolean(),
                 IconColumn::make('is_active')->label('চালু')->boolean(),
             ])
             ->recordActions([

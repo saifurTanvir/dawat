@@ -40,6 +40,8 @@
                 <MenuNoticeCard v-if="kitchen?.status === 'approved' && notices" :rows="notices" endpoint="/my/menu-notices" @saved="notices = $event" />
                 <DailyMenu :fees="kitchen?.fees" />
             </template>
+            <!-- F95: the area manager is coming for office boxes -->
+            <CookRoundCard v-if="kitchen?.status === 'approved'" />
             <!-- F26: regular customers today -->
             <section v-if="bookings && (bookings.regular_customers || bookings.slots.length)" class="mb-6 rounded-[var(--radius-plate)] bg-plate p-5" aria-labelledby="regular-title">
                 <h2 id="regular-title" class="font-semibold">আজকের অর্ডার</h2>
@@ -128,6 +130,7 @@ import ContactHours from '@/components/ContactHours.vue';
 import DailyMenu from '@/components/DailyMenu.vue';
 import MenuNoticeCard from '@/components/MenuNoticeCard.vue';
 import CookGuestRequests from '@/components/CookGuestRequests.vue';
+import CookRoundCard from '@/components/CookRoundCard.vue';
 import PushToggle from '@/components/PushToggle.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn, placeOf } from '@/lib/bn';

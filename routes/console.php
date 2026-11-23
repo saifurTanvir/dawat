@@ -27,6 +27,9 @@ Schedule::command('posts:daily-menus')->everyMinute()->withoutOverlapping();
 // F61: from 8 am, daily menus tell regular customers what is cooking today.
 Schedule::command('menus:announce')->everyFiveMinutes()->withoutOverlapping();
 
+// F95: on office rounds, cooks hear about 30 minutes before the area manager comes.
+Schedule::command('rounds:tick')->everyMinute()->withoutOverlapping();
+
 // F64: the cook has 5 minutes to answer a guest-meal request.
 Schedule::command('guests:follow-up')->everyMinute()->withoutOverlapping();
 
