@@ -2,18 +2,20 @@
 <x-filament-panels::page>
     {{-- Inside the page root: a Livewire component must have a single root element. --}}
     <style>.dawat-money th, .dawat-money td { padding: 8px 12px 8px 0; text-align: left; vertical-align: middle; } .dawat-money .r { text-align: right; } .dawat-money tbody tr { border-top: 1px solid rgb(229 231 235); } .dawat-money .muted { color: rgb(107 114 128); }</style>
-    <x-filament::section heading="এলাকা ম্যানেজারের কাছে নগদ" description="ডেলিভারিতে তোলা টাকা, এখনো দাওয়াতকে জমা দেওয়া হয়নি।">
+    <x-filament::section heading="এলাকা ম্যানেজারের কাছে নগদ" description="ডেলিভারিতে তোলা টাকা, ফেরত রাউন্ডে গৃহিণীদের হাতে দেওয়া টাকা বাদে — এখনো দাওয়াতকে জমা দেওয়া হয়নি।">
         @if ($shahidars->isEmpty())
             <p class="text-sm text-gray-500">কারো কাছে জমা টাকা নেই।</p>
         @else
             <table class="dawat-money w-full text-sm">
-                <thead><tr class="text-left text-gray-500"><th class="py-2">এলাকা ম্যানেজার</th><th>বক্স</th><th class="r">টাকা</th><th></th></tr></thead>
+                <thead><tr class="text-left text-gray-500"><th class="py-2">এলাকা ম্যানেজার</th><th>বক্স</th><th class="r">তোলা</th><th class="r">গৃহিণীদের দিয়েছেন</th><th class="r">জমা দেবেন</th><th></th></tr></thead>
                 <tbody>
                     @foreach ($shahidars as $row)
                         <tr class="border-t border-gray-200 dark:border-white/10">
                             <td class="py-2 font-medium">{{ $row['shahidar']->name }} <span class="muted">{{ $row['shahidar']->phone }}</span></td>
                             <td>{{ $row['orders'] }}</td>
-                            <td class="r" style="font-weight:600">{{ $tk($row['cash']) }}</td>
+                            <td class="r">{{ $tk($row['collected']) }}</td>
+                            <td class="r">{{ $row['paid_cooks'] ? $tk($row['paid_cooks']) : '—' }}</td>
+                            <td class="r" style="font-weight:600">{{ $row['cash'] < 0 ? 'দাওয়াত দেবে '.$tk(-$row['cash']) : $tk($row['cash']) }}</td>
                             <td class="r">{{ ($this->receiveCashAction)(['shahidar' => $row['shahidar']->id]) }}</td>
                         </tr>
                     @endforeach
@@ -21,6 +23,26 @@
             </table>
         @endif
     </x-filament::section>
+
+    @if ($returns->isNotEmpty())
+        <x-filament::section heading="ফেরত রাউন্ড — গৃহিণী নিশ্চিত করেননি" description="এলাকা ম্যানেজার বক্স (আর টাকা) দিয়েছেন বলেছেন; গৃহিণী অ্যাপে এখনো “পেয়েছি” চাপেননি, বা “পাইনি” বলেছেন। ফোন করে মিলিয়ে নিন।">
+            <table class="dawat-money w-full text-sm">
+                <thead><tr class="text-left text-gray-500"><th class="py-2">রান্নাঘর</th><th>এলাকা ম্যানেজার</th><th>কখন</th><th>বক্স</th><th class="r">টাকা</th><th>গৃহিণী</th></tr></thead>
+                <tbody>
+                    @foreach ($returns as $s)
+                        <tr>
+                            <td class="py-2 font-medium">{{ $s->kitchen->display_name }} <span class="muted">{{ $s->kitchen->user->phone }}</span></td>
+                            <td>{{ $s->shahidar->name }}</td>
+                            <td>{{ $s->picked_at->timezone('Asia/Dhaka')->format('j M, g:i A') }}</td>
+                            <td>{{ $s->boxes }}</td>
+                            <td class="r">{{ $s->paid_paisa ? $tk($s->paid_paisa) : '—' }}</td>
+                            <td style="font-weight:600;color:{{ $s->cook_disputed_at ? 'rgb(185 28 28)' : 'rgb(107 114 128)' }}">{{ $s->cook_disputed_at ? 'পাইনি বলেছেন' : 'নিশ্চিত বাকি' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </x-filament::section>
+    @endif
 
     <x-filament::section heading="গৃহিণীদের পাওনা" :description="'পৌঁছানো বা রান্না-হয়ে-ফেরত আসা বক্সের খাবারের দাম, দাওয়াতের ফি আর ডেলিভারি খরচ বাদে। এখনকার সাধারণ নিয়ম: '.$feesLine">
         @if ($cooks->isEmpty())
@@ -31,7 +53,7 @@
                 <tbody>
                     @foreach ($cooks as $row)
                         <tr class="border-t border-gray-200 dark:border-white/10">
-                            <td class="py-2 font-medium">{{ $row['kitchen']->display_name }} <span class="muted">{{ $row['kitchen']->user->phone }}</span></td>
+                            <td class="py-2 font-medium">{{ $row['kitchen']->display_name }} <span class="muted">{{ $row['kitchen']->user->phone }} · টাকা নেন {{ $row['kitchen']->payLabel() }}</span></td>
                             <td>{{ \Illuminate\Support\Carbon::parse($row['from'])->format('j M') }} – {{ \Illuminate\Support\Carbon::parse($row['to'])->format('j M') }}</td>
                             <td>{{ $row['orders'] }}</td>
                             <td class="r">{{ $tk($row['gross']) }}</td>

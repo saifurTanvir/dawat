@@ -17,7 +17,7 @@ class SendRoundSms implements ShouldQueue
 
     public int $tries = 2;
 
-    public function __construct(public int $stopId, public string $when) {}
+    public function __construct(public int $stopId, public string $when, public ?string $line = null) {}
 
     public function handle(OtpSender $sender): void
     {
@@ -26,7 +26,9 @@ class SendRoundSms implements ShouldQueue
             return;
         }
         try {
-            $sender->send($stop->kitchen->user->phone, '', OtpPurpose::RoundComing, ['when' => $this->when, 'boxes' => Order::banglaDigits($stop->boxes)]);
+            $stop->kind === 'return'
+                ? $sender->send($stop->kitchen->user->phone, '', OtpPurpose::RoundReturn, ['when' => $this->when, 'line' => $this->line])
+                : $sender->send($stop->kitchen->user->phone, '', OtpPurpose::RoundComing, ['when' => $this->when, 'boxes' => Order::banglaDigits($stop->boxes)]);
         } catch (OtpDeliveryFailedException) {
             $this->release(60);
         }

@@ -100,6 +100,13 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        // F110: the evening return round — empty boxes back, cooks paid at the door
+        path: '/shahidar/return/:id(\\d+)',
+        name: 'shahidar-return',
+        component: () => import('./pages/ReturnRoundPage.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
         // F46: a shahidar acts for one cook
         path: '/shahidar/kitchens/:id',
         name: 'shahidar-kitchen',

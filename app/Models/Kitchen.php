@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Casts\AsGeoPoint;
 use App\Enums\KitchenStatus;
 use App\Support\Geo\LocationFuzzer;
+use Carbon\CarbonInterface;
 use Database\Factories\KitchenFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 #[Fillable(['platform_fee_type', 'platform_fee_value', 'delivery_cut_type', 'delivery_cut_value',
     'user_id', 'display_name', 'area_id', 'pickup_address', 'location', 'status',
-    'allow_call', 'allow_message', 'allow_comment', 'allow_order', 'contact_phone', 'contact_name', 'max_regular_customers', 'reach_m', 'daily_plates',
+    'allow_call', 'allow_message', 'allow_comment', 'allow_order', 'contact_phone', 'contact_name', 'max_regular_customers', 'reach_m', 'daily_plates', 'pay_cycle', 'pay_weekday',
 ])]
 #[Hidden(['location', 'public_location', 'pickup_address'])]
 class Kitchen extends Model
@@ -41,6 +42,7 @@ class Kitchen extends Model
             'max_regular_customers' => 'integer',
             'reach_m' => 'integer',
             'daily_plates' => 'integer',
+            'pay_weekday' => 'integer',
             'contact_verified_at' => 'datetime',
             'pending_contact_requested_at' => 'datetime',
         ];
@@ -55,6 +57,21 @@ class Kitchen extends Model
                 $kitchen->public_location = $kitchen->location ? LocationFuzzer::fuzz($kitchen->location) : null;
             }
         });
+    }
+
+    /** F110: Sunday first, as Carbon's dayOfWeek. */
+    public const WEEKDAYS = ['রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার', 'শনিবার'];
+
+    /** F110: does she take her money on this (Dhaka) day? Daily, or once a week on her day. */
+    public function paidOn(CarbonInterface $day): bool
+    {
+        return $this->pay_cycle !== 'weekly' || $this->pay_weekday === null || $this->pay_weekday === $day->dayOfWeek;
+    }
+
+    /** "প্রতিদিন" or "প্রতি বৃহস্পতিবার" */
+    public function payLabel(): string
+    {
+        return $this->pay_cycle === 'weekly' && $this->pay_weekday !== null ? 'প্রতি '.self::WEEKDAYS[$this->pay_weekday] : 'প্রতিদিন';
     }
 
     public function user(): BelongsTo

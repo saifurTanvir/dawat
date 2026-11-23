@@ -21,6 +21,8 @@ class RoundStop extends Model
             'cook_ready_at' => 'datetime',
             'picked_at' => 'datetime',
             'sms_sent' => 'boolean',
+            'cook_confirmed_at' => 'datetime',
+            'cook_disputed_at' => 'datetime',
         ];
     }
 
@@ -37,6 +39,16 @@ class RoundStop extends Model
     public function shahidar(): BelongsTo
     {
         return $this->belongsTo(User::class, 'shahidar_id');
+    }
+
+    public function settlement(): BelongsTo
+    {
+        return $this->belongsTo(Settlement::class);
+    }
+
+    public function isReturn(): bool
+    {
+        return $this->kind === 'return';
     }
 
     public function scopeOpen(Builder $query): Builder

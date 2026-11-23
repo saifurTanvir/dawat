@@ -145,6 +145,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         // F95: the area manager's coming for office boxes; "ready" or "10 more minutes"
         Route::get('/my/rounds', [MyBookingController::class, 'rounds'])->name('my.rounds.index');
         Route::post('/my/rounds/{stop}/reply', [MyBookingController::class, 'roundReply'])->middleware('throttle:comments')->name('my.rounds.reply');
+        // F110: "got the boxes and the money", and when she takes her money
+        Route::post('/my/rounds/{stop}/confirm', [MyBookingController::class, 'roundConfirm'])->middleware('throttle:comments')->name('my.rounds.confirm');
+        Route::get('/my/pay-schedule', [MyBookingController::class, 'paySchedule'])->name('my.pay-schedule');
+        Route::put('/my/pay-schedule', [MyBookingController::class, 'savePaySchedule'])->name('my.pay-schedule.save');
         Route::get('/my/guest-meals', [GuestMealController::class, 'forCook'])->name('my.guest-meals.index');
         Route::post('/my/guest-meals/{guest}/reply', [GuestMealController::class, 'reply'])->middleware('throttle:comments')->name('my.guest-meals.reply');
         Route::get('/my/menu-notices', [MyMenuNoticeController::class, 'index'])->name('my.menu-notices.index');
@@ -176,6 +180,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('/drops/{drop}/round', [ShahidarDropController::class, 'round'])->name('drops.round');
             Route::post('/drops/{drop}/round/start', [ShahidarDropController::class, 'start'])->name('drops.round.start');
             Route::post('/drops/{drop}/round/stops/{stop}/later', [ShahidarDropController::class, 'later'])->name('drops.round.later');
+            // F110: the evening return round — empty boxes back, cooks paid at the door
+            Route::get('/drops/{drop}/return', [ShahidarDropController::class, 'round'])->name('drops.return');
+            Route::post('/drops/{drop}/return/start', [ShahidarDropController::class, 'start'])->name('drops.return.start');
+            Route::post('/drops/{drop}/return/stops/{stop}/later', [ShahidarDropController::class, 'later'])->name('drops.return.later');
+            Route::post('/drops/{drop}/return/stops/{stop}/done', [ShahidarDropController::class, 'returned'])->name('drops.return.done');
             Route::post('/drops/{drop}/deliver', [ShahidarDropController::class, 'deliver'])->middleware('throttle:otp')->name('drops.deliver');
             Route::post('/orders/{order}/deliver', [ShahidarController::class, 'deliver'])->middleware('throttle:otp')->name('orders.deliver');
             Route::post('/orders/{order}/fail', [ShahidarController::class, 'fail'])->name('orders.fail');

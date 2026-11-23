@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Api\V1\My;
 use App\Enums\MealSlot;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Kitchen;
 use App\Models\Order;
 use App\Models\Pairing;
 use App\Models\RoundStop;
 use App\Services\Kitchens\ActForCook;
 use App\Services\Kitchens\CookActions;
 use App\Services\Orders\BookingPlanner;
+use App\Services\Orders\Settlements;
 use App\Services\Regular\OfficeRounds;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -168,5 +170,52 @@ class MyBookingController extends Controller
             'data' => OfficeRounds::forCook($request->user()->kitchen),
             'message' => $data['reply'] === 'late' ? 'এলাকা ম্যানেজারকে জানানো হয়েছে — উনি আগে অন্য বাসায় যাবেন।' : 'এলাকা ম্যানেজারকে জানানো হয়েছে বক্স তৈরি।',
         ]);
+    }
+
+    /** POST /api/v1/my/rounds/{stop}/confirm {got: bool} — F110. */
+    public function roundConfirm(Request $request, RoundStop $stop, OfficeRounds $rounds): JsonResponse
+    {
+        abort_unless($stop->kitchen_id === $request->user()->kitchen?->id, 404);
+        $data = $request->validate(['got' => ['required', 'boolean']]);
+        $rounds->confirm($stop, (bool) $data['got']);
+
+        return response()->json([
+            'data' => OfficeRounds::forCook($request->user()->kitchen),
+            'message' => $data['got'] ? 'ধন্যবাদ — লেখা হলো আপনি পেয়েছেন।' : 'জানানো হয়েছে — এলাকা ম্যানেজার আর দাওয়াত টিম ফোন করবে।',
+        ]);
+    }
+
+    /** GET /api/v1/my/pay-schedule — F110: when she takes her money, and what she is owed now. */
+    public function paySchedule(Request $request, Settlements $money): JsonResponse
+    {
+        $kitchen = $request->user()->kitchen;
+        abort_unless($kitchen, 404);
+
+        return response()->json(['data' => self::payRow($kitchen, $money)]);
+    }
+
+    /** PUT /api/v1/my/pay-schedule {pay_cycle: daily|weekly, pay_weekday?: 0–6} */
+    public function savePaySchedule(Request $request, Settlements $money): JsonResponse
+    {
+        $kitchen = $request->user()->kitchen;
+        abort_unless($kitchen, 404);
+        $data = $request->validate([
+            'pay_cycle' => ['required', Rule::in(['daily', 'weekly'])],
+            'pay_weekday' => ['required_if:pay_cycle,weekly', 'nullable', 'integer', 'between:0,6'],
+        ], ['pay_weekday.required_if' => 'কোন বারে টাকা নেবেন বেছে নিন।']);
+        $kitchen->forceFill(['pay_cycle' => $data['pay_cycle'], 'pay_weekday' => $data['pay_cycle'] === 'weekly' ? $data['pay_weekday'] : null])->save();
+
+        return response()->json(['data' => self::payRow($kitchen, $money), 'message' => 'রাখা হলো: টাকা নেবেন '.$kitchen->payLabel().'।']);
+    }
+
+    private static function payRow(Kitchen $kitchen, Settlements $money): array
+    {
+        return [
+            'pay_cycle' => $kitchen->pay_cycle,
+            'pay_weekday' => $kitchen->pay_weekday,
+            'label' => $kitchen->payLabel(),
+            'weekdays' => Kitchen::WEEKDAYS,
+            'due_paisa' => $money->dueFor($kitchen)['payable'],
+        ];
     }
 }

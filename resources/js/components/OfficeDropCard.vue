@@ -23,6 +23,11 @@
             <span aria-hidden="true">🗺️</span> {{ drop.booked ? 'রাউন্ড — ম্যাপ ধরে বাসায় বাসায়' : 'রাউন্ড — অফিসের পথ' }}
         </RouterLink>
 
+        <!-- F110: evening — the empty boxes back to the cooks, and their money -->
+        <RouterLink v-if="!inRound && drop.done" :to="`/shahidar/return/${drop.id}`" class="btn-primary mt-3 flex items-center justify-center gap-2">
+            <span aria-hidden="true">🌙</span> ফেরত রাউন্ড — খালি বক্স আর গৃহিণীর টাকা
+        </RouterLink>
+
         <!-- Pickup, cook by cook: one tap (and one bag sticker) for all her boxes -->
         <div v-for="k in drop.kitchens" :key="k.id" class="mt-3 border-t border-rule pt-3">
             <div class="flex items-start justify-between gap-3">
