@@ -154,6 +154,25 @@ class OfficeRoundTest extends TestCase
         $this->actingAs($this->far->user)->postJson("/api/v1/my/rounds/{$mine[0]['id']}/reply", ['reply' => 'ready'])->assertNotFound();
     }
 
+    public function test_as_time_passes_the_next_house_is_still_the_nearest_and_a_cook_told_he_is_coming_stays_next(): void
+    {
+        $door = $this->cook('পাশের বাসার রান্না', 23.7813, 90.4203); // the newest cook, next door to the first house
+        $drop = $this->drop();
+        $this->actingAs($this->shahidar)->postJson("/api/v1/shahidar/drops/{$drop->id}/round/start", ['lat' => 23.7805, 'lng' => 90.4195])->assertOk();
+        $nextOf = fn () => RoundStop::open()->orderBy('position')->first()->kitchen_id;
+        $this->assertSame($this->near->id, $nextOf());
+        $this->postJson("/api/v1/shahidar/drops/{$drop->id}/pickup", ['kitchen_id' => $this->near->id])->assertOk();
+        $this->assertSame($door->id, $nextOf());
+        $this->assertContains('এলাকা ম্যানেজার এখন আপনার কাছে আসছেন', $this->told($door));
+
+        // Twenty minutes later, still not there: she stays next (she was told he is coming).
+        $this->travel(20)->minutes();
+        $this->artisan('rounds:tick')->assertSuccessful();
+        $this->assertSame($door->id, $nextOf());
+        $r = $this->getJson("/api/v1/shahidar/drops/{$drop->id}/round")->json('data');
+        $this->assertSame($door->id, collect($r['stops'])->firstWhere('id', $r['next_id'])['kitchen_id']);
+    }
+
     public function test_only_the_offices_area_manager_sees_the_round_and_admins_set_the_office_pin(): void
     {
         $drop = $this->drop();

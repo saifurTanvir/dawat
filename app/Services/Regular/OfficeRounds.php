@@ -277,14 +277,16 @@ class OfficeRounds
         }
 
         while ($open->isNotEmpty()) {
-            $best = $open->sortBy(function (RoundStop $s) use ($pos, $leftAt, $t, $office) {
+            $best = $open->sortBy(function (RoundStop $s) use ($pos, $leftAt, $office) {
+                // By the time he could be there, not clamped to now: otherwise every house ties once time has passed.
                 $arrive = $leftAt->copy()->addSeconds($this->travelSeconds($pos, $s->kitchen->location));
-                $arrive = $arrive->lt($t) ? $t->copy() : $arrive;
                 $ready = $s->cook_ready_at && $s->cook_ready_at->gt($arrive) ? $s->cook_ready_at : $arrive;
+                // The cook already told "he is coming to you now" stays next — unless she asked for more time.
+                $promised = $s->next_sent_at && ! ($s->cook_ready_at && $s->cook_ready_at->gt($arrive)) ? 0 : 1;
                 // Without a known start, the house farthest from the office first, to end near it.
                 $far = $pos === null && $office && $s->kitchen->location ? -$office->distanceTo($s->kitchen->location) : 0;
 
-                return sprintf('%03d|%d|%012d|%012d|%08d', $s->later, $s->kitchen->location ? 0 : 1, $ready->getTimestamp(), (int) ($far + 1e9), $s->kitchen_id);
+                return sprintf('%03d|%d|%d|%012d|%012d|%08d', $s->later, $promised, $s->kitchen->location ? 0 : 1, $ready->getTimestamp(), (int) ($far + 1e9), $s->kitchen_id);
             })->first();
             $arrive = $leftAt->copy()->addSeconds($this->travelSeconds($pos, $best->kitchen->location));
             $arrive = $arrive->lt($t) ? $t->copy() : $arrive;
