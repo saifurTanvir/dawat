@@ -221,6 +221,13 @@ class Agent
         }
 
         $area = $facts['area_text'] ?? Area::find($facts['area_id'])?->slug;
+        if (! self::asksPins()) {
+            // F103: the team takes the pin on a call; no link, no location ask.
+            return [
+                'dhonnobad 😊 apnake '.($area ?: 'apnar elaka').' e add kore approve kore dilam ✅',
+                'amader team proyojon moto apnar sathe jogajog korbe 🙏',
+            ];
+        }
         $extra[] = 'basay boshe ei link khulun, location keu dekhbe na: '.PinLink::forKitchen($kitchen)->url();
         $extra[] = 'link e na hole ekhane 📎 → Location pathan';
         $extra[] = 'ar: shuru te dine 1 plate (ek joner purno khabar) nebo 😊';
@@ -251,7 +258,7 @@ class Agent
             }
             $t->forceFill(['kitchen_id' => $kitchen->id, 'needs_human' => false, 'human_reason' => null])->save();
             $messages = ['mile dekhlam ✅ ei number e apnar rannaghor "'.$kitchen->display_name.'" age thekei ache — notun kore kichu korte hobe na 😊'];
-            if (! $kitchen->location) {
+            if (! $kitchen->location && self::asksPins()) {
                 $messages[] = 'shudhu basar location ta baki — basay boshe ei link khulun, location keu dekhbe na: '.PinLink::forKitchen($kitchen)->url();
                 $messages[] = 'link e na hole ekhane 📎 → Location pathan';
             }
@@ -302,8 +309,17 @@ class Agent
     /** Owner, 21 Nov: cooks found the 12-hourly reminders too many — once every 2–3 days. */
     public const PIN_REMIND_GAP_HOURS = 60;
 
+    /** F103: whether the bot asks cooks for their home pin at all. */
+    public static function asksPins(): bool
+    {
+        return (bool) config('dawat.pins.ask_by_bot');
+    }
+
     public function remindPins(): int
     {
+        if (! self::asksPins()) {
+            return 0;
+        }
         $n = 0;
         $threads = MessengerThread::query()->where('last_in_at', '>', now()->subHours(166))->where('bot_off', false)->get();
         foreach ($threads as $t) {

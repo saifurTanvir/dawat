@@ -49,6 +49,7 @@ class MessengerBotTest extends TestCase
             'services.messenger.page_token' => 'page-token',
             'services.messenger.graph' => 'https://graph.test',
             'services.ai.anthropic_key' => 'ai-key',
+            'dawat.pins.ask_by_bot' => true, // the older pin flows; F103 turns them off by default
         ]);
         Graph::setBot(true);
         User::factory()->admin()->create(['name' => 'মালিক']);
@@ -337,6 +338,18 @@ class MessengerBotTest extends TestCase
         $d->messages()->create(['direction' => 'out', 'by' => 'bot', 'text' => 'thikana din']);
         $d->forceFill(['last_in_at' => now()->subHours(5), 'facts' => ['customer' => true, 'customer_address' => 'Merul Badda']])->save();
         $this->assertSame(0, app(Agent::class)->customerFollowUps());
+    }
+
+    public function test_with_pin_asks_off_she_gets_no_link_and_no_reminders(): void
+    {
+        config(['dawat.pins.ask_by_bot' => false]);
+        $old = Kitchen::factory()->approved()->create(['area_id' => $this->area->id, 'location' => null, 'daily_plates' => null]);
+        $this->hook([$this->text('PX', 'ok', 'mid.x1')]);
+        MessengerThread::where('psid', 'PX')->firstOrFail()->forceFill(['facts' => ['phone' => $old->user->phone]])->save();
+        $this->fake([]);
+
+        $this->assertSame(0, app(Agent::class)->remindPins());
+        $this->assertSame([], collect($this->sent())->filter(fn ($x) => str_contains($x, '/pin/'))->values()->all());
     }
 
     public function test_she_is_told_about_her_existing_kitchen_only_once(): void
