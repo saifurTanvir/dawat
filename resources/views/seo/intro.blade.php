@@ -5,12 +5,13 @@
     </header>
     <main class="px-4 pt-2">
         <img src="/brand/lockup.png" alt="দাওয়াত — পাড়ার ঘরের খাবার। ঘর থেকে দূরে, তবু খাবারটা ঘরের" width="800" height="761" class="mx-auto mb-4 w-56">
-        <h1 class="font-serif text-2xl font-bold">আজকের দাওয়াত — ঢাকায় পাড়ার ঘরের খাবার</h1>
+        <h1 class="font-serif text-2xl font-bold">আজকের দাওয়াত — বাড্ডায় পাড়ার ঘরের খাবার</h1>
         <p class="mt-2 text-muted">
             {{ \App\Support\Seo::of(config('dawat.seo.region')) }} গৃহিণীরা নিজের বাসার রান্না থেকে কয়েক প্লেট বিক্রি করেন।
             আজকের দুপুর আর রাতের রান্না দেখুন, অ্যাপেই অর্ডার করুন — এলাকা ম্যানেজার বাসায় বা অফিসে পৌঁছে দেন,
             টাকা দেবেন খাবার হাতে পেয়ে। প্রতিদিন দুপুরের লাঞ্চও বুক করা যায়।
         </p>
+        <p class="mt-3 rounded-[var(--radius-plate)] bg-plate p-3 text-sm">{{ config('dawat.launch.notice') }}</p>
         @include('seo.footer')
     </main>
 </div>

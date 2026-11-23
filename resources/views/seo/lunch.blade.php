@@ -29,7 +29,7 @@
 
     <section class="mt-8" aria-labelledby="where">
         <h2 id="where" class="font-serif text-xl font-bold">কোন কোন এলাকায়</h2>
-        <p class="mt-2 leading-relaxed">{{ $areas->pluck('name')->implode(', ') }}।</p>
+        <p class="mt-2 leading-relaxed">{{ config('dawat.launch.notice') }}</p>
     </section>
 
     <a href="{{ url('/regular') }}" class="btn-primary mt-8">নিয়মিত খাবারের অনুরোধ করুন</a>
