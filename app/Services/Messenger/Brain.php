@@ -2,6 +2,7 @@
 
 namespace App\Services\Messenger;
 
+use App\Enums\MealSlot;
 use App\Enums\PostStatus;
 use App\Models\Area;
 use App\Models\BotFact;
@@ -66,7 +67,7 @@ class Brain
         if (BaddaAds::kindOf($thread) === 'customer' || ($thread->facts['customer'] ?? false)) {
             $menu = self::customerMenu();
             $state .= $menu
-                ? " Real dishes Badda cooks posted lately (per plate, use these when they ask about food or price): {$menu}."
+                ? " Home lunches from Badda kitchens (per plate; use only these when they ask about food or price — lunch means rice with curry, fish, chicken, dal, never roti or fried rice): {$menu}."
                 : ' No recent dish list: say a full lunch (bhat, torkari, dal) is usually about 100 taka.';
         }
         $facts = json_encode($thread->facts ?? (object) [], JSON_UNESCAPED_UNICODE);
@@ -183,21 +184,40 @@ class Brain
     }
 
     /** The rules with the owner's fact list (F82, "বটের জ্ঞান") put in. */
+    /** F102: what a home lunch looks like when no Badda lunch post fits (from the Badda customer ad). */
+    public const LUNCH_FALLBACK = 'ভাত, লাল শাক, লাউ তরকারি, ভর্তা — 110 taka; ভাত, মাছ ভাজি, ফুলকপির তরকারি — 130 taka; ভাত, ডাল, মাছ, বাঁধাকপি ভাজি — 140 taka; ভাত, মুরগির তরকারি, ডাল — 150 taka';
+
     /**
-     * F100: up to four recent dishes (title — price) posted by kitchens in the focus area, newest first.
+     * F100/F102: up to four recent home LUNCHES (rice with curry, fish, chicken, dal) posted by
+     * kitchens in the focus area — never roti, fried rice or snacks; a fixed list when none fit.
      */
     public static function customerMenu(): string
     {
-        return Post::query()
+        $menu = Post::query()
             ->whereIn('area_id', app(FocusSplit::class)->focusAreaIds())
-            ->where('published_at', '>', now()->subDays(7))
+            ->where('meal_slot', MealSlot::Lunch)
+            ->where('published_at', '>', now()->subDays(14))
             ->whereNotIn('status', [PostStatus::Hidden])
-            ->where('price_paisa', '>', 0)
-            ->latest('published_at')->limit(30)->get(['title', 'price_paisa'])
+            ->whereBetween('price_paisa', [6000, 25000])
+            ->latest('published_at')->limit(60)->get(['title', 'price_paisa'])
+            ->filter(fn (Post $p) => self::isHomeLunch($p->title))
             ->unique(fn (Post $p) => mb_strtolower(trim($p->title)))
             ->take(4)
             ->map(fn (Post $p) => trim($p->title).' — '.intdiv($p->price_paisa, 100).' taka')
             ->implode('; ');
+
+        return $menu !== '' ? $menu : self::LUNCH_FALLBACK;
+    }
+
+    /** Rice with curry is a home lunch; roti, fried rice, noodles, snacks are not. */
+    public static function isHomeLunch(string $title): bool
+    {
+        $t = mb_strtolower($title);
+        if (preg_match('/ফ্রাইড|fried|রুটি|roti|পরোটা|parota|paratha|নুডল|noodle|পাস্তা|pasta|বার্গার|burger|পিঠা|chowmin|চাউমিন|সমুচা|পাকোড়া/u', $t)) {
+            return false;
+        }
+
+        return (bool) preg_match('/ভাত|bhat|vat|rice|খিচুড়ি|khichuri|পোলাও|polao/u', $t);
     }
 
     public static function system(): string
