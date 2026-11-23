@@ -13,6 +13,7 @@ use App\Models\PinLink;
 use App\Models\User;
 use App\Services\Ads\BaddaAds;
 use App\Services\Ai\AssistantUnavailableException;
+use App\Services\Geo\FocusSplit;
 use App\Services\Kitchens\PinLinks;
 use App\Support\Geo\Geocoder;
 use App\Support\Geo\GeoPoint;
@@ -185,7 +186,7 @@ class Agent
             if (! ($facts['customer_listed'] ?? false)) {
                 $this->callList($thread, $reason);
                 // F106: the customer ad runs only in Badda, so its chats are Badda customers.
-                if (BaddaAds::kindOf($thread) === 'customer') {
+                if (BaddaAds::kindOf($thread) === 'customer' && ! in_array($thread->callRequest?->tag, [CallRequest::TAG_TALK_BADDA, CallRequest::TAG_TALK], true)) {
                     $thread->callRequest?->update(['tag' => CallRequest::TAG_BADDA_CUSTOMER]);
                 }
                 $thread->facts = [...$thread->facts, 'customer_listed' => true, 'customer_listed_address' => (bool) $address];
@@ -507,8 +508,8 @@ class Agent
     }
 
     /**
-     * F107: they tapped "আগ্রহী — কথা বলুন". Flag the chat for the owner (once) as a Badda customer
-     * who wants to talk on Messenger; the owner calls or writes from the page inbox.
+     * F107/F108: they tapped "আগ্রহী — কথা বলুন". They go on "যোগাযোগ করতে হবে" (once), even without a
+     * number, tagged "কথা বলতে চান (ক্লিক)" — with "বাড্ডা" for Badda — and the owner talks to them on Messenger.
      */
     private function tappedTalk(MessengerThread $thread): bool
     {
@@ -516,9 +517,27 @@ class Agent
         if (! $last || $last->direction !== 'in' || trim((string) $last->text) !== self::TALK_BUTTON) {
             return false;
         }
-        $thread->facts = [...($thread->facts ?? []), 'customer' => true, 'wants_messenger_talk' => now()->toIso8601String()];
+        $facts = $thread->facts ?? [];
+        $thread->facts = [...$facts, 'customer' => true, 'wants_messenger_talk' => now()->toIso8601String()];
         $thread->save();
-        $this->flag($thread, 'আগ্রহী গ্রাহক — Messenger-এ কথা বলতে চান (নম্বর দেননি)'.(BaddaAds::kindOf($thread) === 'customer' ? ' · বাড্ডা গ্রাহক' : ''));
+
+        $areaId = $thread->kitchen?->area_id ?? ($facts['area_id'] ?? null);
+        $badda = BaddaAds::kindOf($thread) === 'customer'
+            || ($areaId && in_array((int) $areaId, app(FocusSplit::class)->focusAreaIds(), true))
+            || preg_match(BaddaAds::BADDA_WORDS, (string) ($facts['area_text'] ?? '')) === 1;
+        $tag = $badda ? CallRequest::TAG_TALK_BADDA : CallRequest::TAG_TALK;
+
+        $open = $thread->call_request_id && $thread->callRequest && $thread->callRequest->status->value !== 'done';
+        if ($open) {
+            $thread->callRequest->update(['tag' => $tag, 'messenger_thread_id' => $thread->id]);
+        } else {
+            $call = CallRequest::create([
+                'phone' => $facts['phone'] ?? null, 'name' => $facts['name'] ?? $thread->name,
+                'reason' => 'আগ্রহী গ্রাহক — Messenger-এ "কথা বলুন" চেপেছেন'.(filled($facts['phone'] ?? null) ? '' : ', নম্বর দেননি').' (Messenger)',
+                'source' => 'messenger', 'tag' => $tag, 'messenger_thread_id' => $thread->id,
+            ]);
+            $thread->forceFill(['call_request_id' => $call->id])->save();
+        }
 
         return true;
     }
@@ -543,12 +562,17 @@ class Agent
 
             return;
         }
-        if ($thread->call_request_id && $thread->callRequest?->status->value !== 'done') {
+        if ($thread->call_request_id && $thread->callRequest && $thread->callRequest->status->value !== 'done') {
+            // F108: they tapped "কথা বলুন" first and gave the number later.
+            if (blank($thread->callRequest->phone)) {
+                $thread->callRequest->update(['phone' => $phone, 'reason' => ($reason ?: 'ফোনে কথা বলতে চান').' (Messenger)']);
+            }
+
             return;
         }
         $call = CallRequest::create([
             'phone' => $phone, 'name' => $thread->fact('name') ?? $thread->name,
-            'reason' => ($reason ?: 'ফোনে কথা বলতে চান').' (Messenger)', 'source' => 'messenger',
+            'reason' => ($reason ?: 'ফোনে কথা বলতে চান').' (Messenger)', 'source' => 'messenger', 'messenger_thread_id' => $thread->id,
         ]);
         $thread->forceFill(['call_request_id' => $call->id])->save();
     }

@@ -36,8 +36,8 @@ class CallList extends TableWidget
             ])
             ->columns([
                 TextColumn::make('name')->label('কে')->weight('semibold')
-                    ->state(fn (CallRequest $r) => $r->name ?: ($r->user?->name ?: $r->phone))
-                    ->description(fn (CallRequest $r) => $r->phone),
+                    ->state(fn (CallRequest $r) => $r->name ?: ($r->user?->name ?: $r->phoneLabel()))
+                    ->description(fn (CallRequest $r) => $r->phoneLabel()),
                 CallRequestActions::reasonColumn(),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
                 CallRequestActions::talksColumn(),

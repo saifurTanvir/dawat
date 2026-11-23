@@ -89,12 +89,16 @@ class CallRequestResource extends Resource
             ->defaultSort('created_at')
             ->columns([
                 TextColumn::make('name')->label('কে')->weight('semibold')
-                    ->state(fn (CallRequest $r) => $r->name ?: ($r->user?->name ?: $r->phone))
-                    ->description(fn (CallRequest $r) => $r->phone.' · '.(CallRequest::SOURCES[$r->source] ?? $r->source))
+                    ->state(fn (CallRequest $r) => $r->name ?: ($r->user?->name ?: $r->phoneLabel()))
+                    ->description(fn (CallRequest $r) => $r->phoneLabel().' · '.(CallRequest::SOURCES[$r->source] ?? $r->source))
                     ->url(fn (CallRequest $r) => $r->user ? Links::person($r->user) : null)
                     ->searchable(['name', 'phone']),
                 TextColumn::make('tag')->label('ট্যাগ')->badge()->placeholder('—')
-                    ->color(fn (?string $state) => $state === CallRequest::TAG_BADDA_CUSTOMER ? 'success' : 'gray'),
+                    ->color(fn (?string $state) => match ($state) {
+                        CallRequest::TAG_BADDA_CUSTOMER, CallRequest::TAG_TALK_BADDA => 'success',
+                        CallRequest::TAG_TALK => 'info',
+                        default => 'gray',
+                    }),
                 CallRequestActions::reasonColumn(),
                 CallRequestActions::talksColumn(),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
@@ -116,7 +120,7 @@ class CallRequestResource extends Resource
                     }),
                 // F106: Badda customers apart from the rest.
                 SelectFilter::make('tag')->label('ট্যাগ')
-                    ->options([CallRequest::TAG_BADDA_CUSTOMER => CallRequest::TAG_BADDA_CUSTOMER, CallRequest::TAG_CUSTOMER => CallRequest::TAG_CUSTOMER]),
+                    ->options(collect([CallRequest::TAG_BADDA_CUSTOMER, CallRequest::TAG_CUSTOMER, CallRequest::TAG_TALK_BADDA, CallRequest::TAG_TALK])->mapWithKeys(fn ($t) => [$t => $t])->all()),
                 // F88: who closed how many — pick a person to see the ones they finished.
                 SelectFilter::make('done_by')->label('কে বন্ধ করেছেন')
                     ->options(fn () => User::query()

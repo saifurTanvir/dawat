@@ -64,7 +64,7 @@ class CallOnboarding
     /** "গৃহিণী — রহিমা খালার রান্নাঘর", or null when not in the system. */
     public static function existing(CallRequest $r): ?string
     {
-        $user = User::with(['kitchen', 'customer', 'roles'])->where('phone', $r->phone)->first();
+        $user = $r->phone ? User::with(['kitchen', 'customer', 'roles'])->where('phone', $r->phone)->first() : null;
         if (! $user) {
             return null;
         }

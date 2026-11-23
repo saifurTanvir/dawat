@@ -27,13 +27,14 @@ class CallListController extends Controller
             ->get()->keyBy(fn (Kitchen $k) => $k->user->phone);
 
         return response()->json(['data' => $open->map(function (CallRequest $r) use ($kitchens) {
-            $k = $kitchens[PhoneNumber::normalize($r->phone)] ?? null;
+            $k = $r->phone ? ($kitchens[PhoneNumber::normalize($r->phone)] ?? null) : null;
 
             return [
                 'id' => $r->id,
                 'name' => $r->name,
                 'phone' => $r->phone,
                 'source' => $r->source,
+                'tag' => $r->tag,
                 'status' => $r->status->value,
                 'reason' => $r->reason,
                 'notes' => collect($r->notes ?? [])->map(fn ($n) => ($n['at'] ?? '').' '.($n['body'] ?? ''))->values(),
