@@ -327,16 +327,16 @@ class MessengerBotTest extends TestCase
         $this->assertStringContainsString('ভাত, ডাল, মুরগি — 130 taka', Brain::customerMenu() ?: 'none');
         $this->assertSame(1, app(Agent::class)->customerFollowUps());
         $sent = implode(' ', $this->sent());
-        $this->assertStringContainsString('thikana', $sent);
         $this->assertStringContainsString('mobile number', $sent);
+        $this->assertStringContainsString('phone kore', $sent);
         $this->assertStringNotContainsString('dawat.cloud', $sent);
         $this->assertSame(0, app(Agent::class)->customerFollowUps()); // only once
 
-        // Someone who already gave an address is not nudged.
+        // Someone who already gave a number is not nudged.
         $this->hook([$this->text('PD', 'কীভাবে খাবার নেব?', 'mid.d1')]);
         $d = MessengerThread::where('psid', 'PD')->firstOrFail();
         $d->messages()->create(['direction' => 'out', 'by' => 'bot', 'text' => 'thikana din']);
-        $d->forceFill(['last_in_at' => now()->subHours(5), 'facts' => ['customer' => true, 'customer_address' => 'Merul Badda']])->save();
+        $d->forceFill(['last_in_at' => now()->subHours(5), 'facts' => ['customer' => true, 'phone' => '01822334455']])->save();
         $this->assertSame(0, app(Agent::class)->customerFollowUps());
     }
 
@@ -682,6 +682,22 @@ class MessengerBotTest extends TestCase
         // Not for anyone else.
         $this->actingAs(User::factory()->create());
         $this->get('/admin-tools/messenger/connect')->assertForbidden();
+    }
+
+    public function test_a_customer_number_alone_reaches_the_call_list_and_a_later_address_is_added(): void
+    {
+        $this->hook([$this->text('PN', '01822334455', 'mid.n1')]);
+        $this->fake(['phone' => '01822334455', 'customer' => true]);
+        $this->answer('PN');
+        $call = CallRequest::firstOrFail();
+        $this->assertStringContainsString('নতুন গ্রাহক', $call->reason);
+        $this->assertStringContainsString('এখনো দেননি', $call->reason);
+
+        $this->hook([$this->text('PN', 'Merul Badda, DIT road', 'mid.n2')]);
+        $this->fake(['phone' => '01822334455', 'home_address' => 'Merul Badda, DIT road', 'customer' => true]);
+        $this->answer('PN');
+        $this->assertSame(1, CallRequest::count());
+        $this->assertStringContainsString('DIT road', $call->fresh()->reason);
     }
 
     public function test_a_would_be_customer_goes_on_the_call_list_once_and_is_never_made_a_cook(): void
