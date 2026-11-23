@@ -312,7 +312,9 @@ class MessengerBotTest extends TestCase
     {
         $badda = Area::whereIn('id', app(FocusSplit::class)->focusAreaIds())->firstOrFail();
         $kitchen = Kitchen::factory()->approved()->create(['area_id' => $badda->id]);
-        Post::factory()->create(['kitchen_id' => $kitchen->id, 'area_id' => $badda->id, 'title' => 'ভাত, ডাল, মুরগি', 'price_paisa' => 13000, 'published_at' => now()->subDay()]);
+        Post::factory()->create(['kitchen_id' => $kitchen->id, 'area_id' => $badda->id, 'title' => 'ভাত, ডাল, মুরগি', 'price_paisa' => 13000, 'meal_slot' => 'lunch', 'published_at' => now()->subDay()]);
+        Post::factory()->create(['kitchen_id' => $kitchen->id, 'area_id' => $badda->id, 'title' => 'রুটি উইথ কারি', 'price_paisa' => 8000, 'meal_slot' => 'lunch', 'published_at' => now()->subDay()]);
+        Post::factory()->create(['kitchen_id' => $kitchen->id, 'area_id' => $badda->id, 'title' => 'চিকেন ফ্রাইড রাইস', 'price_paisa' => 12000, 'meal_slot' => 'lunch', 'published_at' => now()->subDay()]);
         $this->fake([]);
         $this->hook([$this->text('PC', 'দাম কত?', 'mid.c1')]);
         $t = MessengerThread::where('psid', 'PC')->firstOrFail();
