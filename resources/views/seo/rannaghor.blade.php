@@ -6,6 +6,7 @@
         পরিবারের জন্য যা রান্না করেন, তার থেকে কয়েক প্লেট পাড়ার মানুষের কাছে বিক্রি করুন।
         দোকান লাগে না, ডেলিভারি করেন দাওয়াতের এলাকা ম্যানেজার। ঘরে বসেই আয়।
     </p>
+    <p class="mt-4 rounded-[var(--radius-plate)] bg-plate p-3">{{ config('dawat.launch.notice') }}</p>
 
     <section class="mt-8" aria-labelledby="steps">
         <h2 id="steps" class="font-serif text-xl font-bold">কীভাবে শুরু করবেন</h2>

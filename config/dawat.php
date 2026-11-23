@@ -97,7 +97,16 @@ return [
     'seo' => [
         // Search Console "HTML tag" method; not needed when the domain is verified by DNS.
         'google_verification' => env('GOOGLE_SITE_VERIFICATION'),
-        // F60: all of Dhaka city. Used as "ঢাকা শহরের সব এলাকার …".
-        'region' => 'ঢাকা শহরের সব এলাকা',
+        // F60 was all of Dhaka; F104 (owner, 23 Nov): only Badda for now.
+        'region' => 'বাড্ডা',
+    ],
+
+    /*
+    | F104 (owner, 23 Nov): we run only in Badda; other areas come one by one.
+    | Shown on the public pages, the feed and the cook page.
+    */
+    'launch' => [
+        'areas' => 'উত্তর, মধ্য, দক্ষিণ ও মেরুল বাড্ডা, হাতিরঝিল-পাড়ের বাড্ডা, লিংক রোড আর শাহজাদপুর-বাঁশতলা',
+        'notice' => 'দাওয়াত এখন চালু শুধু বাড্ডায় — উত্তর, মধ্য, দক্ষিণ ও মেরুল বাড্ডা, হাতিরঝিল-পাড়ের বাড্ডা, লিংক রোড আর শাহজাদপুর-বাঁশতলা। অন্য এলাকায় ধাপে ধাপে আসছি; গৃহিণী বা গ্রাহক হিসেবে এখনই নাম দিয়ে রাখতে পারেন, আপনার এলাকায় চালু হলে আমরাই যোগাযোগ করব।',
     ],
 ];

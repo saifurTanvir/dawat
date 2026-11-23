@@ -1,5 +1,7 @@
 <template>
     <section aria-labelledby="feed-title" class="pt-2">
+        <!-- F104: only Badda for now. -->
+        <p class="mb-4 rounded-[var(--radius-plate)] bg-leaf-soft p-3 text-sm leading-relaxed text-ink">{{ LAUNCH_NOTICE }}</p>
         <!-- F52: a visitor who is not signed in first sees what Dawat is, and three ways in. -->
         <HomeIntro v-if="showIntro" :areas="areas" :compact="introCompact" :class="introCompact ? 'mb-6' : 'mb-10'" @find-food="goToFood" />
 
@@ -141,8 +143,9 @@
         <!-- F31: plain links (full page loads) to the public pages search engines index. -->
         <footer class="mt-10 border-t border-rule pt-6 text-sm text-muted">
             <template v-if="areas.length">
-                <p class="font-semibold text-ink">দাওয়াত এখন সব জায়গায়</p>
-                <p class="mt-1">ঢাকার ভিতরে-বাইরে যেকোনো এলাকা থেকে যোগ দিতে পারেন। কয়েকটা এলাকার পাতা:</p>
+                <p class="font-semibold text-ink">দাওয়াত এখন শুধু বাড্ডায়</p>
+                <p class="mt-1">{{ LAUNCH_NOTICE }}</p>
+                <p class="mt-2">যেসব এলাকায় শিগগিরই আসছি:</p>
                 <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1">
                     <li v-for="a in areas" :key="a.slug">
                         <a :href="`/area/${a.slug}`" class="text-leaf underline-offset-2 hover:underline">{{ a.name }}</a>
@@ -176,7 +179,7 @@ import PostCard from '@/components/PostCard.vue';
 import WhereAmI from '@/components/WhereAmI.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn, placeOf } from '@/lib/bn';
-import { CONTACT } from '@/lib/contact';
+import { CONTACT, LAUNCH_NOTICE } from '@/lib/contact';
 import { install, promptInstall } from '@/lib/pwa';
 import { agoText, clockText, distanceText } from '@/lib/format';
 import { currentPosition, useFeedStore } from '@/stores/feed';

@@ -8,6 +8,9 @@ export const CONTACT = {
     facebook: 'https://www.facebook.com/groups/dawat.cloud/',
 };
 
+/** F104 (owner, 23 Nov): same text as config('dawat.launch.notice'). */
+export const LAUNCH_NOTICE = 'দাওয়াত এখন চালু শুধু বাড্ডায় — উত্তর, মধ্য, দক্ষিণ ও মেরুল বাড্ডা, হাতিরঝিল-পাড়ের বাড্ডা, লিংক রোড আর শাহজাদপুর-বাঁশতলা। অন্য এলাকায় ধাপে ধাপে আসছি; গৃহিণী বা গ্রাহক হিসেবে এখনই নাম দিয়ে রাখতে পারেন, আপনার এলাকায় চালু হলে আমরাই যোগাযোগ করব।';
+
 /**
  * F33 popup. F52 turned it off: the first screen now explains Dawat itself,
  * and the footer keeps the same phone and WhatsApp.

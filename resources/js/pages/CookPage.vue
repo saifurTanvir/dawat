@@ -12,6 +12,7 @@
                 পরিবারের জন্য রান্না থেকে এক-দুই প্লেট আলাদা করে পাড়ার মানুষের কাছে বিক্রি করুন।
                 দাওয়াত টিম আপনার সাথে কথা বলে অনুমোদন দেবে।
             </p>
+            <p class="mt-3 rounded-[var(--radius-plate)] bg-plate p-3 text-sm">{{ LAUNCH_NOTICE }}</p>
             <label for="display_name" class="mt-6 mb-2 block font-semibold">রান্নাঘরের নাম</label>
             <input
                 id="display_name"
@@ -123,6 +124,7 @@
 </template>
 
 <script setup>
+import { LAUNCH_NOTICE } from '@/lib/contact';
 import { computed, onMounted, ref } from 'vue';
 import ContactHours from '@/components/ContactHours.vue';
 import DailyMenu from '@/components/DailyMenu.vue';
