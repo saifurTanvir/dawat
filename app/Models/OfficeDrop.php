@@ -40,6 +40,12 @@ class OfficeDrop extends Model
         return $this->hasMany(Order::class);
     }
 
+    /** F95: the cooks' houses on the area manager's round for this drop. */
+    public function stops(): HasMany
+    {
+        return $this->hasMany(RoundStop::class);
+    }
+
     public function stickers(): HasMany
     {
         return $this->hasMany(Sticker::class);

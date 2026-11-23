@@ -93,6 +93,13 @@ const routes = [
         meta: { requiresAuth: true },
     },
     {
+        // F95: one office's round, house by house on the map
+        path: '/shahidar/round/:id(\\d+)',
+        name: 'shahidar-round',
+        component: () => import('./pages/RoundPage.vue'),
+        meta: { requiresAuth: true },
+    },
+    {
         // F46: a shahidar acts for one cook
         path: '/shahidar/kitchens/:id',
         name: 'shahidar-kitchen',

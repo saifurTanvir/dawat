@@ -142,6 +142,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/my/menus', [MyMenuController::class, 'index'])->name('my.menus.index');
         // F61: today's dish, told to the regular customer
         // F64: guest meals the customer asked for; no customer names.
+        // F95: the area manager's coming for office boxes; "ready" or "10 more minutes"
+        Route::get('/my/rounds', [MyBookingController::class, 'rounds'])->name('my.rounds.index');
+        Route::post('/my/rounds/{stop}/reply', [MyBookingController::class, 'roundReply'])->middleware('throttle:comments')->name('my.rounds.reply');
         Route::get('/my/guest-meals', [GuestMealController::class, 'forCook'])->name('my.guest-meals.index');
         Route::post('/my/guest-meals/{guest}/reply', [GuestMealController::class, 'reply'])->middleware('throttle:comments')->name('my.guest-meals.reply');
         Route::get('/my/menu-notices', [MyMenuNoticeController::class, 'index'])->name('my.menu-notices.index');
@@ -169,6 +172,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('/stickers/{code}', [ShahidarController::class, 'scan'])->name('stickers.scan');
             // F68
             Route::post('/drops/{drop}/pickup', [ShahidarDropController::class, 'pickup'])->name('drops.pickup');
+            // F95: the office round, house by house on the map
+            Route::get('/drops/{drop}/round', [ShahidarDropController::class, 'round'])->name('drops.round');
+            Route::post('/drops/{drop}/round/start', [ShahidarDropController::class, 'start'])->name('drops.round.start');
+            Route::post('/drops/{drop}/round/stops/{stop}/later', [ShahidarDropController::class, 'later'])->name('drops.round.later');
             Route::post('/drops/{drop}/deliver', [ShahidarDropController::class, 'deliver'])->middleware('throttle:otp')->name('drops.deliver');
             Route::post('/orders/{order}/deliver', [ShahidarController::class, 'deliver'])->middleware('throttle:otp')->name('orders.deliver');
             Route::post('/orders/{order}/fail', [ShahidarController::class, 'fail'])->name('orders.fail');

@@ -54,6 +54,21 @@ return [
     ],
 
     /*
+    | F95: office rounds. Travel time is the straight-line distance times a
+    | road factor at the area manager's speed, plus a few minutes at each
+    | house. Cooks hear about it this many minutes before he comes; an SMS
+    | goes when they have no app notifications turned on.
+    */
+    'rounds' => [
+        'speed_kmh' => (float) env('ROUND_SPEED_KMH', 15),
+        'road_factor' => 1.4,
+        'stop_minutes' => (int) env('ROUND_STOP_MINUTES', 5),
+        'notice_minutes' => (int) env('ROUND_NOTICE_MINUTES', 30),
+        'late_minutes' => 10,
+        'sms' => (bool) env('ROUND_SMS_ENABLED', true),
+    ],
+
+    /*
     | F31: public contact and search settings. The phone shows on the public
     | pages, in Google's structured data and on the Business Profile.
     */
