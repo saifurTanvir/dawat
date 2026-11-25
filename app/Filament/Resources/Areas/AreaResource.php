@@ -17,6 +17,8 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
@@ -63,6 +65,8 @@ class AreaResource extends Resource
                     ->afterStateHydrated(fn ($component, ?Area $record) => $component->state(intdiv($record?->delivery_fee_paisa ?? 0, 100))),
                 TextInput::make('sort_order')->label('ক্রম')->numeric()->default(0),
                 Toggle::make('is_active')->label('চালু')->default(true),
+                // F111
+                Toggle::make('for_customers')->label('গ্রাহকের তালিকায় দেখাবে')->helperText('নিয়মিত গ্রাহক যোগ করার সময় এলাকার তালিকায় শুধু টিক দেওয়া এলাকাগুলো আসে — যেখানে এখন ডেলিভারি চলে।'),
                 // F56
                 FeeFields::section('এই এলাকার গৃহিণীদের জন্য। খালি রাখলে "সবার জন্য" নিয়ম চলবে; কোনো গৃহিণীর নিজের নিয়ম থাকলে সেটাই আগে।')->columnSpanFull()->collapsed(),
             ]);
@@ -79,6 +83,11 @@ class AreaResource extends Resource
                 TextColumn::make('kitchens_count')->label('রান্নাঘর')->counts('kitchens'),
                 TextColumn::make('shahidars.name')->label('এলাকা ম্যানেজার')->badge()->color('success')->placeholder('—'),
                 IconColumn::make('is_active')->label('চালু')->boolean(),
+                // F111: tap to add or remove an area from the customer form's list
+                ToggleColumn::make('for_customers')->label('গ্রাহকের তালিকায়'),
+            ])
+            ->filters([
+                TernaryFilter::make('for_customers')->label('গ্রাহকের তালিকায়'),
             ])
             ->recordActions([
                 EditAction::make()

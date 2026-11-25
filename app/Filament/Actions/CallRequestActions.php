@@ -127,7 +127,9 @@ final class CallRequestActions
             TextInput::make('onboard_name')->label('নাম')->maxLength(60)
                 ->required(fn ($get) => $when($get) && $role($get) !== 'skip')
                 ->visible(fn ($get) => $when($get) && $role($get) !== 'skip'),
-            Select::make('area_id')->label('এলাকা')->options(fn () => Area::active()->orderBy('sort_order')->pluck('name', 'id'))->searchable()
+            // F111: a customer — only where delivery runs now; a cook — anywhere
+            Select::make('area_id')->label('এলাকা')->live()
+                ->options(fn ($get) => $role($get) === 'customer' ? Area::customerOptions() : Area::active()->orderBy('sort_order')->pluck('name', 'id')->all())->searchable()
                 ->required(fn ($get) => $when($get) && in_array($role($get), ['cook', 'customer'], true))
                 ->visible(fn ($get) => $when($get) && in_array($role($get), ['cook', 'customer'], true)),
             Select::make('area_ids')->label('কোন এলাকায় কাজ করবেন')->options(fn () => Area::active()->orderBy('sort_order')->pluck('name', 'id'))->multiple()->searchable()

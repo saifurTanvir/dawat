@@ -97,9 +97,10 @@ class CustomerResource extends Resource
     public static function bookingFields(): array
     {
         return [
+            // F111: only where delivery runs now (admin → এলাকা → "গ্রাহকের তালিকায়")
             Select::make('area_id')->label('এলাকা')
-                ->options(fn () => Area::active()->orderBy('sort_order')->pluck('name', 'id'))
-                ->required(),
+                ->options(fn ($record) => Area::customerOptions($record instanceof Customer ? $record->area_id : null))
+                ->searchable()->required(),
             // F68: an office employee — their box goes in the office's drop.
             Select::make('company_id')->label('অফিস (কর্মী হলে)')
                 ->options(fn () => Company::where('is_active', true)->orderBy('name')->pluck('name', 'id'))

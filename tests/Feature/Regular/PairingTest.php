@@ -34,7 +34,7 @@ class PairingTest extends TestCase
     {
         parent::setUp();
         $this->admin = User::factory()->admin()->create();
-        $this->area = Area::factory()->create();
+        $this->area = Area::factory()->create(['for_customers' => true]);
         $this->shahidar = $this->makeShahidar($this->area);
     }
 
