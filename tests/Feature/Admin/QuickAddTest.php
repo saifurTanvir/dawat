@@ -24,7 +24,7 @@ class QuickAddTest extends TestCase
     {
         parent::setUp();
         $this->actingAs(User::factory()->admin()->create());
-        $this->area = Area::factory()->create(['is_active' => true]);
+        $this->area = Area::factory()->create(['is_active' => true, 'for_customers' => true]);
     }
 
     public function test_dashboard_shows_the_three_buttons_and_the_voice_typing_script(): void

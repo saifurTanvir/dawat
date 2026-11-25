@@ -72,7 +72,7 @@ class LocationInputTest extends TestCase
     public function test_admin_adds_a_cook_and_a_customer_with_a_short_link_and_pins_a_customer(): void
     {
         $this->actingAs(User::factory()->admin()->create());
-        $area = Area::factory()->create(['is_active' => true]);
+        $area = Area::factory()->create(['is_active' => true, 'for_customers' => true]);
 
         Livewire::test(Dashboard::class)
             ->callAction('addCook', ['phone' => '01711223344', 'name' => 'সুমা', 'display_name' => 'সুমার রান্না', 'area_id' => $area->id, 'where' => 'https://maps.app.goo.gl/AbCd123'])
