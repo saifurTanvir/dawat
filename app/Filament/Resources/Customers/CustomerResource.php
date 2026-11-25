@@ -31,6 +31,7 @@ use App\Services\Regular\PairingSuggester;
 use App\Support\ContactHours;
 use App\Support\Geo\Geocoder;
 use App\Support\Geo\MapLink;
+use App\Support\PhoneNumber;
 use App\Support\Roles;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -39,6 +40,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -58,6 +60,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use UnitEnum;
 
@@ -250,6 +253,10 @@ class CustomerResource extends Resource
                     ->status(fn () => self::suggestion($record)['kitchen_id'] ? 'info' : 'warning'),
                 Select::make('kitchen_id')->label('গৃহিণী (রান্নাঘর)')->options(self::kitchenOptions($record))->required()->searchable()->live()
                     ->helperText('শুধু অনুমোদিত আর খালি গৃহিণী — একজন গৃহিণী একজন গ্রাহকের সাথেই জোড়া হন। কাছের জন আগে।'),
+                // The suggested or chosen cook: call or WhatsApp her from here before pairing.
+                Placeholder::make('cook_contact')->hiddenLabel()
+                    ->visible(fn (Get $get) => filled($get('kitchen_id')))
+                    ->content(fn (Get $get) => self::cookContact(Kitchen::with('user')->find($get('kitchen_id')))),
                 Callout::make('আপনি সাজেশনের বাইরে বেছেছেন')
                     ->description(fn () => 'সাজেশন ছিল '.self::suggestion($record)['kitchen_name'].'। অন্যজনকে বেছে নেওয়া যায় — ঠিক থাকলে সেভ করুন, জুটির ইতিহাসে লেখা থাকবে।')
                     ->warning()
@@ -281,6 +288,27 @@ class CustomerResource extends Resource
                     ->body($pairing->followedSuggestion() === false ? "সাজেশন ছিল {$suggested['kitchen_name']}, আপনি বেছেছেন {$pairing->kitchen->display_name}।" : null)
                     ->success()->send();
             });
+    }
+
+    /** Call / WhatsApp buttons for a cook in the pairing form. No customer name goes to her. */
+    public static function cookContact(?Kitchen $kitchen): ?HtmlString
+    {
+        if (! $kitchen?->user) {
+            return null;
+        }
+        $btn = 'display:inline-flex;align-items:center;gap:.35rem;font-weight:600;padding:.45rem .9rem;border-radius:.5rem;text-decoration:none;color:#fff';
+        $wa = ContactHours::whatsappUrl($kitchen->user->phone, 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। আপনার কাছাকাছি একজন নিয়মিত গ্রাহকের খাবারের ব্যাপারে কথা বলতে চাই।');
+        $numbers = collect([$kitchen->user->phone, $kitchen->contact_phone])->filter()->unique()->values();
+        $calls = $numbers->map(fn (string $n, int $i) => '<a href="tel:+'.e(PhoneNumber::international($n)).'" style="'.$btn.';background:#15803d">📞 '.($i ? 'অন্য নম্বরে কল' : 'ফোন করুন').'</a>')->implode(' ');
+
+        return new HtmlString(
+            '<div style="border:1px solid rgba(127,127,127,.35);border-radius:.75rem;padding:.75rem 1rem">'
+            .'<div style="font-weight:600">'.e($kitchen->display_name).' · <span style="font-variant-numeric:tabular-nums">'.e($numbers->implode(', ')).'</span></div>'
+            .'<div style="font-size:.85rem;opacity:.8;margin:.2rem 0 .6rem">'.e(ContactHours::adminLine($kitchen->user)).'</div>'
+            .'<div style="display:flex;flex-wrap:wrap;gap:.5rem">'.$calls
+            .($wa ? ' <a href="'.e($wa).'" target="_blank" rel="noopener" style="'.$btn.';background:#16a34a">💬 WhatsApp</a>' : '')
+            .'</div></div>'
+        );
     }
 
     public static function stopAction(): Action
