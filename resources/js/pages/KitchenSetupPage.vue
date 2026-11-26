@@ -13,15 +13,10 @@
                     ঠিকানা কেউ দেখবে না। ক্রেতারা শুধু দেখবেন খাবারটা কত দূরে, যেমন “৪০০ মি”।
                 </p>
 
-                <button type="button" class="btn-quiet -ml-4 mt-2" :disabled="locating" @click="useMyLocation">
-                    {{ locating ? 'লোকেশন খোঁজা হচ্ছে…' : 'আমি এখন বাসায় আছি — এই লোকেশন নিন' }}
-                </button>
-                <p v-if="locateError" class="error-text" role="alert">{{ locateError }}</p>
-
                 <p v-if="hasLocation && !point" class="mt-2 rounded-lg bg-leaf-soft p-3 text-sm">
                     লোকেশন আগেই দেওয়া আছে। বাসা বদলালে শুধু তখন নতুন করে পিন দিন।
                 </p>
-                <MapPicker v-model="point" :fallback-center="mapFallback" :locate="false" class="mt-3" />
+                <MapPicker v-model="point" :fallback-center="mapFallback" class="mt-3" />
                 <p v-if="fieldError('lat')" class="error-text" role="alert">{{ fieldError('lat') }}</p>
             </fieldset>
 
@@ -80,8 +75,6 @@ const areas = ref([]);
 const areaId = ref(null);
 const point = ref(null);
 const hasLocation = ref(false);
-const locating = ref(false);
-const locateError = ref('');
 const kitchen = ref(null);
 const contact = ref({ allow_order: true, allow_call: false, allow_message: true, allow_comment: true });
 
@@ -131,26 +124,6 @@ watch(point, async (value) => {
         // Keep the old list; not worth bothering the cook.
     }
 });
-
-function useMyLocation() {
-    locateError.value = '';
-    if (!('geolocation' in navigator)) {
-        locateError.value = 'এই ফোনে লোকেশন পাওয়া যাচ্ছে না। ম্যাপে নিজে পিন দিন।';
-        return;
-    }
-    locating.value = true;
-    navigator.geolocation.getCurrentPosition(
-        (pos) => {
-            point.value = { lat: Number(pos.coords.latitude.toFixed(6)), lng: Number(pos.coords.longitude.toFixed(6)) };
-            locating.value = false;
-        },
-        () => {
-            locateError.value = 'লোকেশনের অনুমতি পাওয়া যায়নি। ম্যাপে নিজে পিন দিন।';
-            locating.value = false;
-        },
-        { enableHighAccuracy: true, timeout: 15000 },
-    );
-}
 
 async function save() {
     error.value = '';
