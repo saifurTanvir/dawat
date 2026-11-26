@@ -47,6 +47,10 @@ class Money extends Page
             'owing' => $money->customersOwing(),
             'dues' => app(Billing::class)->dues()->filter(fn (array $r) => $r['customer']->paysByBill() || $r['billed_due'] > 0)->values(),
             'recent' => Settlement::with(['kitchen', 'shahidar'])->latest('id')->limit(15)->get(),
+            // F110: money an area manager gave a cook at her door (outside the return round), not confirmed by her
+            'payouts' => Settlement::where('kind', 'cook')->whereNotNull('cash_from_shahidar_id')->whereNull('cook_confirmed_at')
+                ->where('created_at', '>', now()->subDays(7))->whereNotIn('id', RoundStop::whereNotNull('settlement_id')->select('settlement_id'))
+                ->with(['kitchen.user', 'settler'])->orderByDesc('cook_disputed_at')->latest('id')->limit(50)->get(),
             // F110: boxes and money left at a cook's door that she has not confirmed, or says she did not get
             'returns' => RoundStop::where('kind', 'return')->whereNotNull('picked_at')->whereNull('cook_confirmed_at')
                 ->where('picked_at', '>', now()->subDays(7))->with(['kitchen.user', 'shahidar'])

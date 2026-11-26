@@ -18,9 +18,8 @@
                 <span aria-hidden="true" class="mr-1">📷</span>বক্স স্ক্যান করুন — কোন বক্স কার
             </button>
 
-            <p v-if="day.cash_held_paisa" class="mt-4 rounded-xl bg-plate p-3">
-                হাতে জমা টাকা <strong>{{ taka(day.cash_held_paisa) }}</strong> · দাওয়াত টিমকে বুঝিয়ে দিন
-            </p>
+            <!-- F110: today's money, and cooks paid at their door -->
+            <ShahidarMoneyCard :money="day.money" @updated="day.money = $event" />
 
             <!-- F64: guest plates -->
             <ShahidarGuestMeals v-if="day.guest_meals?.length" :rows="day.guest_meals" @updated="onGuest" />
@@ -148,6 +147,7 @@
                     <div>
                         <p class="font-semibold"><span class="text-leaf">{{ g.orders[0].meal_slot_label }}</span> · <RouterLink :to="{ name: 'shahidar-kitchen', params: { id: g.kitchen.id } }" class="underline decoration-rule underline-offset-4">{{ g.kitchen.name }}</RouterLink></p>
                         <p class="text-sm text-muted">{{ g.kitchen.address }}</p>
+                        <a v-if="g.kitchen.map_url" :href="g.kitchen.map_url" target="_blank" rel="noopener" class="text-sm font-semibold text-leaf"><span aria-hidden="true">🗺️</span> ম্যাপে পথ</a>
                     </div>
                     <CallButtons :phone="g.kitchen.phone" :contact="g.kitchen.contact" />
                 </div>
@@ -179,6 +179,7 @@
                     <div>
                         <p class="font-semibold">বক্স {{ o.code }} · {{ o.customer.name }}<span v-if="o.kind === 'oneoff'" class="ml-1 rounded-full bg-turmeric-soft px-2 text-xs font-normal">একবারের</span></p>
                         <p class="text-sm text-muted">{{ o.customer.address }}</p>
+                        <a v-if="o.customer.map_url" :href="o.customer.map_url" target="_blank" rel="noopener" class="text-sm font-semibold text-leaf"><span aria-hidden="true">🗺️</span> ম্যাপে পথ</a>
                         <p v-if="o.customer.note" class="text-sm">{{ o.customer.note }}</p>
                         <p class="mt-1 text-sm">
                             {{ bn(o.plates) }} প্লেট ·
@@ -202,6 +203,8 @@
                         <input :id="`code-${o.id}`" v-model="code" class="field flex-1" inputmode="numeric" maxlength="4" autocomplete="one-time-code" />
                         <button type="submit" class="btn-primary w-auto px-5" :disabled="busy || code.length !== 4">দিয়েছি</button>
                     </div>
+                    <!-- A wrong code is said right here, in red: at the door, the top of the page is out of sight -->
+                    <p v-if="cardError && cardError.id === o.id" class="mt-2 rounded-xl border-2 border-chili bg-chili/10 p-3 font-semibold text-chili" role="alert">{{ cardError.text }}</p>
                     <label v-if="!o.pays_by_bill" class="mt-2 flex items-center gap-2 text-sm">
                         <input v-model="cash" type="checkbox" class="size-5 accent-leaf" />
                         {{ taka(o.total_paisa) }} নগদ পেয়েছি
@@ -274,6 +277,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import CookShare from '@/components/CookShare.vue';
 import CallButtons from '@/components/CallButtons.vue';
 import ShahidarGuestMeals from '@/components/ShahidarGuestMeals.vue';
+import ShahidarMoneyCard from '@/components/ShahidarMoneyCard.vue';
 import BoxLabelPrint from '@/components/BoxLabelPrint.vue';
 import OfficeDropCard from '@/components/OfficeDropCard.vue';
 import PlateSplitBar from '@/components/PlateSplitBar.vue';
@@ -347,7 +351,9 @@ async function postFor(g) {
 const scanning = ref(null); // order being picked up
 const handing = ref(null); // order id being handed over
 const code = ref('');
-const cash = ref(true);
+// Nothing is marked paid unless he ticks it (taking cash is a deliberate act).
+const cash = ref(false);
+const cardError = ref(null); // { id, text }: an error shown inside that box's card
 
 const dateLabel = computed(() => day.value.date
     ? new Intl.DateTimeFormat('bn-BD', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${day.value.date}T00:00:00Z`))
@@ -489,6 +495,7 @@ async function refreshCash() {
     try {
         const { data } = await api.get('/shahidar/today');
         day.value.cash_held_paisa = data.data.cash_held_paisa;
+        day.value.money = data.data.money;
     } catch {
         // the list still works without the total
     }
@@ -497,6 +504,7 @@ async function refreshCash() {
 async function act(order, path, body = {}) {
     busy.value = true;
     notice.value = '';
+    cardError.value = null;
     try {
         const { data } = await api.post(`/shahidar/orders/${order.id}/${path}`, body);
         const i = day.value.orders.findIndex((o) => o.id === order.id);
@@ -505,7 +513,13 @@ async function act(order, path, body = {}) {
         if (path === 'paid') refreshCash();
         return true;
     } catch (e) {
-        notice.value = `বক্স ${order.code}: ${errorMessage(e)}`;
+        if (handing.value === order.id) {
+            // At the door: in the card itself, in red, with a buzz.
+            cardError.value = { id: order.id, text: errorMessage(e) };
+            if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+        } else {
+            notice.value = `বক্স ${order.code}: ${errorMessage(e)}`;
+        }
         return false;
     } finally {
         busy.value = false;
@@ -525,7 +539,8 @@ async function finishPickup(sticker) {
 function openHand(order) {
     handing.value = order.id;
     code.value = '';
-    cash.value = true;
+    cash.value = false;
+    cardError.value = null;
     scanAlert.value = '';
 }
 

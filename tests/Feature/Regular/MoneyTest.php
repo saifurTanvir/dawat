@@ -49,14 +49,15 @@ class MoneyTest extends TestCase
         ]);
     }
 
-    public function test_deliver_marks_cash_unless_told_not_to(): void
+    public function test_deliver_marks_cash_only_when_he_says_he_took_it(): void
     {
         $a = $this->order(OrderStatus::PickedUp);
         $b = $this->order(OrderStatus::PickedUp);
 
-        $this->actingAs($this->shahidar, 'sanctum')->postJson("/api/v1/shahidar/orders/{$a->id}/deliver")
+        $this->actingAs($this->shahidar, 'sanctum')->postJson("/api/v1/shahidar/orders/{$a->id}/deliver", ['cash_received' => true])
             ->assertOk()->assertJsonPath('data.paid', true);
-        $this->actingAs($this->shahidar, 'sanctum')->postJson("/api/v1/shahidar/orders/{$b->id}/deliver", ['cash_received' => false])
+        // Not ticked (or not said): not paid.
+        $this->actingAs($this->shahidar, 'sanctum')->postJson("/api/v1/shahidar/orders/{$b->id}/deliver")
             ->assertOk()->assertJsonPath('data.paid', false);
         $this->actingAs($this->shahidar, 'sanctum')->postJson("/api/v1/shahidar/orders/{$b->id}/paid")
             ->assertOk()->assertJsonPath('data.paid', true);

@@ -15,6 +15,8 @@ enum OtpPurpose: string
     case OneOffSelf = 'oneoff_self';
     /** F29: tells the cook about a new one-off order. */
     case CookNewOrder = 'cook_new_order';
+    /** A regular customer was paired after the cook posted: one of her plates is now booked for him. */
+    case CookLateBooking = 'cook_late_booking';
     /** F29: the cook could not give a one-off order. */
     case OrderDeclined = 'order_declined';
     /** F26: the paired cook is not cooking this meal today. */
@@ -68,11 +70,20 @@ enum OtpPurpose: string
                 $context['box'] ?? '',
             ),
             self::CookNewOrder => sprintf(
-                'দাওয়াত: নতুন অর্ডার — %s, %s প্লেট, বক্স %s। %s দিতে না পারলে ১০ মিনিটের মধ্যে অ্যাপে জানান।',
+                'দাওয়াত: নতুন অর্ডার — %s, %s প্লেট, বক্স %s%s। %s%s দিতে না পারলে ১০ মিনিটের মধ্যে অ্যাপে জানান।',
                 $context['title'] ?? '',
                 $context['plates'] ?? '১',
                 $context['box'] ?? '',
+                filled($context['buyer'] ?? null) ? ', ক্রেতা '.$context['buyer'] : '',
                 $context['receive'] ?? '',
+                filled($context['note'] ?? null) ? ' ক্রেতা লিখেছেন: "'.$context['note'].'"।' : '',
+            ),
+            self::CookLateBooking => sprintf(
+                'দাওয়াত: নতুন নিয়মিত গ্রাহক — আজ %s আপনার পোস্ট থেকে %s প্লেট আলাদা রাখুন (বক্স %s)। এলাকা ম্যানেজার %s নিতে আসবেন।',
+                $context['slot'] ?? '',
+                $context['plates'] ?? '১',
+                $context['box'] ?? '',
+                $context['manager'] ?? '',
             ),
             self::OrderDeclined => sprintf(
                 'দাওয়াত: দুঃখিত, %s আজ বক্স %s দিতে পারছেন না। অর্ডারটা বাতিল হয়েছে।',

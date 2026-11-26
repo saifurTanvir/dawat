@@ -23,6 +23,9 @@ use Illuminate\Validation\ValidationException;
  */
 class CookActions
 {
+    /** The most plates one post can grow to. */
+    public const MAX_PLATES = 60;
+
     public const DECLINE_MINUTES = 10;
 
     public function __construct(private readonly BookingPlanner $planner) {}
@@ -64,9 +67,14 @@ class CookActions
     }
 
     /** How many plates are left on the feed; regular customers' plates are not for sale. */
-    public function setPlates(Post $post, int $left): Post
+    /** @param  bool  $cookedMore  her "+" button: she cooked more, so the post may grow past its first total */
+    public function setPlates(Post $post, int $left, bool $cookedMore = false): Post
     {
         $booked = (int) $post->orders()->open()->sum('plates');
+        // She cooked more than she first posted: the post grows (up to a sane limit). Booked plates stay booked.
+        if ($cookedMore && $left > $post->plates_total - $booked && $left + $booked <= self::MAX_PLATES) {
+            $post->plates_total = $left + $booked;
+        }
         $max = $post->plates_total - $booked;
         if ($left < 0 || $left > $max) {
             throw ValidationException::withMessages(['plates_left' => $booked

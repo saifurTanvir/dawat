@@ -24,6 +24,26 @@
         @endif
     </x-filament::section>
 
+    @if ($payouts->isNotEmpty())
+        <x-filament::section heading="গৃহিণীকে হাতে দেওয়া টাকা — নিশ্চিত হয়নি" description="এলাকা ম্যানেজার বাসায় গিয়ে টাকা দিয়েছেন বলেছেন; গৃহিণী অ্যাপে এখনো “পেয়েছি” চাপেননি, বা “পাইনি” বলেছেন। ফোন করে মিলিয়ে নিন।">
+            <table class="dawat-money w-full text-sm">
+                <thead><tr class="text-left text-gray-500"><th class="py-2">রান্নাঘর</th><th>এলাকা ম্যানেজার</th><th>কখন</th><th>বক্স</th><th class="r">টাকা</th><th>গৃহিণী</th></tr></thead>
+                <tbody>
+                    @foreach ($payouts as $s)
+                        <tr>
+                            <td class="py-2 font-medium">{{ $s->kitchen->display_name }} <span class="muted">{{ $s->kitchen->user->phone }}</span></td>
+                            <td>{{ $s->settler?->name }}</td>
+                            <td>{{ $s->created_at->timezone('Asia/Dhaka')->format('j M, g:i A') }}</td>
+                            <td>{{ $s->orders_count }}</td>
+                            <td class="r">{{ $tk($s->amount_paisa) }}</td>
+                            <td style="font-weight:600;color:{{ $s->cook_disputed_at ? 'rgb(185 28 28)' : 'rgb(107 114 128)' }}">{{ $s->cook_disputed_at ? 'পাইনি বলেছেন' : 'নিশ্চিত বাকি' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </x-filament::section>
+    @endif
+
     @if ($returns->isNotEmpty())
         <x-filament::section heading="ফেরত রাউন্ড — গৃহিণী নিশ্চিত করেননি" description="এলাকা ম্যানেজার বক্স (আর টাকা) দিয়েছেন বলেছেন; গৃহিণী অ্যাপে এখনো “পেয়েছি” চাপেননি, বা “পাইনি” বলেছেন। ফোন করে মিলিয়ে নিন।">
             <table class="dawat-money w-full text-sm">

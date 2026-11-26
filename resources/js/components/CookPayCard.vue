@@ -5,13 +5,26 @@
             <div>
                 <h2 id="pay-title" class="font-semibold">আপনার টাকা</h2>
                 <p class="text-sm text-muted">
-                    এলাকা ম্যানেজার সন্ধ্যায় খালি বক্স ফেরত দেওয়ার সময় নগদে দেন · এখন নেন <strong class="text-ink">{{ pay.label }}</strong>
+                    এলাকা ম্যানেজার বাসায় এসে নগদে দেন · এখন নেন <strong class="text-ink">{{ pay.label }}</strong>
                 </p>
             </div>
             <p class="shrink-0 text-right">
                 <span class="block text-xs text-muted">এখন পাওনা</span>
                 <span class="text-xl font-bold">{{ taka(pay.due_paisa) }}</span>
             </p>
+        </div>
+        <!-- Money the area manager says he gave at her door: did she get it? -->
+        <div v-for="p in pay.payouts" :key="p.id" class="mt-3 rounded-xl border-2 p-3" :class="p.disputed ? 'border-chili' : 'border-turmeric'">
+            <p class="font-semibold">
+                এলাকা ম্যানেজার জানিয়েছেন: <strong>{{ taka(p.amount_paisa) }}</strong> দিয়েছেন ({{ bn(p.boxes) }}টা বক্সের)।
+            </p>
+            <p v-if="p.disputed" class="mt-1 text-sm font-semibold text-chili">জানিয়েছেন পাননি — দাওয়াত টিম ফোন করবে</p>
+            <div class="mt-2 grid grid-cols-2 gap-2">
+                <button type="button" class="btn-primary" :disabled="busy" @click="confirmPayout(p, true)">হ্যাঁ, পেয়েছি</button>
+                <button v-if="!p.disputed" type="button" class="btn-quiet border-2 border-rule font-semibold text-chili" :disabled="busy" @click="confirmPayout(p, false)">
+                    পাইনি / কম পেয়েছি
+                </button>
+            </div>
         </div>
         <button v-if="!editing" type="button" class="mt-2 text-sm font-semibold text-leaf" @click="open">কখন নেবেন বদলান</button>
         <form v-else class="mt-3 space-y-3" @submit.prevent="save">
@@ -43,6 +56,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { api, errorMessage } from '@/lib/api';
+import { bn } from '@/lib/bn';
 import { taka } from '@/lib/format';
 
 const pay = ref(null);
@@ -52,6 +66,20 @@ const weekday = ref(null);
 const busy = ref(false);
 const notice = ref('');
 const error = ref('');
+
+async function confirmPayout(p, got) {
+    busy.value = true;
+    error.value = '';
+    try {
+        const { data } = await api.post(`/my/payouts/${p.id}/confirm`, { got });
+        pay.value = data.data;
+        notice.value = data.message;
+    } catch (e) {
+        error.value = errorMessage(e);
+    } finally {
+        busy.value = false;
+    }
+}
 
 function open() {
     cycle.value = pay.value.pay_cycle;

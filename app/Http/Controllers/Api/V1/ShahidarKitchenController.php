@@ -17,6 +17,7 @@ use App\Models\Post;
 use App\Services\Kitchens\ActForCook;
 use App\Services\Kitchens\CookActions;
 use App\Services\Money\CookFees;
+use App\Services\Money\DoorPayouts;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Posts\PlateSplit;
 use App\Services\Posts\PostForCook;
@@ -250,5 +251,16 @@ class ShahidarKitchenController extends Controller
     private function allow(Request $request, ?Kitchen $kitchen): void
     {
         abort_unless($kitchen && $request->user()->isShahidar() && ShahidarController::worksWith($request->user(), $kitchen), 404);
+    }
+
+    /** POST /api/v1/shahidar/kitchens/{kitchen}/pay — F110: "৳… হাতে দিয়েছি", from his cash. */
+    public function pay(Request $request, Kitchen $kitchen, DoorPayouts $payouts): JsonResponse
+    {
+        $s = $payouts->pay($kitchen, $request->user());
+
+        return response()->json([
+            'data' => $payouts->forShahidar($request->user()),
+            'message' => $kitchen->display_name.'-কে ৳'.number_format(intdiv($s->amount_paisa, 100)).' দেওয়া লেখা হলো — উনি অ্যাপে নিশ্চিত করবেন।',
+        ]);
     }
 }

@@ -16,6 +16,7 @@ use App\Models\Order;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\Orders\BookingPlanner;
+use App\Services\Regular\GuestMeals;
 use App\Support\Roles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -129,6 +130,47 @@ class GuestMealTest extends TestCase
 
         $this->actingAs($this->customer->user, 'sanctum')->getJson('/api/v1/regular')
             ->assertOk()->assertJsonPath('data.guest_meals.0.status', 'arranged')->assertJsonPath('data.guest_meals.0.order_code', $order->code());
+    }
+
+    public function test_cook_says_yes_after_her_post_ran_out_and_the_guest_plates_are_booked_as_extra(): void
+    {
+        $post = $this->livePost(1); // the regular box takes the only plate: sold out
+        $this->assertSame(0, $post->plates_left);
+        $this->ask(2)->assertOk();
+        $guest = GuestMeal::first();
+
+        $this->actingAs($this->kitchen->user, 'sanctum')->postJson("/api/v1/my/guest-meals/{$guest->id}/reply", ['yes' => true])->assertOk();
+
+        $guest->refresh();
+        $this->assertSame('arranged', $guest->status);
+        $this->assertSame(2, $guest->order->plates);
+        $this->assertSame(24000, $guest->order->food_paisa);
+        $this->assertSame($post->id, $guest->order->post_id);
+        $this->assertSame(0, $post->fresh()->plates_left); // cooked on top, not taken from the post
+    }
+
+    public function test_a_yes_without_a_post_is_followed_up_after_half_an_hour(): void
+    {
+        $this->ask(2)->assertOk();
+        $guest = GuestMeal::first();
+        $this->actingAs($this->kitchen->user, 'sanctum')->postJson("/api/v1/my/guest-meals/{$guest->id}/reply", ['yes' => true])->assertOk();
+        $this->assertSame('cook_yes', $guest->fresh()->status);
+
+        $this->travel(31)->minutes();
+        app(GuestMeals::class)->followUps();
+        app(GuestMeals::class)->followUps(); // once only
+        $this->assertSame(1, Queue::pushed(SendWebPush::class, fn ($j) => $j->userId === $this->shahidar->id && $j->title === 'অতিথির খাবার: এখনো বক্স হয়নি')->count());
+    }
+
+    public function test_a_cook_who_cooked_more_can_raise_a_sold_out_post(): void
+    {
+        $post = $this->livePost(1);
+        $this->actingAs($this->kitchen->user, 'sanctum')->patchJson("/api/v1/my/posts/{$post->id}", ['plates_left' => 2])->assertUnprocessable(); // not by accident
+        $this->patchJson("/api/v1/my/posts/{$post->id}", ['plates_left' => 2, 'cooked_more' => true])->assertOk();
+        $post->refresh();
+        $this->assertSame(2, $post->plates_left);
+        $this->assertSame(3, $post->plates_total);
+        $this->assertSame(PostStatus::Live, $post->status);
     }
 
     public function test_cook_says_yes_before_posting_and_the_post_books_the_guest_plates(): void

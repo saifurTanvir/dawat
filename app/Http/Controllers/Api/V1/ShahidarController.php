@@ -15,6 +15,7 @@ use App\Models\Sticker;
 use App\Models\User;
 use App\Services\Images\UnreadablePhotoException;
 use App\Services\Money\CookFees;
+use App\Services\Money\DoorPayouts;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Orders\BoxLabels;
 use App\Services\Orders\Delivery;
@@ -22,6 +23,7 @@ use App\Services\Orders\Settlements;
 use App\Services\Posts\PlateSplit;
 use App\Services\Posts\PostForCook;
 use App\Services\Regular\OfficeDrops;
+use App\Services\Regular\OfficeRounds;
 use App\Services\Regular\TodayMenu;
 use App\Support\ContactHours;
 use App\Support\DhakaTime;
@@ -81,6 +83,8 @@ class ShahidarController extends Controller
             'posts' => $this->todayPosts($me, $pairings->pluck('kitchen_id')->merge($orders->pluck('kitchen_id'))->unique()->values()),
             // F28: cash collected and not yet handed to Dawat.
             'cash_held_paisa' => $this->money->cashHeldBy($me),
+            // F110: today's money — collected, paid to cooks, to Dawat — and the cooks to pay.
+            'money' => app(DoorPayouts::class)->forShahidar($me),
             // F61: my customers who will not eat today's dish and want something else.
             'meal_requests' => TodayMenu::requestsToday($me)->map(fn (MealChoice $c) => self::mealRequest($c))->values(),
             // F64: guest plates my customers asked for.
@@ -110,7 +114,7 @@ class ShahidarController extends Controller
 
         $order = $this->delivery->deliverByShahidar($order, $request->user(), $data['code'] ?? null, $data['sticker'] ?? null);
         // F39: weekly/monthly customers pay on their bill, not at the door.
-        if ($request->boolean('cash_received', true) && ! $order->customer?->paysByBill()) {
+        if ($request->boolean('cash_received') && ! $order->customer?->paysByBill()) {
             $order = $this->money->markPaid($order, $request->user());
         }
 
@@ -347,6 +351,8 @@ class ShahidarController extends Controller
                 'name' => $o->kitchen->display_name,
                 'phone' => $o->kitchen->user->phone,
                 'address' => $o->kitchen->pickup_address ?? $o->kitchen->area?->name,
+                // Owner's decision: the area manager of the box gets the way to the cook's house.
+                'map_url' => OfficeRounds::mapUrl($o->kitchen->location, $o->kitchen->pickup_address ? $o->kitchen->pickup_address.', '.($o->kitchen->area?->name ?? 'ঢাকা') : null),
                 // F41: may they be called now, and a free WhatsApp link.
                 'contact' => ContactHours::card($o->kitchen->user, $todaySlots, 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। বক্স '.$o->code().' নিয়ে।'),
             ],
@@ -355,6 +361,8 @@ class ShahidarController extends Controller
                 'phone' => $o->recipient()->phone,
                 'address' => $o->recipientAddress(),
                 'note' => $o->recipientNote(),
+                // …and to the customer's home pin (regular customers); else a search for the address.
+                'map_url' => OfficeRounds::mapUrl($o->customer?->location, $o->recipientAddress()),
                 'contact' => ContactHours::card($o->recipient(), $todaySlots, 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। আপনার বক্স '.$o->code().' নিয়ে।'),
             ],
             'paid' => $o->paid_at !== null,

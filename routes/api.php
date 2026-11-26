@@ -149,6 +149,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/my/rounds/{stop}/confirm', [MyBookingController::class, 'roundConfirm'])->middleware('throttle:comments')->name('my.rounds.confirm');
         Route::get('/my/pay-schedule', [MyBookingController::class, 'paySchedule'])->name('my.pay-schedule');
         Route::put('/my/pay-schedule', [MyBookingController::class, 'savePaySchedule'])->name('my.pay-schedule.save');
+        Route::post('/my/payouts/{settlement}/confirm', [MyBookingController::class, 'payoutConfirm'])->middleware('throttle:comments')->name('my.payouts.confirm');
         Route::get('/my/guest-meals', [GuestMealController::class, 'forCook'])->name('my.guest-meals.index');
         Route::post('/my/guest-meals/{guest}/reply', [GuestMealController::class, 'reply'])->middleware('throttle:comments')->name('my.guest-meals.reply');
         Route::get('/my/menu-notices', [MyMenuNoticeController::class, 'index'])->name('my.menu-notices.index');
@@ -198,6 +199,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('/kitchens/{kitchen}', [ShahidarKitchenController::class, 'show'])->name('kitchens.show');
             Route::post('/kitchens/{kitchen}/view-as', [ImpersonationController::class, 'shahidarStart'])->name('kitchens.view-as');
             Route::post('/kitchens/{kitchen}/ready', [ShahidarKitchenController::class, 'ready'])->name('kitchens.ready');
+            // F110: pay a cook at her door from the cash he holds
+            Route::post('/kitchens/{kitchen}/pay', [ShahidarKitchenController::class, 'pay'])->name('kitchens.pay');
             Route::post('/kitchens/{kitchen}/off', [ShahidarKitchenController::class, 'off'])->name('kitchens.off');
             Route::put('/kitchens/{kitchen}/menus/{slot}', [ShahidarKitchenController::class, 'saveMenu'])->name('kitchens.menus.save');
             // F61

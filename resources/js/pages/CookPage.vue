@@ -59,6 +59,7 @@
                     <ul v-if="slot.orders.length" class="mt-1 space-y-0.5 text-sm text-muted">
                         <li v-for="o in slot.orders" :key="o.code">
                             বক্স {{ o.code }} · {{ o.name }} · {{ bn(o.plates) }} প্লেট · {{ o.status_label }}
+                            <span v-if="o.note" class="mt-0.5 block rounded-lg bg-turmeric-soft px-2 py-1 text-ink">ক্রেতা লিখেছেন: “{{ o.note }}”</span>
                             <span v-if="o.kind === 'oneoff'" class="ml-1 rounded-full bg-turmeric-soft px-2 text-xs text-ink">{{ o.receive === 'self' ? 'নিজে নেবেন' : 'একবারের' }}</span>
                             <span class="mt-0.5 flex flex-wrap gap-x-3">
                                 <a v-if="o.phone" :href="`tel:${o.phone}`" class="font-semibold text-leaf">ক্রেতাকে ফোন</a>

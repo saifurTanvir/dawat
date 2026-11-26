@@ -25,12 +25,18 @@ class OrderController extends Controller
             'receive' => ['required', Rule::in(['delivery', 'self'])],
             'address' => ['required_if:receive,delivery', 'nullable', 'string', 'min:5', 'max:255'],
             'note' => ['nullable', 'string', 'max:200'],
+            // The cook needs to know who is coming: asked once, when the account has no name.
+            'name' => [Rule::requiredIf(fn () => blank($request->user()->name)), 'nullable', 'string', 'max:60'],
         ], [
             'plates.between' => 'এক অর্ডারে ১ থেকে ৫ প্লেট।',
             'address.required_if' => 'কোথায় পৌঁছাবে, ঠিকানা লিখুন।',
             'address.min' => 'ঠিকানাটা আরেকটু বিস্তারিত লিখুন।',
+            'name.required' => 'আপনার নাম লিখুন — গৃহিণী জানবেন কার জন্য রাখছেন।',
         ]);
 
+        if (filled($data['name'] ?? null) && blank($request->user()->name)) {
+            $request->user()->forceFill(['name' => trim($data['name'])])->save();
+        }
         $order = $place($post, $request->user(), $data['plates'], $data['receive'], $data['address'] ?? null, $data['note'] ?? null);
 
         return response()->json([

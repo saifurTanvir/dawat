@@ -157,7 +157,9 @@ class OfficeRounds
     public function confirm(RoundStop $stop, bool $got): RoundStop
     {
         abort_unless($stop->isReturn() && $stop->picked_at, 422, 'এলাকা ম্যানেজার এখনো বক্স দিয়েছেন বলে জানাননি।');
-        $stop->forceFill($got ? ['cook_confirmed_at' => now(), 'cook_disputed_at' => null] : ['cook_disputed_at' => now(), 'cook_confirmed_at' => null])->save();
+        $fields = $got ? ['cook_confirmed_at' => now(), 'cook_disputed_at' => null] : ['cook_disputed_at' => now(), 'cook_confirmed_at' => null];
+        $stop->forceFill($fields)->save();
+        $stop->settlement?->forceFill($fields)->save();
         if (! $got) {
             Push::toUser($stop->shahidar_id, $stop->kitchen->display_name.' বলছেন বক্স বা টাকা পাননি',
                 'ফোন করে মিলিয়ে নিন। দাওয়াত টিমও দেখছে।', '/shahidar/return/'.$stop->office_drop_id, 'round-dispute-'.$stop->id);
