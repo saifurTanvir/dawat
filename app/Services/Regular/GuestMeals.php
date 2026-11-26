@@ -20,6 +20,7 @@ use App\Support\Roles;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -89,8 +90,12 @@ class GuestMeals
         if ($yes) {
             // Already cooking this meal today with plates to spare: book it now.
             $post = $this->livePostOf($guest);
+            $today = $this->todaysPostOf($guest);
             if ($post) {
                 $this->arrangeFromPost($guest, $post, $by);
+            } elseif ($today) {
+                // She already posted and the plates are gone: she said she can cook the extra — book it at that price.
+                $this->arrangeFromPost($guest, $today, $by, extra: true);
             } else {
                 Push::toUser($guest->shahidar_id, 'গৃহিণী অতিথির খাবার দেবেন', "{$guest->customer->user->name}: {$guest->when()}, ".Order::banglaDigits($guest->plates).' প্লেট। পোস্টের সাথে বুক হবে।', '/shahidar', 'guest-'.$guest->id);
             }
@@ -118,17 +123,25 @@ class GuestMeals
                     }
                 }
 
-                Push::toUser($guest->shahidar_id, 'অতিথির খাবারের প্লেট কম পড়েছে',
-                    "{$guest->customer->user->name}: গৃহিণী পোস্টে যথেষ্ট প্লেট রাখেননি। অন্য পোস্ট থেকে ব্যবস্থা করুন।", '/shahidar', 'guest-'.$guest->id);
-                $guest->update(['status' => 'cook_no']);
+                // Not enough plates left in the post: she agreed to the guest plates, so they are booked as extra.
+                try {
+                    $this->arrangeFromPost($guest, $post, null, extra: true);
+                } catch (ValidationException) {
+                    Push::toUser($guest->shahidar_id, 'অতিথির খাবারের বক্স হয়নি',
+                        "{$guest->customer->user->name}: গৃহিণী ও গ্রাহককে ফোন করে ব্যবস্থা করুন।", '/shahidar', 'guest-'.$guest->id);
+                }
 
             });
     }
 
-    /** Books the guest plates from a live post (her cook's or anyone's) and tells the customer. */
-    public function arrangeFromPost(GuestMeal $guest, Post $post, ?User $by): Order
+    /**
+     * Books the guest plates from a live post (her cook's or anyone's) and tells the customer.
+     * With $extra (her own cook said "পারব" after the post ran out), the plates are cooked on
+     * top of the post: booked at its price without taking from it.
+     */
+    public function arrangeFromPost(GuestMeal $guest, Post $post, ?User $by, bool $extra = false): Order
     {
-        return DB::transaction(function () use ($guest, $post, $by) {
+        return DB::transaction(function () use ($guest, $post, $by, $extra) {
             $guest = GuestMeal::whereKey($guest->id)->lockForUpdate()->firstOrFail();
             $post = Post::whereKey($post->id)->lockForUpdate()->with('kitchen.area')->firstOrFail();
             $customer = $guest->customer()->with(['user', 'area'])->first();
@@ -139,15 +152,19 @@ class GuestMeals
             if ($guest->service_date->toDateString() !== BookingPlanner::today()) {
                 throw ValidationException::withMessages(['guest' => 'এই অনুরোধ আজকের নয়; সেদিন ব্যবস্থা করুন।']);
             }
-            if (! Post::whereKey($post->id)->visibleNow()->exists() || $post->plates_left < $guest->plates) {
+            if ($extra) {
+                if ($post->kitchen_id !== $guest->kitchen_id) {
+                    throw ValidationException::withMessages(['post_id' => 'বাড়তি প্লেট শুধু নিজের গৃহিণীর।']);
+                }
+            } elseif (! Post::whereKey($post->id)->visibleNow()->exists() || $post->plates_left < $guest->plates) {
                 throw ValidationException::withMessages(['post_id' => 'এই পোস্টে এত প্লেট বাকি নেই।']);
+            } else {
+                $post->plates_left -= $guest->plates;
+                if ($post->plates_left === 0) {
+                    $post->status = PostStatus::SoldOut;
+                }
+                $post->save();
             }
-
-            $post->plates_left -= $guest->plates;
-            if ($post->plates_left === 0) {
-                $post->status = PostStatus::SoldOut;
-            }
-            $post->save();
 
             $ownCook = $post->kitchen_id === $guest->kitchen_id;
             $code = (string) random_int(1000, 9999);
@@ -240,7 +257,17 @@ class GuestMeals
             User::role(Roles::ADMIN)->pluck('id')->each(fn ($id) => Push::toUser($id, 'অতিথির খাবার: গৃহিণী উত্তর দেননি', $body, '/admin', 'guest-'.$guest->id));
         }
 
-        return $late->count();
+        // "পারব" said, but 30 minutes on still no box (she has not posted this meal): the shahidar calls.
+        $stuck = GuestMeal::where('status', 'cook_yes')->whereNull('order_id')->whereDate('service_date', BookingPlanner::today())
+            ->where('cook_replied_at', '<=', now()->subMinutes(30))->with(['customer.user', 'kitchen.user'])->get()
+            ->filter(fn (GuestMeal $g) => Cache::add('guest-yes-followup-'.$g->id, true, now()->addDay()));
+        foreach ($stuck as $guest) {
+            Push::toUser($guest->shahidar_id, 'অতিথির খাবার: এখনো বক্স হয়নি',
+                "{$guest->customer->user->name}: {$guest->when()}, ".Order::banglaDigits($guest->plates).' প্লেট। গৃহিণী "পারব" বলেছেন কিন্তু পোস্ট দেননি — '
+                .($guest->kitchen?->display_name ?? '').' ('.($guest->kitchen?->user?->phone ?? '').') কে ফোন করুন।', '/shahidar', 'guest-'.$guest->id);
+        }
+
+        return $late->count() + $stuck->count();
     }
 
     /** Live posts today for this meal with enough plates, the customer's area first. */
@@ -253,6 +280,17 @@ class GuestMeals
             ->with('kitchen.area')->get()
             ->sortBy(fn (Post $p) => [$p->kitchen_id === $guest->kitchen_id ? 0 : 1, $p->kitchen->area_id === $areaId ? 0 : 1, $p->price_paisa])
             ->take(15)->values();
+    }
+
+    /** Her post for this meal today, whatever its state (sold out included). */
+    private function todaysPostOf(GuestMeal $guest): ?Post
+    {
+        if ($guest->service_date->toDateString() !== BookingPlanner::today()) {
+            return null;
+        }
+
+        return Post::where('kitchen_id', $guest->kitchen_id)->where('meal_slot', $guest->meal_slot->value)
+            ->where('published_at', '>=', DhakaTime::startOfDay())->latest('id')->first();
     }
 
     private function livePostOf(GuestMeal $guest): ?Post

@@ -59,9 +59,9 @@
                         <button
                             type="button"
                             class="size-11 text-2xl text-leaf disabled:text-rule"
-                            :disabled="busyId === post.id || post.plates_left >= post.plates_total"
-                            aria-label="এক প্লেট বেশি"
-                            @click="setPlates(post, post.plates_left + 1)"
+                            :disabled="busyId === post.id"
+                            aria-label="এক প্লেট বেশি (বেশি রাঁধলে)"
+                            @click="setPlates(post, post.plates_left + 1, true)"
                         >+</button>
                     </div>
                     <button
@@ -147,8 +147,8 @@ async function run(post, request) {
     }
 }
 
-function setPlates(post, platesLeft) {
-    return run(post, () => api.patch(`/my/posts/${post.id}`, { plates_left: platesLeft }));
+function setPlates(post, platesLeft, cookedMore = false) {
+    return run(post, () => api.patch(`/my/posts/${post.id}`, { plates_left: platesLeft, ...(cookedMore ? { cooked_more: true } : {}) }));
 }
 
 function soldOut(post) {

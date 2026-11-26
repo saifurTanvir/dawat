@@ -41,8 +41,8 @@ class MyPostController extends Controller
     public function update(Request $request, Post $post, CookActions $actions): OwnPostResource
     {
         Gate::authorize('manage', $post);
-        $data = $request->validate(['plates_left' => ['required', 'integer']]);
-        $actions->setPlates($post, (int) $data['plates_left']);
+        $data = $request->validate(['plates_left' => ['required', 'integer'], 'cooked_more' => ['sometimes', 'boolean']]);
+        $actions->setPlates($post, (int) $data['plates_left'], $request->boolean('cooked_more'));
 
         return OwnPostResource::make($post->load(['images', 'tags']));
     }
