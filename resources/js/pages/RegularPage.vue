@@ -230,6 +230,7 @@
 </template>
 
 <script setup>
+import { ask } from '@/lib/ask';
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import BoxSteps from '@/components/BoxSteps.vue';
 import ContactHours from '@/components/ContactHours.vue';
@@ -304,8 +305,8 @@ function accept(order) {
     act(() => api.post(`/regular/orders/${order.id}/accept`));
 }
 
-function skip(order) {
-    if (!window.confirm(`আজ ${order.meal_slot_label} খাবার লাগবে না?`)) return;
+async function skip(order) {
+    if (!(await ask(`আজ ${order.meal_slot_label} খাবার লাগবে না?`, { danger: true }))) return;
     act(() => api.post(`/regular/orders/${order.id}/skip`));
 }
 

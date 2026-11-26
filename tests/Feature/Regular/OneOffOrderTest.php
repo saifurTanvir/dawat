@@ -20,6 +20,7 @@ use App\Services\Otp\OtpPurpose;
 use App\Support\Roles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -132,6 +133,17 @@ class OneOffOrderTest extends TestCase
         $this->assertStringContainsString('maps/search', $row['customer']['map_url']); // no pin: the address is searched
         // Buyers never see it.
         $this->assertStringNotContainsString('23.8069', $this->actingAs($this->buyer, 'sanctum')->getJson('/api/v1/orders')->getContent());
+    }
+
+    public function test_the_buyer_sees_the_delivery_code_in_the_app(): void
+    {
+        $this->order()->assertCreated();
+        $order = Order::firstOrFail();
+        $code = $this->actingAs($this->buyer, 'sanctum')->getJson('/api/v1/orders')->json('data.0.delivery_code');
+        $this->assertTrue(Hash::check((string) $code, $order->delivery_code_hash));
+
+        $order->update(['status' => OrderStatus::Delivered]);
+        $this->actingAs($this->buyer, 'sanctum')->getJson('/api/v1/orders')->assertJsonPath('data.0.delivery_code', null);
     }
 
     public function test_a_buyer_without_a_name_gives_it_once_with_the_order(): void

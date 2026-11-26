@@ -24,10 +24,12 @@ class KitchensTable
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('display_name')->label('রান্নাঘর')->searchable()->weight('semibold'),
-                TextColumn::make('user.phone')->label('ফোন')->searchable()->copyable(),
-                TextColumn::make('area.name')->label('এলাকা')->placeholder('—'),
+                // On a phone only the first columns fit: name and status first (QA report).
+                TextColumn::make('display_name')->label('রান্নাঘর')->searchable()->weight('semibold')
+                    ->description(fn ($record) => $record->area?->name, position: 'below'),
                 TextColumn::make('status')->label('অবস্থা')->badge(),
+                TextColumn::make('user.phone')->label('ফোন')->searchable()->copyable(),
+                TextColumn::make('area.name')->label('এলাকা')->placeholder('—')->visibleFrom('md'),
                 TextColumn::make('daily_plates')->label('দিনে প্লেট')->placeholder('—')->sortable(),
                 TextColumn::make('pending_contact_phone')
                     ->label('নতুন নম্বর')

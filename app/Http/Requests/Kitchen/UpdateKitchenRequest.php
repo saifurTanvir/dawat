@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Kitchen;
 
+use App\Enums\KitchenStatus;
 use App\Support\Geo\Bangladesh;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -25,6 +26,8 @@ class UpdateKitchenRequest extends FormRequest
             'allow_comment' => ['sometimes', 'boolean'],
             // F29: "নিতে চাই" button on posts
             'allow_order' => ['sometimes', 'boolean'],
+            // F77: before approval she says how many plates a day she can give; after that the team decides.
+            'daily_plates' => [Rule::prohibitedIf(fn () => $this->user()?->kitchen?->status !== KitchenStatus::Pending), 'integer', 'in:1,2'],
             // Another number must be confirmed first: POST /kitchen/contact.
             'contact_phone' => ['prohibited'],
             'contact_name' => ['prohibited'],

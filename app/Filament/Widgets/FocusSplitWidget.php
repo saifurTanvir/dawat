@@ -16,7 +16,7 @@ class FocusSplitWidget extends Widget
 
     protected static ?int $sort = 0;
 
-    protected static bool $isLazy = false;
+    protected static bool $isLazy = true; // spatial counts: let the page draw first
 
     protected int|string|array $columnSpan = 'full';
 

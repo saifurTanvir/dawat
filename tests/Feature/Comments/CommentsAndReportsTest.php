@@ -90,6 +90,14 @@ class CommentsAndReportsTest extends TestCase
     {
         $this->post->update(['status' => PostStatus::SoldOut, 'plates_left' => 0]);
 
+        // The same day a buyer can still ask when she cooks next.
+        $this->actingAs($this->buyer, 'sanctum')
+            ->postJson("/api/v1/posts/{$this->post->id}/comments", ['body' => 'কাল রাঁধবেন?'])
+            ->assertCreated();
+        $this->getJson("/api/v1/posts/{$this->post->id}")->assertJsonPath('meta.is_available', false)->assertJsonPath('meta.comments_open', true);
+
+        // A day later the post is closed to buyers.
+        $this->travel(25)->hours();
         $this->actingAs($this->buyer, 'sanctum')
             ->postJson("/api/v1/posts/{$this->post->id}/comments", ['body' => 'আছে?'])
             ->assertStatus(410);
@@ -100,7 +108,7 @@ class CommentsAndReportsTest extends TestCase
             ->assertJsonPath('data.author.is_cook', true)
             ->assertJsonPath('data.author.name', $this->post->kitchen->display_name);
 
-        $this->assertSame(0, ContactEvent::count());
+        $this->assertSame(1, ContactEvent::count()); // only the buyer's same-day question
     }
 
     public function test_comments_off_means_no_comments(): void

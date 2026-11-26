@@ -37,6 +37,19 @@ class KitchenRegistrationTest extends TestCase
         $this->assertSame('সালমা আক্তার', $user->fresh()->name);
     }
 
+    public function test_a_waiting_cook_says_how_many_plates_she_can_give(): void
+    {
+        $pending = Kitchen::factory()->create();
+        $this->actingAs($pending->user, 'sanctum')->patchJson('/api/v1/kitchen', ['daily_plates' => 2])
+            ->assertOk()->assertJsonPath('data.daily_plates', 2);
+        $this->actingAs($pending->user, 'sanctum')->patchJson('/api/v1/kitchen', ['daily_plates' => 5])->assertUnprocessable();
+
+        // After approval the team decides.
+        $approved = Kitchen::factory()->approved()->create(['daily_plates' => 1]);
+        $this->actingAs($approved->user, 'sanctum')->patchJson('/api/v1/kitchen', ['daily_plates' => 2])->assertUnprocessable();
+        $this->assertSame(1, $approved->fresh()->daily_plates);
+    }
+
     public function test_a_user_cannot_register_twice(): void
     {
         $kitchen = Kitchen::factory()->create();

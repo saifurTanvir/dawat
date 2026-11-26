@@ -28,6 +28,9 @@
             <p class="font-semibold">{{ o.title }}</p>
             <p class="text-sm text-muted">{{ o.kitchen }} · {{ o.meal_slot_label }} · বক্স {{ o.code }}</p>
             <p class="mt-1">{{ bn(o.plates) }} প্লেট · {{ taka(o.total_paisa) }} · <span class="font-semibold">{{ o.status_label }}</span></p>
+            <p v-if="o.delivery_code" class="mt-2 rounded-lg bg-turmeric-soft px-3 py-2">
+                ডেলিভারি কোড <strong class="text-lg tracking-widest">{{ bn(o.delivery_code) }}</strong> — খাবার হাতে পেলে এলাকা ম্যানেজারকে বলবেন
+            </p>
             <p class="mt-1 text-sm text-muted">{{ o.receive === 'self' ? 'নিজে নেবেন — গৃহিণী ফোন করবেন' : `পৌঁছাবে: ${o.address}` }}</p>
             <div class="mt-2 flex flex-wrap items-center gap-x-4">
                 <a v-if="o.shahidar && ['booked', 'picked_up'].includes(o.status)" :href="`tel:${o.shahidar.phone}`" class="font-semibold text-leaf">এলাকা ম্যানেজারকে ফোন ({{ o.shahidar.name }})</a>
@@ -39,6 +42,7 @@
 </template>
 
 <script setup>
+import { ask } from '@/lib/ask';
 import { onMounted, ref } from 'vue';
 import PushToggle from '@/components/PushToggle.vue';
 import { api, errorMessage } from '@/lib/api';
@@ -63,7 +67,7 @@ onMounted(async () => {
 });
 
 async function cancel(order) {
-    if (!window.confirm(`বক্স ${order.code} বাতিল করবেন?`)) return;
+    if (!(await ask(`বক্স ${order.code} বাতিল করবেন?`, { yes: 'হ্যাঁ, বাতিল করুন', no: 'না, থাক', danger: true }))) return;
     busy.value = true;
     try {
         const { data } = await api.post(`/orders/${order.id}/cancel`);

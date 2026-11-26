@@ -113,6 +113,7 @@
 </template>
 
 <script setup>
+import { ask } from '@/lib/ask';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import CallButtons from '@/components/CallButtons.vue';
@@ -178,9 +179,9 @@ async function start() {
     await send('/start', where);
 }
 
-function done(stop) {
+async function done(stop) {
     const what = stop.pay_due_paisa ? `${bn(stop.boxes)}টা বক্স আর ${taka(stop.pay_due_paisa)}` : `${bn(stop.boxes)}টা বক্স`;
-    if (!window.confirm(`${stop.name}-কে ${what} দিয়েছেন?`)) return;
+    if (!(await ask(`${stop.name}-কে ${what} দিয়েছেন?`))) return;
     send(`/stops/${stop.id}/done`);
 }
 

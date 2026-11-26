@@ -17,6 +17,7 @@ use App\Filament\Resources\Customers\Pages\ViewCustomer;
 use App\Filament\Support\FeatureGate;
 use App\Filament\Support\LocationField;
 use App\Filament\Support\PhoneField;
+use App\Jobs\SendCustomerWelcome;
 use App\Models\Area;
 use App\Models\Bill;
 use App\Models\Company;
@@ -44,6 +45,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
@@ -130,6 +132,8 @@ class CustomerResource extends Resource
             ...self::bookingFields(),
             // F62: the home pin, to find the nearest free cook
             LocationField::make('where'),
+            Toggle::make('welcome_sms')->label('স্বাগতম SMS পাঠান')->default(true)
+                ->helperText('দাওয়াত কী, খাবারের খবর কোথায় পাবেন আর অ্যাপে কীভাবে ঢুকবেন — একটা ছোট SMS।'),
         ];
     }
 
@@ -138,6 +142,7 @@ class CustomerResource extends Resource
         return DB::transaction(function () use ($data) {
             $user = app(EnsurePerson::class)($data['phone'], $data['name'], Roles::BUYER);
             $customer = $user->customer ?? new Customer(['user_id' => $user->id, 'source' => 'admin']);
+            $isNew = ! $customer->exists;
             // Asking again after stopping, or re-entered by an admin: update in place.
             $customer->fill(self::bookingData($data));
             // F62: a home pin given in the form
@@ -145,6 +150,10 @@ class CustomerResource extends Resource
                 $customer->location = $point;
             }
             $customer->save();
+
+            if ($isNew && ($data['welcome_sms'] ?? false)) {
+                SendCustomerWelcome::dispatch($customer->id)->afterCommit();
+            }
 
             return $customer;
         });

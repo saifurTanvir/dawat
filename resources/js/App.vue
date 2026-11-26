@@ -7,10 +7,12 @@
         </main>
         <JoinBanner />
     </div>
+    <AskDialog />
 </template>
 
 <script setup>
 import AppHeader from './components/AppHeader.vue';
+import AskDialog from './components/AskDialog.vue';
 import ImpersonationBanner from './components/ImpersonationBanner.vue';
 import JoinBanner from './components/JoinBanner.vue';
 </script>

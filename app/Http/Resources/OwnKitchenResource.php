@@ -27,6 +27,7 @@ class OwnKitchenResource extends JsonResource
             'status_label' => $this->status->label(),
             'rejection_reason' => $this->rejection_reason,
             'is_set_up' => $this->isSetUp(),
+            'daily_plates' => $this->daily_plates,
             'can_post' => $request->user()?->can('publish-posts') ?? false,
             // F20: show the AI buttons only when an assistant is configured.
             'ai_available' => app(FoodAssistant::class)->available(),

@@ -45,9 +45,9 @@ class CommentController extends Controller
         if (! $kitchen->allow_comment && ! $isCook) {
             return response()->json(['message' => 'রাঁধুনি এই পোস্টে কমেন্ট বন্ধ রেখেছেন।'], 403);
         }
-        // Buyers comment while the food is on; the cook can still answer afterwards.
-        if (! $isCook && ! Post::visibleNow()->whereKey($post->id)->exists()) {
-            return response()->json(['message' => 'এই খাবারটি আর পাওয়া যাচ্ছে না, তাই কমেন্ট বন্ধ।'], 410);
+        // Buyers comment while the food is on and for a day after; the cook can always answer.
+        if (! $isCook && ! $post->commentsOpen() && ! Post::visibleNow()->whereKey($post->id)->exists()) {
+            return response()->json(['message' => 'এই পোস্টে কমেন্টের সময় শেষ।'], 410);
         }
 
         $data = $request->validate(

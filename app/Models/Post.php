@@ -118,6 +118,12 @@ class Post extends Model
             ->where('plates_left', '>', 0);
     }
 
+    /** Buyers may still ask ("কাল রাঁধবেন?") for a day after posting, even once the plates are gone. */
+    public function commentsOpen(): bool
+    {
+        return $this->status !== PostStatus::Hidden && $this->created_at?->gt(now()->subDay()) === true;
+    }
+
     public function shareImageUrl(): ?string
     {
         return $this->share_image_path
