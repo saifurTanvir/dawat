@@ -96,7 +96,7 @@ class MoneyTest extends TestCase
         $this->order(OrderStatus::Delivered, ['paid_at' => now(), 'collected_by' => $this->shahidar->id]);
         $this->actingAs(User::factory()->admin()->create());
 
-        $this->get('/admin/money')->assertOk()->assertSee('করিম')->assertSee('৳340')->assertSee('রহিমার রান্না')->assertSee('৳300');
+        $this->get('/admin/money')->assertOk()->assertSee('করিম')->assertSee('৳৩৪০')->assertSee('রহিমার রান্না')->assertSee('৳৩০০');
 
         Livewire::test(Money::class)
             ->callAction('receiveCash', ['note' => 'সন্ধ্যায় হাতে'], ['shahidar' => $this->shahidar->id])

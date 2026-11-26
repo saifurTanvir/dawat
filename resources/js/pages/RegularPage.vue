@@ -59,7 +59,13 @@
                     </div>
                     <button v-if="o.can_skip" type="button" class="btn-quiet -ml-4 mt-1 text-chili" :disabled="busy" @click="skip(o)">আজ লাগবে না</button>
                 </div>
-                <p class="mt-3 text-sm text-muted">খাবার হাতে পেলে SMS-এ পাওয়া ৪ অঙ্কের কোডটা এলাকা ম্যানেজারকে বলবেন।</p>
+                <template v-for="o in booking.today" :key="`code-${o.id}`">
+                    <p v-if="o.delivery_code" class="mt-3 rounded-lg bg-steel/60 p-3 text-sm">
+                        {{ o.meal_slot_label }}-এর খাবার হাতে পেলে এলাকা ম্যানেজারকে এই কোডটা বলবেন: <strong class="text-lg tracking-widest">{{ bn(o.delivery_code) }}</strong>
+                    </p>
+                </template>
+                <!-- Delivered: what matters now is how it was -->
+                <RouterLink v-if="booking.today.some((o) => o.status === 'delivered')" to="/history" class="btn-primary mt-3">কেমন লাগল? তারা দিন</RouterLink>
             </div>
 
             <div v-if="booking.shahidar" class="rounded-[var(--radius-plate)] bg-plate p-5">

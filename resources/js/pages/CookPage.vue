@@ -13,6 +13,21 @@
                 দাওয়াত টিম আপনার সাথে কথা বলে অনুমোদন দেবে।
             </p>
             <p class="mt-3 rounded-[var(--radius-plate)] bg-plate p-3 text-sm">{{ LAUNCH_NOTICE }}</p>
+            <!-- How it works, before she signs up -->
+            <div class="mt-4 rounded-[var(--radius-plate)] bg-leaf-soft p-4 text-sm">
+                <p class="font-semibold">কীভাবে চলে</p>
+                <ul class="mt-1 list-disc space-y-1 pl-5">
+                    <li>দাম আপনি ঠিক করেন। দাম লিখলেই অ্যাপ দেখাবে আপনি প্লেটে কত পাবেন (দাওয়াতের ফি আর ডেলিভারি খরচ বাদে)।</li>
+                    <li>দিনে ১–২ প্লেট দিয়েও শুরু করা যায়। পাশের বাসার নিয়মিত গ্রাহক পেলে রোজ তাঁর জন্য আলাদা রাখবেন।</li>
+                    <li>এলাকা ম্যানেজার বাসা থেকে খাবার নিয়ে যান, আর টাকা নগদে দেন — প্রতিদিন, বা সপ্তাহে একদিন।</li>
+                    <li>নিবন্ধনের পর দাওয়াত টিম ফোন করে কথা বলে অনুমোদন দেয়।</li>
+                </ul>
+            </div>
+            <template v-if="!auth.user?.name">
+                <label for="own_name" class="mt-6 mb-2 block font-semibold">আপনার নাম</label>
+                <input id="own_name" v-model="ownName" class="field" type="text" maxlength="60" autocomplete="name" placeholder="যেমন: সালমা আক্তার" />
+                <p class="mt-2 text-sm text-muted">দাওয়াত টিম ফোনে এই নামে ডাকবে। ক্রেতারা দেখবেন রান্নাঘরের নাম।</p>
+            </template>
             <label for="display_name" class="mt-6 mb-2 block font-semibold">রান্নাঘরের নাম</label>
             <input
                 id="display_name"
@@ -33,14 +48,7 @@
 
         <!-- Registered: show where they stand -->
         <div v-else class="mt-4">
-            <template v-if="kitchen.can_post">
-                <CookGuestRequests />
-                <RouterLink :to="{ name: 'new-post' }" class="btn-primary">আজকের রান্না পোস্ট করুন</RouterLink>
-                <RouterLink :to="{ name: 'my-posts' }" class="btn-quiet mt-2 w-full border border-rule">আমার পোস্ট ও প্লেট বাকি</RouterLink>
-                <RouterLink :to="{ name: 'sales' }" class="btn-quiet mt-2 mb-6 w-full border border-rule">যা বিক্রি করেছি · পাওনা · রিভিউ</RouterLink>
-                <MenuNoticeCard v-if="kitchen?.status === 'approved' && notices" :rows="notices" endpoint="/my/menu-notices" @saved="notices = $event" />
-                <DailyMenu :fees="kitchen?.fees" />
-            </template>
+            <!-- Today's orders first: a "নতুন অর্ডার" notification lands here -->
             <!-- F95: the area manager is coming for office boxes -->
             <CookRoundCard v-if="kitchen?.status === 'approved'" />
             <!-- F110: when she takes her money -->
@@ -101,6 +109,14 @@
                 </div>
                 <p v-if="bookingNotice" class="mt-3 rounded-lg bg-leaf-soft p-3 text-sm" role="status">{{ bookingNotice }}</p>
             </section>
+            <template v-if="kitchen.can_post">
+                <CookGuestRequests />
+                <RouterLink :to="{ name: 'new-post' }" class="btn-primary">আজকের রান্না পোস্ট করুন</RouterLink>
+                <RouterLink :to="{ name: 'my-posts' }" class="btn-quiet mt-2 w-full border border-rule">আমার পোস্ট ও প্লেট বাকি</RouterLink>
+                <RouterLink :to="{ name: 'sales' }" class="btn-quiet mt-2 mb-6 w-full border border-rule">যা বিক্রি করেছি · পাওনা · রিভিউ</RouterLink>
+                <MenuNoticeCard v-if="kitchen?.status === 'approved' && notices" :rows="notices" endpoint="/my/menu-notices" @saved="notices = $event" />
+                <DailyMenu :fees="kitchen?.fees" />
+            </template>
             <!-- F46: what the team or a shahidar did for her today -->
             <section v-if="bookings?.acted_for?.length" class="mb-6 rounded-[var(--radius-plate)] bg-turmeric-soft p-5">
                 <h2 class="font-semibold">আজ আপনার হয়ে যা করা হয়েছে</h2>
@@ -148,6 +164,7 @@ const kitchen = ref(null);
 const notices = ref(null); // F61: today's dish, told to the regular customer
 const loading = ref(true);
 const displayName = ref('');
+const ownName = ref('');
 const error = ref('');
 const busy = ref(false);
 const bookings = ref(null);
@@ -233,6 +250,11 @@ const statusTone = computed(() => {
 });
 
 onMounted(async () => {
+    // No kitchen yet: show the sign-up form without asking the server (no 404 in the logs).
+    if (auth.user && !auth.user.kitchen) {
+        loading.value = false;
+        return;
+    }
     try {
         const { data } = await api.get('/kitchen');
         kitchen.value = data.data;
@@ -254,7 +276,7 @@ async function register() {
     error.value = '';
     busy.value = true;
     try {
-        const { data } = await api.post('/kitchen', { display_name: displayName.value });
+        const { data } = await api.post('/kitchen', { display_name: displayName.value, ...(auth.user?.name ? {} : { name: ownName.value }) });
         kitchen.value = data.data;
         auth.loaded = false;
         await auth.load();

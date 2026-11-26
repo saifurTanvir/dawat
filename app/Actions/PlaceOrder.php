@@ -90,6 +90,7 @@ class PlaceOrder
                         'delivery_fee_paisa' => $receive === 'delivery' ? (int) $kitchen->area?->delivery_fee_paisa : 0,
                         'status' => OrderStatus::Booked,
                         'delivery_code_hash' => Hash::make($code),
+                        'delivery_code' => $code,
                         // Self pickup: the cook takes the cash herself.
                         'payment_method' => $receive === 'self' ? 'cash_to_cook' : 'cash',
                     ]);

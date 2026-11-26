@@ -15,7 +15,7 @@ class Order extends Model
 {
     protected $guarded = ['id'];
 
-    protected $hidden = ['delivery_code_hash'];
+    protected $hidden = ['delivery_code_hash', 'delivery_code'];
 
     /** F56: the cook's fees are fixed on each box when it is made or its food changes. */
     protected static function booted(): void
@@ -32,6 +32,8 @@ class Order extends Model
         return [
             'service_date' => 'date',
             'meal_slot' => MealSlot::class,
+            // The customer's own code, shown only to them in the app (SMS carries it too).
+            'delivery_code' => 'encrypted',
             'status' => OrderStatus::class,
             'picked_at' => 'datetime',
             'delivered_at' => 'datetime',

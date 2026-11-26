@@ -160,7 +160,7 @@ class OrderResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('কী কী হলো')->schema([ViewEntry::make('timeline')->hiddenLabel()->view('filament.history.timeline')]),
+            Section::make('কী কী হলো')->schema([ViewEntry::make('timeline')->label('কী কী হলো')->hiddenLabel()->view('filament.history.timeline')]),
             Section::make('কারা')->columns(2)->schema([
                 TextEntry::make('recipient')->label(fn (Order $record) => $record->isOneOff() ? 'ক্রেতা (ফিড থেকে)' : 'নিয়মিত গ্রাহক')
                     ->state(fn (Order $record) => trim(($record->recipient()?->name ?? '').' · '.($record->recipient()?->phone ?? ''), ' ·'))

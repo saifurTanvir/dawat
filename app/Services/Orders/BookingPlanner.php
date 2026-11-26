@@ -144,6 +144,7 @@ class BookingPlanner
                     'plates' => $plates, 'shahidar_id' => $pairing->shahidar_id,
                     'delivery_fee_paisa' => (int) $pairing->customer->area->delivery_fee_paisa,
                     'delivery_code_hash' => Hash::make($code),
+                    'delivery_code' => $code,
                 ])->save();
                 SendOrderSms::dispatch($old->id, OtpPurpose::OrderBooked, $code)->afterCommit();
                 $order = $old;
@@ -292,6 +293,7 @@ class BookingPlanner
                 'status' => OrderStatus::Booked,
                 'ask_until' => null,
                 'delivery_code_hash' => Hash::make($code),
+                'delivery_code' => $code,
                 'delivery_fee_paisa' => (int) $order->customer->area->delivery_fee_paisa,
             ])->save();
 
@@ -377,6 +379,7 @@ class BookingPlanner
                     'delivery_fee_paisa' => $status === OrderStatus::Booked ? (int) $pairing->customer->area->delivery_fee_paisa : 0,
                     'status' => $status,
                     'delivery_code_hash' => $code !== '' ? Hash::make($code) : null,
+                    'delivery_code' => $code !== '' ? $code : null,
                     ...$extra,
                 ]);
                 break;

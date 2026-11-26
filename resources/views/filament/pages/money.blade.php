@@ -1,4 +1,4 @@
-@php($tk = fn (int $paisa) => '৳'.number_format(intdiv($paisa, 100)))
+@php($tk = fn (int $paisa) => \App\Support\BnDate::taka($paisa))
 <x-filament-panels::page>
     {{-- Inside the page root: a Livewire component must have a single root element. --}}
     <style>.dawat-money th, .dawat-money td { padding: 8px 12px 8px 0; text-align: left; vertical-align: middle; } .dawat-money .r { text-align: right; } .dawat-money tbody tr { border-top: 1px solid rgb(229 231 235); } .dawat-money .muted { color: rgb(107 114 128); }</style>
@@ -12,7 +12,7 @@
                     @foreach ($shahidars as $row)
                         <tr class="border-t border-gray-200 dark:border-white/10">
                             <td class="py-2 font-medium">{{ $row['shahidar']->name }} <span class="muted">{{ $row['shahidar']->phone }}</span></td>
-                            <td>{{ $row['orders'] }}</td>
+                            <td>{{ \App\Models\Order::banglaDigits($row['orders']) }}</td>
                             <td class="r">{{ $tk($row['collected']) }}</td>
                             <td class="r">{{ $row['paid_cooks'] ? $tk($row['paid_cooks']) : '—' }}</td>
                             <td class="r" style="font-weight:600">{{ $row['cash'] < 0 ? 'দাওয়াত দেবে '.$tk(-$row['cash']) : $tk($row['cash']) }}</td>
@@ -53,8 +53,8 @@
                         <tr>
                             <td class="py-2 font-medium">{{ $s->kitchen->display_name }} <span class="muted">{{ $s->kitchen->user->phone }}</span></td>
                             <td>{{ $s->shahidar->name }}</td>
-                            <td>{{ $s->picked_at->timezone('Asia/Dhaka')->format('j M, g:i A') }}</td>
-                            <td>{{ $s->boxes }}</td>
+                            <td>{{ \App\Support\BnDate::dayTime($s->picked_at) }}</td>
+                            <td>{{ \App\Models\Order::banglaDigits($s->boxes) }}</td>
                             <td class="r">{{ $s->paid_paisa ? $tk($s->paid_paisa) : '—' }}</td>
                             <td style="font-weight:600;color:{{ $s->cook_disputed_at ? 'rgb(185 28 28)' : 'rgb(107 114 128)' }}">{{ $s->cook_disputed_at ? 'পাইনি বলেছেন' : 'নিশ্চিত বাকি' }}</td>
                         </tr>
@@ -74,8 +74,8 @@
                     @foreach ($cooks as $row)
                         <tr class="border-t border-gray-200 dark:border-white/10">
                             <td class="py-2 font-medium">{{ $row['kitchen']->display_name }} <span class="muted">{{ $row['kitchen']->user->phone }} · টাকা নেন {{ $row['kitchen']->payLabel() }}</span></td>
-                            <td>{{ \Illuminate\Support\Carbon::parse($row['from'])->format('j M') }} – {{ \Illuminate\Support\Carbon::parse($row['to'])->format('j M') }}</td>
-                            <td>{{ $row['orders'] }}</td>
+                            <td>{{ \App\Support\BnDate::day($row['from']) }} – {{ \App\Support\BnDate::day($row['to']) }}</td>
+                            <td>{{ \App\Models\Order::banglaDigits($row['orders']) }}</td>
                             <td class="r">{{ $tk($row['gross']) }}</td>
                             <td class="r">{{ $tk($row['commission']) }}</td>
                             <td class="r">{{ $tk($row['delivery']) }}</td>
@@ -143,9 +143,9 @@
             <ul class="space-y-1 text-sm">
                 @foreach ($recent as $s)
                     <li>
-                        {{ $s->created_at->timezone(config('app.display_timezone'))->format('j M, g:i a') }} ·
+                        {{ \App\Support\BnDate::dayTime($s->created_at) }} ·
                         {{ $s->kind === 'cook' ? 'পরিশোধ: '.$s->kitchen?->display_name : 'জমা নেওয়া: '.$s->shahidar?->name }} ·
-                        {{ $s->orders_count }} বক্স · <strong>{{ $tk($s->amount_paisa) }}</strong>
+                        {{ \App\Models\Order::banglaDigits($s->orders_count) }} বক্স · <strong>{{ $tk($s->amount_paisa) }}</strong>
                         @if ($s->note) <span class="muted">({{ $s->note }})</span> @endif
                     </li>
                 @endforeach

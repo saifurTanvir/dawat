@@ -9,6 +9,11 @@
         <div v-if="route.query.posted" class="mt-4 rounded-xl bg-leaf-soft p-4" role="status">
             <p class="font-semibold text-leaf-deep">✅ পোস্ট হয়ে গেছে।</p>
             <p v-if="posts[0]?.split" class="mt-1 text-sm">{{ resultLine(posts[0].split) }}</p>
+            <!-- At first, her own people are her best buyers -->
+            <p v-if="posts[0]" class="mt-3 text-sm">পরিচিতদের জানান — শুরুতে চেনাজানা মানুষরাই সবচেয়ে বেশি কেনেন।</p>
+            <a v-if="posts[0]" :href="shareUrl(posts[0])" target="_blank" rel="noopener" class="btn-primary mt-2 flex items-center justify-center gap-2 bg-[#1f8f4e]">
+                <span aria-hidden="true">💬</span> WhatsApp-এ পরিচিতদের পাঠান
+            </a>
         </div>
 
         <p v-if="loading" class="mt-6 text-muted">লোড হচ্ছে…</p>
@@ -145,6 +150,13 @@ async function run(post, request) {
     } finally {
         busyId.value = null;
     }
+}
+
+/** A WhatsApp message with today's dish and its link, for her contacts. */
+function shareUrl(post) {
+    const link = `${window.location.origin}/p/${post.id}`;
+    const text = `আজ বাসায় রান্না করেছি: ${post.title}। দাওয়াত অ্যাপে অর্ডার করতে পারেন — ${link}`;
+    return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 
 function setPlates(post, platesLeft, cookedMore = false) {

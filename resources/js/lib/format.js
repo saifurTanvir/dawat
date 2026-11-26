@@ -62,3 +62,11 @@ export function currentMealSlot(now = new Date()) {
     if (hour < 19) return 'snack';
     return 'dinner';
 }
+
+const MONTHS = ['জানু', 'ফেব্রু', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টে', 'অক্টো', 'নভে', 'ডিসে'];
+
+/** "2026-11-26" → "২৬ নভে" */
+export function dayText(ymd) {
+    const [, m, d] = String(ymd).split('-').map(Number);
+    return m && d ? `${bn(d)} ${MONTHS[m - 1]}` : ymd;
+}

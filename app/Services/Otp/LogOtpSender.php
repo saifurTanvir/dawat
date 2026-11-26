@@ -9,6 +9,6 @@ class LogOtpSender implements OtpSender
 {
     public function send(string $phone, string $code, OtpPurpose $purpose = OtpPurpose::Login, array $context = []): void
     {
-        Log::info("[OTP] {$phone}: {$code} | ".$purpose->message($code, $context));
+        Log::info(($purpose === OtpPurpose::Login ? '[OTP]' : '[SMS '.$purpose->value.']')." {$phone}: ".$purpose->message($code, $context));
     }
 }

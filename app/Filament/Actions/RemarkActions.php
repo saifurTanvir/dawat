@@ -46,7 +46,7 @@ final class RemarkActions
                 DatePicker::make('follow_up_on')->label('ফলো-আপের দিন (ইচ্ছা হলে)')->native(false)
                     ->minDate(now(DhakaTime::TZ)->startOfDay())->displayFormat('j M Y')
                     ->helperText('সেদিন ড্যাশবোর্ডের "আজকের ফলো-আপ"-এ আসবে।'),
-                ViewField::make('history')->hiddenLabel()->view('filament.remarks.history')
+                ViewField::make('history')->label('আগের কথা')->hiddenLabel()->view('filament.remarks.history')
                     ->viewData(['remarks' => $userOf($record)?->remarks()->with(['author', 'doneBy'])->limit(20)->get() ?? collect()]),
             ])
             ->action(function ($record, array $data) use ($userOf) {

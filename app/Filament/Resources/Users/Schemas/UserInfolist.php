@@ -44,7 +44,7 @@ class UserInfolist
                     TextEntry::make('shahidar_link')->label('এলাকা ম্যানেজার')->state(fn (User $record) => $record->isShahidar() ? 'এলাকা ম্যানেজারের পাতা →' : null)
                         ->url(fn (User $record) => $record->isShahidar() ? Links::shahidar($record->id) : null)->placeholder('—'),
                 ]),
-                Section::make('গ্রাহক হিসেবে সারাংশ')->columnSpanFull()->schema([ViewEntry::make('history_summary')->hiddenLabel()->view('filament.history.summary-customer')]),
+                Section::make('গ্রাহক হিসেবে সারাংশ')->columnSpanFull()->schema([ViewEntry::make('history_summary')->label('সারাংশ')->hiddenLabel()->view('filament.history.summary-customer')]),
             ]);
     }
 }

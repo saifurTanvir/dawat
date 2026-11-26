@@ -13,6 +13,7 @@ use App\Support\Roles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class KitchenController extends Controller
 {
@@ -41,13 +42,22 @@ class KitchenController extends Controller
         }
 
         $data = $request->validate(
-            ['display_name' => ['required', 'string', 'min:2', 'max:60']],
             [
+                'display_name' => ['required', 'string', 'min:2', 'max:60'],
+                // Her own name: how the team addresses her on the phone (asked when the account has none).
+                'name' => [Rule::requiredIf(fn () => blank($user->name)), 'nullable', 'string', 'min:2', 'max:60'],
+            ],
+            [
+                'name.required' => 'আপনার নিজের নাম লিখুন — দাওয়াত টিম ফোনে এই নামে ডাকবে।',
                 'display_name.required' => 'রান্নাঘরের একটা নাম দিন, যেমন "রহিমা খালার রান্নাঘর"।',
                 'display_name.min' => 'নাম কমপক্ষে ২ অক্ষরের হতে হবে।',
                 'display_name.max' => 'নাম ৬০ অক্ষরের মধ্যে রাখুন।',
             ],
         );
+
+        if (filled($data['name'] ?? null)) {
+            $user->forceFill(['name' => trim($data['name'])])->save();
+        }
 
         $kitchen = DB::transaction(function () use ($user, $data) {
             $kitchen = Kitchen::create([

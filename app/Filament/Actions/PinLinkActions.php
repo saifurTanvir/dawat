@@ -26,7 +26,7 @@ final class PinLinkActions
             ->fillForm(fn (Kitchen $record) => ['message' => PinLink::forKitchen($record, auth()->user())->message()])
             ->schema(fn (Kitchen $record) => [
                 Textarea::make('message')->label('মেসেজ (কপি করে পাঠান)')->rows(8)->readOnly(),
-                Placeholder::make('wa')->hiddenLabel()->content(function () use ($record) {
+                Placeholder::make('wa')->label('WhatsApp')->hiddenLabel()->content(function () use ($record) {
                     $url = 'https://wa.me/'.PhoneNumber::international($record->user->phone).'?text='.rawurlencode(PinLink::forKitchen($record)->message());
 
                     return new HtmlString('<a href="'.e($url).'" target="_blank" rel="noopener" style="display:inline-block;background:#16a34a;color:#fff;font-weight:600;padding:.5rem 1rem;border-radius:.5rem">WhatsApp-এ পাঠান</a>');

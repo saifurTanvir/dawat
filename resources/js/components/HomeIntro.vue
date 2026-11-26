@@ -13,10 +13,14 @@
                 <span :class="[ICON, 'bg-leaf-soft text-leaf']"><svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2" /></svg></span>
                 রোজ দুপুরের লাঞ্চ নিন
             </RouterLink>
-            <RouterLink to="/cook" :class="TILE">
+            <RouterLink v-if="auth.isSignedIn" to="/cook" :class="TILE">
                 <span :class="[ICON, 'bg-turmeric-soft text-leaf-deep']"><svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h16a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6Z" /><path d="M12 9V6M8 9V7M16 9V7M2 13h20" /></svg></span>
                 রান্না করে আয় করুন
             </RouterLink>
+            <a v-else href="/rannaghor" :class="TILE">
+                <span :class="[ICON, 'bg-turmeric-soft text-leaf-deep']"><svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h16a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6Z" /><path d="M12 9V6M8 9V7M16 9V7M2 13h20" /></svg></span>
+                রান্না করে আয় করুন
+            </a>
             <RouterLink to="/join/area-manager" :class="[TILE, 'ring-2 ring-turmeric']">
                 <span :class="[ICON, 'bg-turmeric text-leaf-deep']"><svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="16.5" r="3.5" /><circle cx="18.5" cy="16.5" r="3.5" /><path d="M5.5 16.5L9 9h6l3.5 7.5M9 9l3 7.5h-6.5M14 5h2.5L15 9" /></svg></span>
                 <span>এলাকা ম্যানেজার হয়ে আয় করুন<span class="block text-xs font-normal text-muted">মাসে {{ incomeShort }}</span></span>
@@ -67,7 +71,7 @@
                 <Chevron />
             </RouterLink>
 
-            <RouterLink to="/cook" :class="DOOR">
+            <component :is="auth.isSignedIn ? RouterLink : 'a'" v-bind="auth.isSignedIn ? { to: '/cook' } : { href: '/rannaghor' }" :class="DOOR">
                 <span :class="[ART, 'bg-turmeric-soft text-leaf-deep']">
                     <svg viewBox="0 0 24 24" class="size-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h16a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6Z" /><path d="M12 9V6M8 9V7M16 9V7M2 13h20" /></svg>
                 </span>
@@ -76,7 +80,7 @@
                     <span class="block text-sm text-muted">গৃহিণীদের জন্য — পরিবারের রান্না থেকে কয়েক প্লেট বিক্রি</span>
                 </span>
                 <Chevron />
-            </RouterLink>
+            </component>
 
             <!-- F53: the offer that brings in runners -->
             <RouterLink to="/join/area-manager" :class="[DOOR, 'ring-2 ring-turmeric']">
@@ -132,6 +136,9 @@ import { RouterLink } from 'vue-router';
 import { api } from '@/lib/api';
 import { bn } from '@/lib/bn';
 import { taka } from '@/lib/format';
+import { useAuthStore } from '@/stores/auth';
+
+const auth = useAuthStore();
 
 defineProps({
     areas: { type: Array, default: () => [] },

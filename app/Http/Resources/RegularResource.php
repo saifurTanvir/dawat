@@ -57,6 +57,8 @@ class RegularResource extends JsonResource
                 'can_skip' => in_array($o->status, [OrderStatus::Booked, OrderStatus::Asking], true),
                 // F79: an office box's place at the office.
                 'spot' => BoxLabels::spot($o),
+                // Their own delivery code, while the box is on its way (the SMS has it too).
+                'delivery_code' => in_array($o->status, [OrderStatus::Booked, OrderStatus::PickedUp], true) ? $o->delivery_code : null,
                 // F30: today's price is above the limit; "নেব" until ask_until.
                 'can_accept' => $o->status === OrderStatus::Asking,
                 'ask_until' => $o->ask_until?->toIso8601String(),

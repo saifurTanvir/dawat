@@ -124,7 +124,7 @@ class MessengerThreadResource extends Resource
             ->modalHeading(fn (MessengerThread $t) => $t->name ?: 'Messenger চ্যাট')
             ->modalSubmitActionLabel('পাঠান')
             ->schema(fn (MessengerThread $t) => [
-                ViewField::make('history')->hiddenLabel()->view('filament.messenger.chat')
+                ViewField::make('history')->label('আগের কথা')->hiddenLabel()->view('filament.messenger.chat')
                     ->viewData(['messages' => $t->messages()->latest('id')->limit(40)->get()->reverse(), 'thread' => $t]),
                 Textarea::make('reply')->label('উত্তর লিখুন (ইচ্ছা হলে)')->rows(3)->maxLength(1900)
                     ->helperText('পাঠানোর পরও বট তাঁর পরের মেসেজের উত্তর দেবে। শেষ মেসেজের ২৪ ঘণ্টা পর Meta আর পাঠাতে দেয় না।'),

@@ -24,6 +24,7 @@ use App\Services\Otp\OtpSender;
 use App\Support\Roles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -87,6 +88,11 @@ class LateBookingTest extends TestCase
         $this->assertStringContainsString('নতুন নিয়মিত গ্রাহক', $note->title);
         $this->assertStringNotContainsString('কল্যাণ', $note->title.$note->body);
         $this->assertStringNotContainsString('কল্যাণ', OtpPurpose::CookLateBooking->message('', ['slot' => 'দুপুর', 'plates' => '১', 'box' => 'x', 'manager' => 'করিম']));
+
+        // The customer sees the delivery code in the app as well as by SMS.
+        $code = $this->actingAs($this->customer->user, 'sanctum')->getJson('/api/v1/regular')->json('data.today.0.delivery_code');
+        $this->assertTrue(Hash::check($code, $order->delivery_code_hash));
+        $this->assertArrayNotHasKey('delivery_code', $order->toArray());
 
         // Not twice.
         app(BookingPlanner::class)->bookLate($this->customer);

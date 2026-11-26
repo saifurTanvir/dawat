@@ -191,6 +191,7 @@ class GuestMeals
                         'delivery_fee_paisa' => $ownCook ? 0 : (int) ($customer->area?->delivery_fee_paisa ?? 0),
                         'status' => OrderStatus::Booked,
                         'delivery_code_hash' => Hash::make($code),
+                        'delivery_code' => $code,
                         'payment_method' => 'cash',
                     ]);
                     break;

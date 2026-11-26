@@ -203,7 +203,7 @@ final class CallRequestActions
                 ->modalHeading(fn (CallRequest $r) => 'কথা হয়েছে '.Order::banglaDigits(count($r->notes ?? [])).' বার — '.($r->name ?: $r->phoneLabel()))
                 ->modalWidth('lg')
                 ->schema(fn (CallRequest $r) => [
-                    Placeholder::make('history')->hiddenLabel()
+                    Placeholder::make('history')->label('আগের কথা')->hiddenLabel()
                         ->content(fn () => empty($r->notes) ? 'এখনো কোনো রিমার্কস নেই।' : self::history($r)),
                 ])
                 ->modalSubmitAction(false)
@@ -216,7 +216,7 @@ final class CallRequestActions
             ->modalHeading(fn (CallRequest $r) => 'কেন — '.($r->name ?: ($r->user?->name ?: $r->phoneLabel())))
             ->modalWidth('lg')
             ->schema(fn (CallRequest $r) => [
-                Placeholder::make('full')->hiddenLabel()->content(fn () => new HtmlString('<div style="white-space:pre-line;line-height:1.6">'.e($r->reason).'</div>')),
+                Placeholder::make('full')->label('পুরো লেখা')->hiddenLabel()->content(fn () => new HtmlString('<div style="white-space:pre-line;line-height:1.6">'.e($r->reason).'</div>')),
                 Placeholder::make('history')->label('রিমার্কস')
                     ->content(fn () => self::history($r))
                     ->visible(fn () => ! empty($r->notes)),

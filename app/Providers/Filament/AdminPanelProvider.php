@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
+use App\Filament\Support\LetterAvatars;
 use App\Http\Controllers\Admin\QrCodeController;
 use App\Http\Controllers\Admin\StickerSheetController;
 use Filament\Http\Middleware\Authenticate;
@@ -46,6 +47,7 @@ class AdminPanelProvider extends PanelProvider
                 'danger' => Color::hex('#b8322a'),
             ])
             ->font('Noto Sans Bengali')
+            ->defaultAvatarProvider(LetterAvatars::class)
             ->navigationGroups(['রাঁধুনি ও খাবার', 'নিয়মিত খাবার', 'নিরাপত্তা', 'সেটিংস'])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')

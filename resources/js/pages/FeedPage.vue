@@ -145,12 +145,22 @@
             <template v-if="areas.length">
                 <p class="font-semibold text-ink">দাওয়াত এখন শুধু বাড্ডায়</p>
                 <p class="mt-1">{{ LAUNCH_NOTICE }}</p>
-                <p class="mt-2">যেসব এলাকায় শিগগিরই আসছি:</p>
-                <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-                    <li v-for="a in areas" :key="a.slug">
-                        <a :href="`/area/${a.slug}`" class="text-leaf underline-offset-2 hover:underline">{{ a.name }}</a>
-                    </li>
-                </ul>
+                <template v-if="servingAreas.length">
+                    <p class="mt-2">এখন চালু:</p>
+                    <ul class="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                        <li v-for="a in servingAreas" :key="a.slug">
+                            <a :href="`/area/${a.slug}`" class="font-semibold text-leaf underline-offset-2 hover:underline">{{ a.name }}</a>
+                        </li>
+                    </ul>
+                </template>
+                <details class="mt-3">
+                    <summary class="cursor-pointer">যেসব এলাকায় শিগগিরই আসছি ({{ bn(soonAreas.length) }}টা)</summary>
+                    <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                        <li v-for="a in soonAreas" :key="a.slug">
+                            <a :href="`/area/${a.slug}`" class="text-leaf underline-offset-2 hover:underline">{{ a.name }}</a>
+                        </li>
+                    </ul>
+                </details>
             </template>
             <ul class="mt-5 flex flex-wrap gap-x-4 gap-y-1">
                 <li v-if="!install.standalone"><RouterLink to="/app" class="text-leaf underline-offset-2 hover:underline">📲 অ্যাপ ইনস্টল করুন</RouterLink></li>
@@ -218,6 +228,8 @@ const mealOptions = [
 ];
 
 const areas = ref([]);
+const servingAreas = computed(() => areas.value.filter((a) => a.serving));
+const soonAreas = computed(() => areas.value.filter((a) => !a.serving));
 const posts = ref([]);
 const nextPage = ref(null);
 const loading = ref(false);

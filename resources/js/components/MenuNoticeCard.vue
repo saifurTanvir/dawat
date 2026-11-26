@@ -2,7 +2,7 @@
     <!-- F61: tell the regular customer today's dish, before cooking. -->
     <section class="mb-6 rounded-[var(--radius-plate)] bg-plate p-5" aria-labelledby="notice-title">
         <h2 id="notice-title" class="font-semibold">আজ কী রান্না {{ forCook ? 'করছেন' : 'হচ্ছে' }}?</h2>
-        <p class="mt-1 text-sm text-muted">{{ forCook ? 'নিয়মিত গ্রাহক আগে থেকে জানবেন।' : 'গৃহিণীর নিয়মিত গ্রাহক আগে থেকে জানবেন।' }}</p>
+        <p class="mt-1 text-sm text-muted">{{ forCook ? 'শুধু নিয়মিত গ্রাহককে আগে থেকে জানানো — এটা পোস্ট নয়। বিক্রি করতে রান্না হলে "আজকের রান্না পোস্ট করুন" চাপুন।' : 'গৃহিণীর নিয়মিত গ্রাহক আগে থেকে জানবেন।' }}</p>
 
         <ul v-if="told.length" class="mt-3 space-y-1 text-sm">
             <li v-for="r in told" :key="r.meal_slot" class="flex items-start justify-between gap-2">

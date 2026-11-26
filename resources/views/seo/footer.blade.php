@@ -2,12 +2,23 @@
 <footer class="mt-14 border-t border-rule pt-6 pb-10 text-sm text-muted">
     <p class="font-semibold text-ink">দাওয়াত এখন শুধু বাড্ডায়</p>
     <p class="mt-1">{{ config('dawat.launch.notice') }}</p>
-    <p class="mt-2">যেসব এলাকায় শিগগিরই আসছি:</p>
-    <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-        @foreach ($areas as $a)
-            <li><a href="{{ url('/area/'.$a->slug) }}" class="text-leaf underline-offset-2 hover:underline">{{ $a->name }}</a></li>
-        @endforeach
-    </ul>
+    @php([$serving, $soon] = collect($areas)->partition(fn ($a) => $a->for_customers))
+    @if ($serving->isNotEmpty())
+        <p class="mt-2">এখন চালু:</p>
+        <ul class="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+            @foreach ($serving as $a)
+                <li><a href="{{ url('/area/'.$a->slug) }}" class="font-semibold text-leaf underline-offset-2 hover:underline">{{ $a->name }}</a></li>
+            @endforeach
+        </ul>
+    @endif
+    <details class="mt-3">
+        <summary class="cursor-pointer">যেসব এলাকায় শিগগিরই আসছি</summary>
+        <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            @foreach ($soon as $a)
+                <li><a href="{{ url('/area/'.$a->slug) }}" class="text-leaf underline-offset-2 hover:underline">{{ $a->name }}</a></li>
+            @endforeach
+        </ul>
+    </details>
     <ul class="mt-5 flex flex-wrap gap-x-4 gap-y-1">
         <li><a href="{{ url('/') }}" class="text-leaf underline-offset-2 hover:underline">আজকের খাবার</a></li>
         <li><a href="{{ url('/lunch') }}" class="text-leaf underline-offset-2 hover:underline">প্রতিদিনের লাঞ্চ</a></li>

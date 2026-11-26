@@ -51,6 +51,7 @@
                             </span>
                         </label>
                     </div>
+                    <p v-if="!post.order.delivery" class="mt-2 text-sm text-muted">এই গৃহিণীর এলাকায় এখনো এলাকা ম্যানেজার নেই, তাই আপাতত শুধু নিজে নেওয়া যাবে। শিগগিরই পৌঁছে দেওয়াও চালু হবে।</p>
                     <p v-if="err('receive')" class="error-text">{{ err('receive') }}</p>
                 </fieldset>
 

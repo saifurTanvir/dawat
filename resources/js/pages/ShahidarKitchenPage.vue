@@ -141,7 +141,7 @@
                 </div>
                 <p class="text-xs text-muted">{{ bn(data.sales.totals.plates) }} প্লেট · গৃহিণীর পাওনা বাকি {{ taka(data.sales.totals.due_paisa) }}</p>
                 <p v-for="d in data.sales.days.slice(0, 6)" :key="`${d.date}-${d.meal_slot}`" class="mt-1 text-xs">
-                    {{ d.date.slice(5) }} {{ d.meal_slot_label }} · নিয়মিত {{ bn(d.regular_plates) }} · ফিড {{ bn(d.feed_plates) }} · পৌঁছেছে {{ bn(d.delivered) }}<template v-if="d.cancelled"> · বাতিল {{ bn(d.cancelled) }}</template>
+                    {{ dayText(d.date) }} {{ d.meal_slot_label }} · নিয়মিত {{ bn(d.regular_plates) }} · ফিড {{ bn(d.feed_plates) }} · পৌঁছেছে {{ bn(d.delivered) }}<template v-if="d.cancelled"> · বাতিল {{ bn(d.cancelled) }}</template>
                 </p>
                 <div class="mt-3 border-t border-rule pt-3">
                     <ReviewList :reviews="data.sales.reviews" :reply-path="(r) => `/shahidar/reviews/${r.id}/reply`" @replied="(m) => { notice = m; load(); }" />
@@ -167,7 +167,7 @@ import PlateSplitBar from '@/components/PlateSplitBar.vue';
 import ReviewList from '@/components/ReviewList.vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
-import { clockText, taka } from '@/lib/format';
+import { clockText, dayText, taka } from '@/lib/format';
 
 const route = useRoute();
 const id = route.params.id;
