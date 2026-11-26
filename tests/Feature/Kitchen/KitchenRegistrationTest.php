@@ -28,6 +28,15 @@ class KitchenRegistrationTest extends TestCase
         $this->assertSame(KitchenStatus::Pending, $user->kitchen->status);
     }
 
+    public function test_a_cook_without_a_name_gives_her_own_name_at_sign_up(): void
+    {
+        $user = User::factory()->create(['name' => null]);
+        $this->actingAs($user, 'sanctum')->postJson('/api/v1/kitchen', ['display_name' => 'সালমার রান্নাঘর'])
+            ->assertUnprocessable()->assertJsonValidationErrors('name');
+        $this->postJson('/api/v1/kitchen', ['display_name' => 'সালমার রান্নাঘর', 'name' => 'সালমা আক্তার'])->assertCreated();
+        $this->assertSame('সালমা আক্তার', $user->fresh()->name);
+    }
+
     public function test_a_user_cannot_register_twice(): void
     {
         $kitchen = Kitchen::factory()->create();

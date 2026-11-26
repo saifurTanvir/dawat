@@ -15,6 +15,8 @@ class AreaResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
+            // F111: delivery runs here now (the rest are "coming soon")
+            'serving' => (bool) $this->for_customers,
             // Area centres are public landmarks, not anyone's home.
             'center' => $this->center?->toArray(),
             'distance_m' => $this->when(isset($this->distance_m), fn () => (int) round($this->distance_m)),

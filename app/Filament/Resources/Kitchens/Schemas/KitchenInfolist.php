@@ -18,7 +18,7 @@ class KitchenInfolist
     {
         return $schema
             ->components([
-                Section::make('সারাংশ')->columnSpanFull()->schema([ViewEntry::make('history_summary')->hiddenLabel()->view('filament.history.summary-kitchen')]),
+                Section::make('সারাংশ')->columnSpanFull()->schema([ViewEntry::make('history_summary')->label('সারাংশ')->hiddenLabel()->view('filament.history.summary-kitchen')]),
                 Section::make('রান্নাঘর')
                     ->columns(2)
                     ->schema([
@@ -75,7 +75,7 @@ class KitchenInfolist
                 Section::make('গৃহিণীর হয়ে যা করা হয়েছে')
                     ->description('অ্যাডমিন বা এলাকা ম্যানেজার যা যা করেছেন — প্রতিবার গৃহিণীকে জানানো হয়েছে।')
                     ->collapsible()
-                    ->schema([ViewEntry::make('acted_log')->hiddenLabel()->view('filament.kitchens.log')]),
+                    ->schema([ViewEntry::make('acted_log')->label('যা করা হয়েছে')->hiddenLabel()->view('filament.kitchens.log')]),
             ]);
     }
 }

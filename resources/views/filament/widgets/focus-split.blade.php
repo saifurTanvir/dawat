@@ -4,7 +4,7 @@
     ['পিন আছে', 'pinned', 'pins_today', 'আজ পিন দিয়েছেন'],
     ['পিন নেই', 'pinless', null, null],
     ['দিনে প্লেট (পিন আছে এমন)', 'plates', null, null],
-    ['অনুমোদনের অপেক্ষায়', 'pending', null, null],
+    ['অনুমোদনের অপেক্ষায়', 'pending', 'signups_today', 'আজ যোগ দিয়েছেন'],
     ['গ্রাহক', 'customers', 'customers_today', 'আজ নতুন'],
     ['এলাকা ম্যানেজার আবেদন', 'managers', 'managers_today', 'আজ নতুন'],
 ])

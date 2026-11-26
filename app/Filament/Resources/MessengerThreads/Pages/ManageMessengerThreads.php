@@ -212,7 +212,7 @@ class ManageMessengerThreads extends ManageRecords
                 ->modalSubmitAction(false)
                 ->modalCancelActionLabel('বন্ধ')
                 ->schema([
-                    ViewField::make('setup')->hiddenLabel()->view('filament.messenger.setup')->viewData([
+                    ViewField::make('setup')->label('যুক্ত করার তথ্য')->hiddenLabel()->view('filament.messenger.setup')->viewData([
                         'url' => route('webhooks.messenger'),
                         'verify' => Graph::verifyToken(),
                         'checks' => [

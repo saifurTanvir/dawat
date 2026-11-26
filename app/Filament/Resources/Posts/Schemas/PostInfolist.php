@@ -42,14 +42,14 @@ class PostInfolist
                 Section::make('কারা পেয়েছে')
                     ->description('নিয়মিত গ্রাহক (নিজে থেকে বুক), দাম জিজ্ঞেস চলছে, আর ফিড থেকে অর্ডার।')
                     ->columnSpanFull()
-                    ->schema([ViewEntry::make('plates_split')->hiddenLabel()->view('filament.posts.plates')]),
+                    ->schema([ViewEntry::make('plates_split')->label('প্লেট')->hiddenLabel()->view('filament.posts.plates')]),
                 Section::make('কোথায় দেখাচ্ছে')
                     ->description('কোন এলাকার ক্রেতারা এই পোস্ট পাচ্ছেন।')
                     ->columnSpanFull()
-                    ->schema([ViewEntry::make('reach')->hiddenLabel()->view('filament.posts.reach')]),
+                    ->schema([ViewEntry::make('reach')->label('কারা দেখবেন')->hiddenLabel()->view('filament.posts.reach')]),
                 Section::make('কারা দেখেছে')
                     ->columnSpanFull()
-                    ->schema([ViewEntry::make('viewers')->hiddenLabel()->view('filament.posts.viewers')]),
+                    ->schema([ViewEntry::make('viewers')->label('কারা দেখেছেন')->hiddenLabel()->view('filament.posts.viewers')]),
             ]);
     }
 }

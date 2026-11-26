@@ -178,6 +178,6 @@ class BillingTest extends TestCase
         $this->assertSame(24000, $bill->fresh()->duePaisa());
 
         Livewire::test(ListBills::class)->assertCanSeeTableRecords([$bill])->assertSee('আংশিক পরিশোধ');
-        Livewire::test(Money::class)->assertSee('বিলের গ্রাহকদের বাকি')->assertSee('নাসরিন')->assertSee('৳240');
+        Livewire::test(Money::class)->assertSee('বিলের গ্রাহকদের বাকি')->assertSee('নাসরিন')->assertSee('৳২৪০');
     }
 }

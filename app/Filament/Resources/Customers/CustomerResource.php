@@ -255,7 +255,7 @@ class CustomerResource extends Resource
                 Select::make('kitchen_id')->label('গৃহিণী (রান্নাঘর)')->options(self::kitchenOptions($record))->required()->searchable()->live()
                     ->helperText('শুধু অনুমোদিত আর খালি গৃহিণী — একজন গৃহিণী একজন গ্রাহকের সাথেই জোড়া হন। কাছের জন আগে।'),
                 // The suggested or chosen cook: call or WhatsApp her from here before pairing.
-                Placeholder::make('cook_contact')->hiddenLabel()
+                Placeholder::make('cook_contact')->label('গৃহিণীর সাথে কথা')->hiddenLabel()
                     ->visible(fn (Get $get) => filled($get('kitchen_id')))
                     ->content(fn (Get $get) => self::cookContact(Kitchen::with('user')->find($get('kitchen_id')))),
                 Callout::make('আপনি সাজেশনের বাইরে বেছেছেন')
@@ -389,7 +389,7 @@ class CustomerResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('সারাংশ')->columnSpanFull()->schema([ViewEntry::make('history_summary')->hiddenLabel()->view('filament.history.summary-customer')]),
+            Section::make('সারাংশ')->columnSpanFull()->schema([ViewEntry::make('history_summary')->label('সারাংশ')->hiddenLabel()->view('filament.history.summary-customer')]),
             Section::make('গ্রাহক')->columns(3)->schema([
                 TextEntry::make('user.name')->label('নাম'),
                 TextEntry::make('user.phone')->label('ফোন')->copyable(),
@@ -420,12 +420,12 @@ class CustomerResource extends Resource
             Section::make('আজ')
                 ->description('বুকিংয়ের প্রতিটা বেলায় আজ কী হলো, বক্স না থাকলে কেন।')
                 ->schema([
-                    TextEntry::make('today_reasons')->hiddenLabel()->listWithLineBreaks()
+                    TextEntry::make('today_reasons')->label('আজ কী হবে')->hiddenLabel()->listWithLineBreaks()
                         ->state(fn (Customer $record) => collect(app(BookingPlanner::class)->todayReasons($record))
                             ->map(fn ($r) => ($r['ok'] ? '✅ ' : '⚠️ ').$r['label'].': '.$r['line'])->all() ?: ['বুকিংয়ে কোনো বেলা নেই']),
                 ]),
             Section::make('বিল')->schema([
-                RepeatableEntry::make('bills')->hiddenLabel()->columns(5)->schema([
+                RepeatableEntry::make('bills')->label('বিল')->hiddenLabel()->columns(5)->schema([
                     TextEntry::make('number')->label('বিল নং')
                         ->url(fn (Bill $record) => BillResource::getUrl('view', ['record' => $record])),
                     TextEntry::make('period')->label('সময়')->state(fn (Bill $record) => $record->period_from->format('j M').' – '.$record->period_to->format('j M')),
@@ -436,14 +436,14 @@ class CustomerResource extends Resource
                 ])->placeholder('এখনো কোনো বিল নেই'),
             ])->collapsible(),
             Section::make('বিরতি')->schema([
-                RepeatableEntry::make('upcomingPauses')->hiddenLabel()->columns(3)->schema([
+                RepeatableEntry::make('upcomingPauses')->label('সামনের বিরতি')->hiddenLabel()->columns(3)->schema([
                     TextEntry::make('starts_on')->label('থেকে')->date('j M Y'),
                     TextEntry::make('ends_on')->label('পর্যন্ত')->date('j M Y'),
                     TextEntry::make('reason')->label('কারণ')->placeholder('—'),
                 ])->placeholder('কোনো বিরতি নেই'),
             ])->collapsible(),
             Section::make('জুটির ইতিহাস')->schema([
-                RepeatableEntry::make('pairings')->hiddenLabel()->columns(4)->schema([
+                RepeatableEntry::make('pairings')->label('জুটির ইতিহাস')->hiddenLabel()->columns(4)->schema([
                     TextEntry::make('kitchen.display_name')->label('রান্নাঘর'),
                     TextEntry::make('shahidar.name')->label('এলাকা ম্যানেজার'),
                     TextEntry::make('started_at')->label('শুরু')->dateTime('j M Y'),

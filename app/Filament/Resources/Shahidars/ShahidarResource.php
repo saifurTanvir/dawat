@@ -101,7 +101,7 @@ class ShahidarResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('সারাংশ')->columnSpanFull()->schema([ViewEntry::make('history_summary')->hiddenLabel()->view('filament.history.summary-shahidar')]),
+            Section::make('সারাংশ')->columnSpanFull()->schema([ViewEntry::make('history_summary')->label('সারাংশ')->hiddenLabel()->view('filament.history.summary-shahidar')]),
             Section::make('এলাকা ম্যানেজার')->columns(3)->schema([
                 TextEntry::make('name')->label('নাম'),
                 TextEntry::make('phone')->label('ফোন')->copyable(),

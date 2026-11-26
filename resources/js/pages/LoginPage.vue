@@ -3,6 +3,12 @@
         <h1 id="login-title" class="font-serif text-2xl font-bold">
             {{ step === 'phone' ? 'মোবাইল নম্বর দিয়ে ঢুকুন' : 'SMS-এর কোডটি দিন' }}
         </h1>
+        <!-- Came from "নিতে চাই": say what they are booking, so the order does not seem lost -->
+        <p v-if="ordering" class="mt-3 rounded-xl bg-turmeric-soft p-3">
+            <template v-if="ordering.title"><strong>{{ ordering.kitchen }}-এর “{{ ordering.title }}”</strong> বুক করতে আপনার মোবাইল নম্বর দিন।</template>
+            <template v-else>খাবারটা বুক করতে আপনার মোবাইল নম্বর দিন।</template>
+            ঢোকার পর সোজা অর্ডারের পাতায় ফিরে যাবেন।
+        </p>
         <p class="mt-1 text-muted">
             <template v-if="step === 'phone'">পাসওয়ার্ড লাগবে না। নতুন হলে নম্বর দিলেই অ্যাকাউন্ট খুলে যাবে।</template>
             <template v-else>{{ phoneShown }} নম্বরে আগে থেকেই অ্যাকাউন্ট আছে। ঢুকতে {{ bn(codeLength) }} অঙ্কের কোডটি দিন, যা এইমাত্র SMS-এ গেছে।</template>
@@ -69,6 +75,7 @@
 </template>
 
 <script setup>
+import { homeAfterLogin } from '@/lib/mode';
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
@@ -78,6 +85,16 @@ import { bn } from '@/lib/bn';
 const auth = useAuthStore();
 const route = useRoute();
 const router = useRouter();
+
+// "নিতে চাই" while signed out sends people here with next=/p/<id>?order=1
+const ordering = ref(null);
+const orderPost = typeof route.query.next === 'string' ? route.query.next.match(/^\/p\/(\d+)\?order=1/) : null;
+if (orderPost) {
+    ordering.value = { title: null, kitchen: null };
+    api.get(`/posts/${orderPost[1]}`)
+        .then(({ data }) => (ordering.value = { title: data.data.title, kitchen: data.data.kitchen?.name }))
+        .catch(() => {});
+}
 
 const codeLength = 6;
 const step = ref('phone');
@@ -123,7 +140,7 @@ function startCooldown(seconds) {
 }
 
 function goNext() {
-    const next = typeof route.query.next === 'string' && route.query.next.startsWith('/') ? route.query.next : '/';
+    const next = typeof route.query.next === 'string' && route.query.next.startsWith('/') ? route.query.next : homeAfterLogin(auth.user);
     router.replace(next);
 }
 

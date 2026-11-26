@@ -42,6 +42,14 @@ export const MODES = {
     },
 };
 
+/** Where to land after signing in, when no page asked: an area manager's day list, a cook's kitchen, else the feed. */
+export function homeAfterLogin(user) {
+    const roles = user?.roles ?? [];
+    if (roles.includes('shahidar')) return '/shahidar';
+    if (roles.includes('cook') || user?.kitchen) return '/cook';
+    return '/';
+}
+
 /** Roles this user can view the app as, in a fixed order. */
 export function availableModes(user) {
     if (!user) return [];
@@ -85,6 +93,8 @@ export function currentMode(user, path) {
     const modes = availableModes(user);
     const fromRoute = modeOfRoute(path);
     if (fromRoute && modes.includes(fromRoute)) return fromRoute;
+    // Someone setting up a kitchen is already a cook to us, before the kitchen exists.
+    if (fromRoute === 'cook' && user) return 'cook';
     if (chosenMode.value && modes.includes(chosenMode.value)) return chosenMode.value;
     return modes.find((m) => m === 'shahidar') ?? modes.find((m) => m === 'cook') ?? 'customer';
 }

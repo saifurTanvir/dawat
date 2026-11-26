@@ -169,7 +169,7 @@ class BillResource extends Resource
                 TextEntry::make('due_on')->label('দেওয়ার শেষ দিন')->date('j M Y')->placeholder('—'),
             ]),
             Section::make('টাকা জমা')->schema([
-                RepeatableEntry::make('payments')->hiddenLabel()->columns(4)->schema([
+                RepeatableEntry::make('payments')->label('পরিশোধ')->hiddenLabel()->columns(4)->schema([
                     TextEntry::make('created_at')->label('কবে')->dateTime('j M, g:i a', config('app.display_timezone')),
                     TextEntry::make('amount_paisa')->label('টাকা')->formatStateUsing(fn (int $state) => self::taka($state)),
                     TextEntry::make('method')->label('কীভাবে')->formatStateUsing(fn (string $state) => Bill::METHOD_LABELS[$state] ?? $state),
@@ -177,7 +177,7 @@ class BillResource extends Resource
                 ])->placeholder('এখনো টাকা জমা হয়নি'),
             ]),
             Section::make('বক্সগুলো')->collapsible()->schema([
-                RepeatableEntry::make('orders')->hiddenLabel()->columns(5)->schema([
+                RepeatableEntry::make('orders')->label('বক্স')->hiddenLabel()->columns(5)->schema([
                     TextEntry::make('service_date')->label('তারিখ')->date('j M, D'),
                     TextEntry::make('meal_slot')->label('বেলা')->formatStateUsing(fn ($state) => $state->label()),
                     TextEntry::make('kitchen.display_name')->label('রান্নাঘর'),
