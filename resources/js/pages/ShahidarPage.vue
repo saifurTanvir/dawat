@@ -18,9 +18,8 @@
                 <span aria-hidden="true" class="mr-1">📷</span>বক্স স্ক্যান করুন — কোন বক্স কার
             </button>
 
-            <p v-if="day.cash_held_paisa" class="mt-4 rounded-xl bg-plate p-3">
-                হাতে জমা টাকা <strong>{{ taka(day.cash_held_paisa) }}</strong> · দাওয়াত টিমকে বুঝিয়ে দিন
-            </p>
+            <!-- F110: today's money, and cooks paid at their door -->
+            <ShahidarMoneyCard :money="day.money" @updated="day.money = $event" />
 
             <!-- F64: guest plates -->
             <ShahidarGuestMeals v-if="day.guest_meals?.length" :rows="day.guest_meals" @updated="onGuest" />
@@ -276,6 +275,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import CookShare from '@/components/CookShare.vue';
 import CallButtons from '@/components/CallButtons.vue';
 import ShahidarGuestMeals from '@/components/ShahidarGuestMeals.vue';
+import ShahidarMoneyCard from '@/components/ShahidarMoneyCard.vue';
 import BoxLabelPrint from '@/components/BoxLabelPrint.vue';
 import OfficeDropCard from '@/components/OfficeDropCard.vue';
 import PlateSplitBar from '@/components/PlateSplitBar.vue';
@@ -491,6 +491,7 @@ async function refreshCash() {
     try {
         const { data } = await api.get('/shahidar/today');
         day.value.cash_held_paisa = data.data.cash_held_paisa;
+        day.value.money = data.data.money;
     } catch {
         // the list still works without the total
     }

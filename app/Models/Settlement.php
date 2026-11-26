@@ -12,7 +12,7 @@ class Settlement extends Model
 
     protected function casts(): array
     {
-        return ['from_date' => 'date', 'to_date' => 'date'];
+        return ['from_date' => 'date', 'to_date' => 'date', 'cook_confirmed_at' => 'datetime', 'cook_disputed_at' => 'datetime'];
     }
 
     public function kitchen(): BelongsTo

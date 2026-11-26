@@ -15,6 +15,7 @@ use App\Models\Sticker;
 use App\Models\User;
 use App\Services\Images\UnreadablePhotoException;
 use App\Services\Money\CookFees;
+use App\Services\Money\DoorPayouts;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Orders\BoxLabels;
 use App\Services\Orders\Delivery;
@@ -82,6 +83,8 @@ class ShahidarController extends Controller
             'posts' => $this->todayPosts($me, $pairings->pluck('kitchen_id')->merge($orders->pluck('kitchen_id'))->unique()->values()),
             // F28: cash collected and not yet handed to Dawat.
             'cash_held_paisa' => $this->money->cashHeldBy($me),
+            // F110: today's money — collected, paid to cooks, to Dawat — and the cooks to pay.
+            'money' => app(DoorPayouts::class)->forShahidar($me),
             // F61: my customers who will not eat today's dish and want something else.
             'meal_requests' => TodayMenu::requestsToday($me)->map(fn (MealChoice $c) => self::mealRequest($c))->values(),
             // F64: guest plates my customers asked for.

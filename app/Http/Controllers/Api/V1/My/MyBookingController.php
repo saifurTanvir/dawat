@@ -9,8 +9,10 @@ use App\Models\Kitchen;
 use App\Models\Order;
 use App\Models\Pairing;
 use App\Models\RoundStop;
+use App\Models\Settlement;
 use App\Services\Kitchens\ActForCook;
 use App\Services\Kitchens\CookActions;
+use App\Services\Money\DoorPayouts;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Orders\Settlements;
 use App\Services\Regular\OfficeRounds;
@@ -187,6 +189,20 @@ class MyBookingController extends Controller
         ]);
     }
 
+    /** POST /api/v1/my/payouts/{settlement}/confirm {got: bool} — F110 */
+    public function payoutConfirm(Request $request, Settlement $settlement, DoorPayouts $payouts, Settlements $money): JsonResponse
+    {
+        $kitchen = $request->user()->kitchen;
+        abort_unless($kitchen && $settlement->kitchen_id === $kitchen->id && $settlement->cash_from_shahidar_id, 404);
+        $data = $request->validate(['got' => ['required', 'boolean']]);
+        $payouts->confirm($settlement, (bool) $data['got']);
+
+        return response()->json([
+            'data' => self::payRow($kitchen, $money),
+            'message' => $data['got'] ? 'ধন্যবাদ — লেখা হলো আপনি পেয়েছেন।' : 'জানানো হয়েছে — এলাকা ম্যানেজার আর দাওয়াত টিম ফোন করবে।',
+        ]);
+    }
+
     /** GET /api/v1/my/pay-schedule — F110: when she takes her money, and what she is owed now. */
     public function paySchedule(Request $request, Settlements $money): JsonResponse
     {
@@ -218,6 +234,8 @@ class MyBookingController extends Controller
             'label' => $kitchen->payLabel(),
             'weekdays' => Kitchen::WEEKDAYS,
             'due_paisa' => $money->dueFor($kitchen)['payable'],
+            // Money the area manager says he gave her at the door: did she get it?
+            'payouts' => DoorPayouts::forCook($kitchen),
         ];
     }
 }
