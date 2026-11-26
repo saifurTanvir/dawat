@@ -19,7 +19,7 @@
         .pin-btn { display: block; width: 100%; border-radius: .9rem; padding: .95rem 1rem; font-weight: 700; font-size: 1.05rem; text-align: center; }
         .pin-primary { background: #1e5b3f; color: #fff; }
         .pin-quiet { background: #fff; border: 2px solid #1e5b3f; color: #1e5b3f; }
-        .pin-map { height: 20rem; border-radius: 1rem; overflow: hidden; border: 1px solid #e5e7eb; }
+        .pin-map { height: 60vh; max-height: 32rem; min-height: 18rem; border-radius: 1rem; overflow: hidden; border: 1px solid #e5e7eb; }
         .pin-err { color: #b91c1c; font-weight: 600; }
         .pin-input { width: 100%; border: 1px solid #d1d5db; border-radius: .7rem; padding: .7rem .9rem; }
         [hidden] { display: none !important; }
@@ -66,7 +66,7 @@
             </div>
             <ul id="results" class="space-y-1"></ul>
             <div id="map" class="pin-map"></div>
-            <p class="text-sm text-gray-600">ম্যাপে নীল পিনটা টেনে বা ম্যাপে চেপে ঠিক আপনার বাসার উপর রাখুন।</p>
+            <p class="text-sm text-gray-600">ম্যাপে নীল পিনটা টেনে বা ম্যাপে চেপে ঠিক আপনার বাড়ির ছাদের উপর রাখুন। ভালো করে দেখতে ম্যাপ বড় (জুম) করুন; উপরে ডানে স্যাটেলাইট/রাস্তা বদলানো যায়।</p>
             <button id="save" type="button" class="pin-btn pin-primary" onclick="pin.save()">✅ এটাই আমার বাসা</button>
             <button type="button" class="pin-btn pin-quiet" onclick="pin.restart()">পেছনে যান</button>
             <p id="pick-msg" class="pin-err" hidden></p>
@@ -79,22 +79,39 @@
         const $ = (id) => document.getElementById(id);
         const center = @json($k->area?->center ? [$k->area->center->lat, $k->area->center->lng] : [23.78, 90.40]);
         const urls = { save: @json(route('pin.store', $link->token)), search: @json(route('pin.search', $link->token)) };
-        let map, marker, mode = 'map', accuracy = null;
+        let map, marker, circle = null, mode = 'map', accuracy = null;
+
+        // F112: give the phone a few seconds and keep its most accurate reading.
+        function bestFix(ok, fail, { good = 20, maxWait = 12000 } = {}) {
+            let best = null, done = false, id = null;
+            const finish = (e) => { if (done) return; done = true; clearTimeout(t); if (id !== null) navigator.geolocation.clearWatch(id); best ? ok(best) : fail(e); };
+            id = navigator.geolocation.watchPosition((p) => {
+                if (!best || p.coords.accuracy < best.coords.accuracy) best = p;
+                if (best.coords.accuracy <= good) finish();
+            }, (e) => { if (e.code === 1) finish(e); }, { enableHighAccuracy: true, timeout: maxWait, maximumAge: 0 });
+            const t = setTimeout(() => finish(), maxWait);
+        }
 
         const show = (id, on = true) => { const el = $(id); if (el) el.hidden = !on; };
         const err = (id, text) => { const el = $(id); el.textContent = text || ''; el.hidden = !text; };
 
-        function openMap(lat, lng, zoom) {
+        function openMap(lat, lng, zoom, radius = null) {
             show('ask', false); show('done', false); show('pick');
             if (!map) {
                 map = L.map('map').setView([lat, lng], zoom);
-                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+                // F112: satellite photo first, so she can find her own roof.
+                const esri = (path, extra = {}) => L.tileLayer(`https://server.arcgisonline.com/ArcGIS/rest/services/${path}/MapServer/tile/{z}/{y}/{x}`, { maxNativeZoom: 19, maxZoom: 20, ...extra });
+                const satellite = L.layerGroup([esri('World_Imagery', { attribution: 'ছবি © Esri, Maxar' }), esri('Reference/World_Transportation'), esri('Reference/World_Boundaries_and_Places')]).addTo(map);
+                const streets = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 20, attribution: '© OpenStreetMap' });
+                L.control.layers({ '🛰️ স্যাটেলাইট': satellite, '🗺️ রাস্তা': streets }, null, { collapsed: false, position: 'topright' }).addTo(map);
                 marker = L.marker([lat, lng], { draggable: true }).addTo(map);
                 map.on('click', (e) => marker.setLatLng(e.latlng));
             } else {
                 map.setView([lat, lng], zoom);
                 marker.setLatLng([lat, lng]);
             }
+            circle?.remove(); circle = null;
+            if (radius) circle = L.circle([lat, lng], { radius, color: '#2563eb', weight: 1, fillOpacity: 0.12, interactive: false }).addTo(map);
             setTimeout(() => map.invalidateSize(), 60);
         }
 
@@ -103,28 +120,28 @@
                 err('ask-msg');
                 // GPS often fails inside the Facebook/Messenger browser or indoors.
                 // Never dead-end: fall back to the map, near the rough GPS fix if we have one.
-                const fallback = (text, lat = null, lng = null) => {
+                const fallback = (text, lat = null, lng = null, radius = null) => {
                     mode = 'map'; accuracy = null;
                     $('pick-hint').textContent = text;
                     show('search-box');
-                    lat === null ? openMap(center[0], center[1], 15) : openMap(lat, lng, 17);
+                    lat === null ? openMap(center[0], center[1], 15) : openMap(lat, lng, 17, radius);
                 };
                 if (!navigator.geolocation) { fallback('ফোনের লোকেশন পাওয়া যাচ্ছে না, সমস্যা নেই। বাসার কাছের রাস্তা/মসজিদ/দোকানের নাম লিখে খুঁজুন, তারপর পিনটা বাসার উপর রাখুন।'); return; }
-                err('ask-msg', 'লোকেশন নিচ্ছি… ফোন অনুমতি চাইলে "Allow" চাপুন।');
-                navigator.geolocation.getCurrentPosition((p) => {
+                err('ask-msg', 'লোকেশন নিচ্ছি… কয়েক সেকেন্ড লাগবে। ফোন অনুমতি চাইলে "Allow" চাপুন।');
+                bestFix((p) => {
                     err('ask-msg');
                     if (p.coords.accuracy > 100) {
-                        fallback('ফোনের লোকেশন পুরো ঠিক আসেনি, তাই কাছাকাছি দেখাচ্ছি। পিনটা টেনে বা ম্যাপে চেপে ঠিক আপনার বাসার উপর রাখুন।', p.coords.latitude, p.coords.longitude);
+                        fallback('ফোনের লোকেশন পুরো ঠিক আসেনি, তাই কাছাকাছি দেখাচ্ছি (নীল বৃত্ত)। স্যাটেলাইট ছবিতে নিজের বাড়ির ছাদ খুঁজে পিনটা টেনে তার উপর রাখুন।', p.coords.latitude, p.coords.longitude, p.coords.accuracy);
                         return;
                     }
                     accuracy = p.coords.accuracy; mode = 'home';
-                    $('pick-hint').textContent = 'আপনার ফোনের লোকেশন। পিনটা ঠিক আপনার বাসার উপর আছে তো? দরকার হলে একটু সরিয়ে দিন।';
+                    $('pick-hint').textContent = `ফোন বলছে আপনি প্রায় ${Math.round(p.coords.accuracy).toLocaleString('bn-BD')} মিটারের মধ্যে আছেন (নীল বৃত্ত)। পিনটা ঠিক আপনার বাড়ির ছাদের উপর আছে তো? না থাকলে টেনে সরিয়ে দিন।`;
                     show('search-box', false);
-                    openMap(p.coords.latitude, p.coords.longitude, 18);
+                    openMap(p.coords.latitude, p.coords.longitude, 19, p.coords.accuracy);
                 }, () => {
                     err('ask-msg');
                     fallback('ফোনের লোকেশন পাওয়া যায়নি, সমস্যা নেই। বাসার কাছের রাস্তা/মসজিদ/দোকানের নাম লিখে খুঁজুন, তারপর পিনটা বাসার উপর রাখুন।');
-                }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+                });
             },
             away() {
                 mode = 'map'; accuracy = null;

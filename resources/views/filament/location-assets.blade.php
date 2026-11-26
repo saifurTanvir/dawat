@@ -12,7 +12,7 @@
         .dl-results li + li { border-top: 1px solid rgb(229 231 235); }
         .dl-results button { display: block; width: 100%; text-align: start; padding: .5rem .75rem; }
         .dl-results button:hover { background: rgb(249 250 251); }
-        .dl-map { height: 14rem; width: 100%; border: 1px solid rgb(229 231 235); border-radius: .5rem; overflow: hidden; }
+        .dl-map { height: 22rem; width: 100%; border: 1px solid rgb(229 231 235); border-radius: .5rem; overflow: hidden; }
         .dl-hint { font-size: .75rem; color: rgb(107 114 128); }
         .dl-hint a { color: rgb(30 91 63); font-weight: 600; }
         .dark .dl-input, .dark .dl-btn:not(.dl-primary) { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.1); color: inherit; }
@@ -40,7 +40,11 @@
                         if (!window.L) return;
                         if (!this.map) {
                             this.map = L.map(this.$refs.map).setView([lat, lng], 17);
-                            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(this.map);
+                            // F112: satellite photo first, so the house's roof can be found.
+                            const esri = (path, extra = {}) => L.tileLayer(`https://server.arcgisonline.com/ArcGIS/rest/services/${path}/MapServer/tile/{z}/{y}/{x}`, { maxNativeZoom: 19, maxZoom: 20, ...extra });
+                            const satellite = L.layerGroup([esri('World_Imagery', { attribution: 'ছবি © Esri, Maxar' }), esri('Reference/World_Transportation'), esri('Reference/World_Boundaries_and_Places')]).addTo(this.map);
+                            const streets = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 20, attribution: '© OpenStreetMap' });
+                            L.control.layers({ 'স্যাটেলাইট': satellite, 'রাস্তা': streets }, null, { collapsed: false }).addTo(this.map);
                             this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
                             this.marker.on('dragend', () => { const p = this.marker.getLatLng(); this.set(p.lat, p.lng); });
                             this.map.on('click', (e) => { this.marker.setLatLng(e.latlng); this.set(e.latlng.lat, e.latlng.lng); });
