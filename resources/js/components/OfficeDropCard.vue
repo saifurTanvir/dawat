@@ -92,7 +92,7 @@ const error = ref('');
 const picking = ref(null); // kitchen whose boxes are being picked up
 const handing = ref(false);
 const code = ref('');
-const cash = ref(true);
+const cash = ref(false); // nothing is marked paid unless he ticks it
 
 async function post(path, body) {
     busy.value = true;
@@ -103,6 +103,7 @@ async function post(path, body) {
         return true;
     } catch (e) {
         error.value = errorMessage(e);
+        if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
         return false;
     } finally {
         busy.value = false;
@@ -122,7 +123,7 @@ async function finishPickup(sticker) {
 function openHand() {
     handing.value = true;
     code.value = '';
-    cash.value = true;
+    cash.value = false;
 }
 
 async function deliver(c) {

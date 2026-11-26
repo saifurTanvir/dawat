@@ -114,7 +114,7 @@ class ShahidarController extends Controller
 
         $order = $this->delivery->deliverByShahidar($order, $request->user(), $data['code'] ?? null, $data['sticker'] ?? null);
         // F39: weekly/monthly customers pay on their bill, not at the door.
-        if ($request->boolean('cash_received', true) && ! $order->customer?->paysByBill()) {
+        if ($request->boolean('cash_received') && ! $order->customer?->paysByBill()) {
             $order = $this->money->markPaid($order, $request->user());
         }
 
