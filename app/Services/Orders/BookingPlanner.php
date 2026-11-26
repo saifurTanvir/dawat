@@ -207,6 +207,8 @@ class BookingPlanner
                 // The post's summary (F44) went out before this customer joined: tell the shahidar now.
                 Push::toUser($pairing->shahidar_id, "নতুন বক্স {$order->code()} · {$slot->label()}",
                     "{$pairing->kitchen->display_name} থেকে {$pairing->customer->user->name}-এর জন্য (পোস্টের পরে জুটি)।", '/shahidar', "order-{$order->id}");
+                // …and the cook, whose plate it is now (she might have given it to someone else).
+                SendOrderSms::dispatch($order->id, OtpPurpose::CookLateBooking, '', 'cook')->afterCommit();
                 $made->push($order);
             }
         }

@@ -27,7 +27,7 @@ class SendOrderSms implements ShouldQueue
 
     public function handle(OtpSender $sender): void
     {
-        $order = Order::with(['customer.user', 'buyer', 'kitchen.user'])->find($this->orderId);
+        $order = Order::with(['customer.user', 'buyer', 'kitchen.user', 'shahidar'])->find($this->orderId);
         if (! $order) {
             return;
         }
@@ -54,6 +54,7 @@ class SendOrderSms implements ShouldQueue
                 'limit' => Order::banglaDigits(intdiv((int) $order->customer?->max_price_paisa, 100)),
                 'receive' => $order->isSelfPickup() ? 'ক্রেতা নিজে নেবেন, তাঁকে ফোন করে জায়গা বলুন।' : 'এলাকা ম্যানেজার নিতে আসবেন।',
                 'minutes' => Order::banglaDigits((int) config('dawat.orders.ask_minutes', 45)),
+                'manager' => $order->shahidar?->name ?? '',
             ]);
         } catch (OtpDeliveryFailedException $e) {
             // Logged by the sender; retry a couple of times, then give up quietly.

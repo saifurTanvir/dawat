@@ -8,7 +8,9 @@ use App\Enums\MealSlot;
 use App\Enums\OrderStatus;
 use App\Enums\PostStatus;
 use App\Filament\Resources\Customers\Pages\ViewCustomer;
+use App\Jobs\SendOrderSms;
 use App\Jobs\SendWebPush;
+use App\Models\AppNotification;
 use App\Models\Customer;
 use App\Models\CustomerPause;
 use App\Models\Kitchen;
@@ -17,6 +19,8 @@ use App\Models\Post;
 use App\Models\User;
 use App\Services\Orders\BookingPlanner;
 use App\Services\Orders\Delivery;
+use App\Services\Otp\OtpPurpose;
+use App\Services\Otp\OtpSender;
 use App\Support\Roles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -76,6 +80,13 @@ class LateBookingTest extends TestCase
         $this->assertSame($post->id, $order->post_id);
         $this->assertSame(3, $post->fresh()->plates_left);
         Queue::assertPushed(SendWebPush::class, fn ($j) => $j->userId === $this->shahidar->id && str_contains($j->body, 'পোস্টের পরে জুটি'));
+        // The cook hears it too (app and SMS), without the customer's name.
+        Queue::assertPushed(SendOrderSms::class, fn ($j) => $j->orderId === $order->id && $j->purpose === OtpPurpose::CookLateBooking && $j->to === 'cook');
+        (new SendOrderSms($order->id, OtpPurpose::CookLateBooking, '', 'cook'))->handle(app(OtpSender::class));
+        $note = AppNotification::where('user_id', $this->kitchen->user_id)->latest('id')->firstOrFail();
+        $this->assertStringContainsString('নতুন নিয়মিত গ্রাহক', $note->title);
+        $this->assertStringNotContainsString('কল্যাণ', $note->title.$note->body);
+        $this->assertStringNotContainsString('কল্যাণ', OtpPurpose::CookLateBooking->message('', ['slot' => 'দুপুর', 'plates' => '১', 'box' => 'x', 'manager' => 'করিম']));
 
         // Not twice.
         app(BookingPlanner::class)->bookLate($this->customer);

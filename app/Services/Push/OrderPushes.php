@@ -23,6 +23,11 @@ class OrderPushes
         $first = trim(explode(' ', (string) $recipient->name)[0] ?? '') ?: 'গ্রাহক';
 
         if ($to === 'cook') {
+            if ($purpose === OtpPurpose::CookLateBooking) {
+                // No customer name: the cook does not learn who her regular customers are.
+                Push::toUser($o->kitchen->user_id, "নতুন নিয়মিত গ্রাহক: আজ {$slot} {$plates} প্লেট আলাদা রাখুন",
+                    "আপনার পোস্ট থেকে বক্স {$box} বুক হয়েছে। এলাকা ম্যানেজার ".($o->shahidar?->name ?? '').' নিতে আসবেন।', '/cook', "order-{$o->id}");
+            }
             if ($purpose === OtpPurpose::CookNewOrder) {
                 Push::toUser($o->kitchen->user_id, "নতুন অর্ডার: {$plates} প্লেট", "{$title} · বক্স {$box}। ".($o->isSelfPickup() ? 'ক্রেতা নিজে নেবেন।' : 'এলাকা ম্যানেজার নিতে আসবেন।'), '/cook', "order-{$o->id}");
             }
