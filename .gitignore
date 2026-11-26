@@ -34,3 +34,8 @@ Thumbs.db
 /public/js/filament
 /public/fonts/filament
 /public/robots.txt
+
+# Playwright (E2E)
+/test-results
+/playwright-report
+/tests/e2e/.auth
