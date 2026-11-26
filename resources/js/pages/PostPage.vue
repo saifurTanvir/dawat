@@ -11,6 +11,7 @@
         <template v-else-if="post">
             <p v-if="!available" class="mt-4 rounded-xl bg-steel p-4 font-semibold text-muted" role="status">
                 এই খাবারটি শেষ হয়ে গেছে বা সময় পেরিয়ে গেছে।
+                <span v-if="commentsOpen" class="mt-1 block text-sm font-normal">পরের বার কবে রাঁধবেন, কমেন্টে জিজ্ঞেস করতে পারেন।</span>
             </p>
 
             <div class="mt-4">
@@ -48,7 +49,7 @@
                 </ul>
                 <p v-else class="mt-2 text-muted">এখনো কেউ কমেন্ট করেননি।</p>
 
-                <template v-if="post.contact.comment && (available || isCook)">
+                <template v-if="post.contact.comment && (available || commentsOpen || isCook)">
                     <form v-if="auth.isSignedIn" class="mt-4" novalidate @submit.prevent="sendComment">
                         <label for="comment" class="sr-only">কমেন্ট লিখুন</label>
                         <textarea
@@ -122,6 +123,7 @@ const feed = useFeedStore();
 
 const post = ref(null);
 const available = ref(true);
+const commentsOpen = ref(true);
 const loading = ref(true);
 const notFound = ref(false);
 const comments = ref([]);
@@ -154,6 +156,7 @@ onMounted(async () => {
         const { data } = await api.get(`/posts/${route.params.id}`, { params: feed.position ?? {} });
         post.value = data.data;
         available.value = data.meta.is_available;
+        commentsOpen.value = data.meta.comments_open ?? false;
         await loadComments();
         if (route.hash === '#comments') {
             document.getElementById('comments')?.scrollIntoView();

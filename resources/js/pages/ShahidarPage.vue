@@ -273,6 +273,7 @@
 </template>
 
 <script setup>
+import { ask } from '@/lib/ask';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import CookShare from '@/components/CookShare.vue';
 import CallButtons from '@/components/CallButtons.vue';
@@ -619,7 +620,7 @@ function closeFound() {
 }
 
 async function deliver(order, c) {
-    if (!c && !window.confirm('কোড ছাড়া "দিয়েছি" দিলে দাওয়াত টিম পরে যাচাই করবে। ঠিক আছে?')) return;
+    if (!c && !(await ask('কোড ছাড়া "দিয়েছি" দিলে দাওয়াত টিম পরে যাচাই করবে। ঠিক আছে?', { danger: true }))) return;
     if (await act(order, 'deliver', { ...(c ? { code: c } : {}), cash_received: cash.value })) {
         handing.value = null;
         refreshCash();
@@ -632,7 +633,7 @@ async function fail(order) {
     if (await act(order, 'fail', { reason })) handing.value = null;
 }
 
-function skip(order) {
-    if (window.confirm(`বক্স ${order.code}: গ্রাহক আজ নেবেন না? প্লেট ফিডে ফিরে যাবে।`)) act(order, 'skip');
+async function skip(order) {
+    if ((await ask(`বক্স ${order.code}: গ্রাহক আজ নেবেন না? প্লেট ফিডে ফিরে যাবে।`, { danger: true }))) act(order, 'skip');
 }
 </script>

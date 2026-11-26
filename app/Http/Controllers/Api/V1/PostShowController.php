@@ -36,7 +36,10 @@ class PostShowController extends Controller
         $views->record([$post], $request, $origin, 'detail');
 
         return FeedPostResource::make($post)->additional([
-            'meta' => ['is_available' => Post::visibleNow()->whereKey($post->id)->exists()],
+            'meta' => [
+                'is_available' => $available = Post::visibleNow()->whereKey($post->id)->exists(),
+                'comments_open' => $available || $post->commentsOpen(),
+            ],
         ]);
     }
 }

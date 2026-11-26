@@ -46,6 +46,7 @@
 </template>
 
 <script setup>
+import { ask } from '@/lib/ask';
 import { ref } from 'vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
@@ -58,7 +59,7 @@ const notice = ref('');
 const error = ref('');
 
 async function pay(c) {
-    if (!window.confirm(`${c.name}-কে ${taka(c.due_paisa)} হাতে দিয়েছেন?`)) return;
+    if (!(await ask(`${c.name}-কে ${taka(c.due_paisa)} হাতে দিয়েছেন?`))) return;
     busy.value = true;
     error.value = '';
     try {

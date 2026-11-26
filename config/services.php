@@ -79,6 +79,11 @@ return [
         'wait' => (int) env('MESSENGER_WAIT', 6),
     ],
 
+    // Session recordings and heatmaps (QA report). Off unless the owner creates a Clarity project and sets its id.
+    'clarity' => [
+        'project_id' => env('CLARITY_PROJECT_ID'),
+    ],
+
     // F54: Facebook ad tracking. Pixel in the browser + Conversions API from the server.
     // Off unless META_PIXEL_ID is set; the server half also needs META_CAPI_TOKEN.
     'meta' => [

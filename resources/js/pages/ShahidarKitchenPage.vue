@@ -158,6 +158,7 @@
 </template>
 
 <script setup>
+import { ask } from '@/lib/ask';
 import { onMounted, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import CookShare from '@/components/CookShare.vue';
@@ -213,7 +214,7 @@ async function run(request) {
 }
 
 async function openCookApp() {
-    if (!window.confirm('গৃহিণীর অ্যাপ তাঁর মতো করে খুলবে, ৩০ মিনিটের জন্য। তিনি জানতে পারবেন, যা করবেন খাতায় থাকবে। খুলবেন?')) return;
+    if (!(await ask('গৃহিণীর অ্যাপ তাঁর মতো করে খুলবে, ৩০ মিনিটের জন্য। তিনি জানতে পারবেন, যা করবেন খাতায় থাকবে। খুলবেন?'))) return;
     busy.value = true;
     try {
         const { data: r } = await api.post(`/shahidar/kitchens/${id}/view-as`);
@@ -242,8 +243,8 @@ async function ready(s) {
 async function off(s) {
     if (await run(() => api.post(`/shahidar/kitchens/${id}/off`, { meal_slot: s.meal_slot, reason: offReason.value }))) offFor.value = null;
 }
-function orderAct(o, path, question) {
-    if (!window.confirm(question)) return;
+async function orderAct(o, path, question) {
+    if (!(await ask(question))) return;
     run(() => api.post(`/shahidar/kitchen-orders/${o.id}/${path}`));
 }
 

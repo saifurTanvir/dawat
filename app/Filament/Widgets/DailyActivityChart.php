@@ -30,6 +30,9 @@ class DailyActivityChart extends ChartWidget
 
     protected ?string $maxHeight = '280px';
 
+    // Days do not change by the second; Filament would redraw every 5s.
+    protected ?string $pollingInterval = null;
+
     protected function getFilters(): ?array
     {
         return ['7' => 'গত ৭ দিন', '14' => 'গত ১৪ দিন', '30' => 'গত ৩০ দিন'];

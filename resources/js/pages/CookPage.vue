@@ -132,6 +132,35 @@
                 </p>
             </div>
 
+            <!-- Waiting for approval: what happens next, and what she can do now -->
+            <section v-if="kitchen.status === 'pending'" class="mt-6 rounded-[var(--radius-plate)] bg-plate p-5" aria-labelledby="wait-title">
+                <h2 id="wait-title" class="font-semibold">অনুমোদনের আগে</h2>
+                <p class="mt-2 text-sm"><span aria-hidden="true">📞</span> দাওয়াত টিম আপনার বেছে নেওয়া সময়ে ফোন করবে — উপরে “কখন ফোন করা যাবে” ঠিক করে রাখুন। ফোনে রান্না, এলাকা আর প্লেট নিয়ে কথা হবে।</p>
+
+                <p class="mt-4 font-semibold">দিনে কত প্লেট দিতে পারবেন?</p>
+                <p class="text-sm text-muted">১ প্লেট মানে একজনের পুরো এক বেলার খাবার। শুরুতে সাধারণত ১ প্লেট।</p>
+                <div class="mt-2 flex gap-2" role="group" aria-label="দিনে কত প্লেট">
+                    <button
+                        v-for="n in [1, 2]"
+                        :key="n"
+                        type="button"
+                        class="flex-1 rounded-xl border-2 px-4 py-3 font-semibold"
+                        :class="kitchen.daily_plates === n ? 'border-leaf bg-leaf-soft text-leaf-deep' : 'border-rule'"
+                        :aria-pressed="kitchen.daily_plates === n"
+                        :disabled="busy"
+                        @click="setPlates(n)"
+                    >{{ bn(n) }} প্লেট</button>
+                </div>
+                <p v-if="platesNotice" class="mt-2 text-sm" :class="platesError ? 'text-chili' : 'text-leaf'" role="status">{{ platesNotice }}</p>
+
+                <p class="mt-4 font-semibold">অনুমোদনের পর পোস্ট দেখতে এমন হবে</p>
+                <div class="mt-2 rounded-xl border border-rule p-3 text-sm">
+                    <p class="font-semibold">দুপুর · ভাত, মুরগির ঝোল, ডাল</p>
+                    <p class="text-muted">১ প্লেট · দাম আপনি ঠিক করবেন · বাসার রান্নার একটা ছবি</p>
+                </div>
+                <p class="mt-2 text-sm text-muted">নিজের পরিবারের জন্য যা রাঁধেন, তা থেকেই এক প্লেট — আলাদা কিছু রাঁধতে হবে না।</p>
+            </section>
+
             <div v-if="!kitchen.is_set_up" class="mt-6 rounded-[var(--radius-plate)] bg-turmeric-soft p-5">
                 <p class="font-semibold">সেটআপ বাকি আছে</p>
                 <p class="mt-1 text-muted">বাসার লোকেশন আর এলাকা দিন। এটা ছাড়া খাবার পোস্ট করা যাবে না।</p>
@@ -145,6 +174,7 @@
 </template>
 
 <script setup>
+import { ask } from '@/lib/ask';
 import { LAUNCH_NOTICE } from '@/lib/contact';
 import { computed, onMounted, ref } from 'vue';
 import ContactHours from '@/components/ContactHours.vue';
@@ -180,7 +210,7 @@ async function loadBookings() {
 }
 
 async function orderAct(order, path, question) {
-    if (!window.confirm(question)) return;
+    if (!(await ask(question))) return;
     busy.value = true;
     try {
         const { data } = await api.post(`/my/orders/${order.id}/${path}`);
@@ -217,7 +247,7 @@ async function sendReady(slot) {
 }
 
 async function cookOff(slot) {
-    if (!window.confirm(`আজ ${slot.label} রান্না নেই? নিয়মিত গ্রাহকদের SMS-এ জানানো হবে।`)) return;
+    if (!(await ask(`আজ ${slot.label} রান্না নেই? নিয়মিত গ্রাহকদের SMS-এ জানানো হবে।`, { danger: true }))) return;
     busy.value = true;
     try {
         const { data } = await api.post('/my/bookings/off', { meal_slot: slot.meal_slot });
@@ -236,6 +266,24 @@ const messages = {
     rejected: 'এখন অনুমোদন দেওয়া যায়নি। প্রশ্ন থাকলে দাওয়াত টিমের সাথে যোগাযোগ করুন।',
     suspended: 'আপনার রান্নাঘর সাময়িক বন্ধ আছে। দাওয়াত টিমের সাথে যোগাযোগ করুন।',
 };
+
+const platesNotice = ref('');
+const platesError = ref(false);
+async function setPlates(n) {
+    busy.value = true;
+    platesNotice.value = '';
+    try {
+        const { data } = await api.patch('/kitchen', { daily_plates: n });
+        kitchen.value = { ...kitchen.value, daily_plates: data.data.daily_plates };
+        platesError.value = false;
+        platesNotice.value = 'জানানো হয়েছে। দাওয়াত টিম ফোনে চূড়ান্ত করবে।';
+    } catch (e) {
+        platesError.value = true;
+        platesNotice.value = errorMessage(e);
+    } finally {
+        busy.value = false;
+    }
+}
 
 const statusMessage = computed(() => messages[kitchen.value?.status] ?? '');
 const statusTone = computed(() => {

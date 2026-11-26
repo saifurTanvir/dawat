@@ -3,6 +3,7 @@
 namespace Tests\Feature\Ads;
 
 use App\Filament\Resources\MessengerThreads\Pages\ManageMessengerThreads;
+use App\Filament\Widgets\BaddaAdsSummary;
 use App\Models\AdLead;
 use App\Models\MessengerThread;
 use App\Models\User;
@@ -76,7 +77,9 @@ class BaddaAdsReportTest extends TestCase
 
         $this->actingAs($admin)->get('/admin/badda-ads')->assertOk()->assertSee('বাড্ডা অ্যাডের রিপোর্ট')->assertSee('Karim')
             ->assertSee('ami korte chai')->assertSee('কী বলেছেন')->assertSee('কোন কোন এলাকায় দেন?');
-        $this->actingAs($admin)->get('/admin')->assertOk()->assertSee('বাড্ডা অ্যাড — আজকের হিসাব');
+        // The dashboard draws first; the widget loads right after (lazy).
+        $this->actingAs($admin)->get('/admin')->assertOk();
+        Livewire::withoutLazyLoading()->test(BaddaAdsSummary::class)->assertSee('বাড্ডা অ্যাড — আজকের হিসাব');
         $this->actingAs(User::factory()->cook()->create())->postJson('/admin-tools/ad-leads', ['leads' => []])->assertForbidden();
 
         // F95: the Messenger page can show only the Badda ad chats; reading one changes nothing for the bot.

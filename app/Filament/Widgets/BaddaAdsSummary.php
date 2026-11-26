@@ -19,7 +19,10 @@ class BaddaAdsSummary extends StatsOverviewWidget
 
     protected static ?int $sort = -1;
 
-    protected static bool $isLazy = false;
+    // The report reads every lead since launch: draw the page first, refresh every two minutes (Filament's default is 5s).
+    protected static bool $isLazy = true;
+
+    protected ?string $pollingInterval = '120s';
 
     protected ?string $heading = 'বাড্ডা অ্যাড — আজকের হিসাব';
 

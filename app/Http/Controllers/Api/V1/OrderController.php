@@ -101,6 +101,8 @@ class OrderController extends Controller
             // Who to call about it: the shahidar, never the cook's number.
             'shahidar' => $o->shahidar ? ['name' => $o->shahidar->name, 'phone' => $o->shahidar->phone] : null,
             'can_cancel' => $o->status === OrderStatus::Booked,
+            // Told to the area manager at the door; also in the SMS.
+            'delivery_code' => ! $o->isSelfPickup() && in_array($o->status, [OrderStatus::Booked, OrderStatus::PickedUp], true) ? $o->delivery_code : null,
         ];
     }
 }

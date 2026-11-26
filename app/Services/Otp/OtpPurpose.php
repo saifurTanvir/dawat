@@ -27,6 +27,8 @@ enum OtpPurpose: string
     case RoundComing = 'round_coming';
     /** F110: the area manager is bringing the empty boxes back (and her money); $code is unused. */
     case RoundReturn = 'round_return';
+    /** A customer the team added in admin learns who Dawat is and where to look; $code is unused. */
+    case CustomerWelcome = 'customer_welcome';
 
     /**
      * The SMS text, in Bangla.
@@ -94,6 +96,10 @@ enum OtpPurpose: string
                 'দাওয়াত: এলাকা ম্যানেজার %s %sটা বক্স নিতে আসছেন। বক্স তৈরি রাখুন। দেরি হলে অ্যাপে "আরও ১০ মিনিট লাগবে" চাপুন।',
                 $context['when'] ?? 'একটু পরে',
                 $context['boxes'] ?? '',
+            ),
+            self::CustomerWelcome => sprintf(
+                'দাওয়াত: স্বাগতম%s! আপনার এলাকার গৃহিণীর ঘরের রান্না আসবে। খাবারের খবর আর ডেলিভারি কোড SMS-এ পাবেন। অ্যাপ: dawat.cloud — এই নম্বর দিয়ে ঢুকুন।',
+                filled($context['name'] ?? null) ? ', '.$context['name'] : '',
             ),
             self::RoundReturn => sprintf(
                 'দাওয়াত: এলাকা ম্যানেজার %s আসছেন — %s',

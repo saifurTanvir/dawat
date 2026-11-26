@@ -76,6 +76,7 @@
 </template>
 
 <script setup>
+import { ask } from '@/lib/ask';
 import { onMounted, ref } from 'vue';
 import CookShare from '@/components/CookShare.vue';
 import { api, errorMessage } from '@/lib/api';
@@ -138,7 +139,7 @@ async function remove() {
 }
 
 async function dayOff(m) {
-    if (!window.confirm(`আজ ${m.meal_slot_label} রান্না নেই? আজকের মেনু পোস্ট হবে না, নিয়মিত গ্রাহকদের জানানো হবে।`)) return;
+    if (!(await ask(`আজ ${m.meal_slot_label} রান্না নেই? আজকের মেনু পোস্ট হবে না, নিয়মিত গ্রাহকদের জানানো হবে।`, { danger: true }))) return;
     busy.value = true;
     try {
         notice.value = (await api.post('/my/bookings/off', { meal_slot: m.meal_slot })).data.message;

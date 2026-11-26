@@ -76,6 +76,7 @@
 </template>
 
 <script setup>
+import { ask } from '@/lib/ask';
 import { computed, ref } from 'vue';
 import CallButtons from '@/components/CallButtons.vue';
 import StickerScanner from '@/components/StickerScanner.vue';
@@ -127,7 +128,7 @@ function openHand() {
 }
 
 async function deliver(c) {
-    if (!c && !window.confirm('কোড ছাড়া দিলে দাওয়াত টিম পরে যাচাই করবে। ঠিক আছে?')) return;
+    if (!c && !(await ask('কোড ছাড়া দিলে দাওয়াত টিম পরে যাচাই করবে। ঠিক আছে?', { danger: true }))) return;
     if (await post('deliver', { ...(c ? { code: c } : {}), cash_received: cash.value })) handing.value = false;
 }
 </script>

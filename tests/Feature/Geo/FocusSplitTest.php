@@ -3,12 +3,14 @@
 namespace Tests\Feature\Geo;
 
 use App\Enums\KitchenStatus;
+use App\Filament\Widgets\FocusSplitWidget;
 use App\Models\Area;
 use App\Models\Kitchen;
 use App\Models\User;
 use App\Services\Geo\FocusSplit;
 use App\Support\Roles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class FocusSplitTest extends TestCase
@@ -29,7 +31,8 @@ class FocusSplitTest extends TestCase
 
         $admin = User::factory()->create();
         $admin->assignRole(Roles::ADMIN);
-        $this->actingAs($admin)->get('/admin')->assertOk()->assertSee('বাড্ডা বনাম বাকি ঢাকা');
+        $this->actingAs($admin)->get('/admin')->assertOk();
+        Livewire::withoutLazyLoading()->test(FocusSplitWidget::class)->assertSee('বাড্ডা বনাম বাকি ঢাকা');
 
         $this->artisan('ops:pin-stats')->expectsOutputToContain('BADDA: cooks 1')->assertSuccessful();
     }
