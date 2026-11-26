@@ -22,6 +22,7 @@ use App\Services\Orders\Settlements;
 use App\Services\Posts\PlateSplit;
 use App\Services\Posts\PostForCook;
 use App\Services\Regular\OfficeDrops;
+use App\Services\Regular\OfficeRounds;
 use App\Services\Regular\TodayMenu;
 use App\Support\ContactHours;
 use App\Support\DhakaTime;
@@ -347,6 +348,8 @@ class ShahidarController extends Controller
                 'name' => $o->kitchen->display_name,
                 'phone' => $o->kitchen->user->phone,
                 'address' => $o->kitchen->pickup_address ?? $o->kitchen->area?->name,
+                // Owner's decision: the area manager of the box gets the way to the cook's house.
+                'map_url' => OfficeRounds::mapUrl($o->kitchen->location, $o->kitchen->pickup_address ? $o->kitchen->pickup_address.', '.($o->kitchen->area?->name ?? 'ঢাকা') : null),
                 // F41: may they be called now, and a free WhatsApp link.
                 'contact' => ContactHours::card($o->kitchen->user, $todaySlots, 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। বক্স '.$o->code().' নিয়ে।'),
             ],
@@ -355,6 +358,8 @@ class ShahidarController extends Controller
                 'phone' => $o->recipient()->phone,
                 'address' => $o->recipientAddress(),
                 'note' => $o->recipientNote(),
+                // …and to the customer's home pin (regular customers); else a search for the address.
+                'map_url' => OfficeRounds::mapUrl($o->customer?->location, $o->recipientAddress()),
                 'contact' => ContactHours::card($o->recipient(), $todaySlots, 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। আপনার বক্স '.$o->code().' নিয়ে।'),
             ],
             'paid' => $o->paid_at !== null,

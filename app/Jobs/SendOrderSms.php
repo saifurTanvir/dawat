@@ -55,6 +55,9 @@ class SendOrderSms implements ShouldQueue
                 'receive' => $order->isSelfPickup() ? 'ক্রেতা নিজে নেবেন, তাঁকে ফোন করে জায়গা বলুন।' : 'এলাকা ম্যানেজার নিতে আসবেন।',
                 'minutes' => Order::banglaDigits((int) config('dawat.orders.ask_minutes', 45)),
                 'manager' => $order->shahidar?->name ?? '',
+                // F29: a one-off buyer's name and note go to the cook.
+                'buyer' => $order->isOneOff() ? trim((string) $order->recipient()->name) : '',
+                'note' => $order->isOneOff() ? (string) $order->buyer_note : '',
             ]);
         } catch (OtpDeliveryFailedException $e) {
             // Logged by the sender; retry a couple of times, then give up quietly.

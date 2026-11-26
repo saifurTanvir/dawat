@@ -105,17 +105,41 @@ class OneOffOrderTest extends TestCase
 
     public function test_self_pickup_is_paid_to_the_cook_and_stays_out_of_dawats_cash(): void
     {
-        $this->order(['receive' => 'self', 'address' => null])->assertCreated()->assertJsonPath('data.shahidar', null);
+        $this->order(['receive' => 'self', 'address' => null, 'note' => 'রাত ৯টায় নিতে আসব'])->assertCreated()->assertJsonPath('data.shahidar', null);
         $order = Order::firstOrFail();
 
         $bookings = $this->actingAs($this->kitchen->user, 'sanctum')->getJson('/api/v1/my/bookings')->json('data.slots.0.orders.0');
         $this->assertSame($this->buyer->phone, $bookings['phone']);
+        // The cook sees who is coming and what they wrote.
+        $this->assertSame('রাশেদ', $bookings['name']);
+        $this->assertSame('রাত ৯টায় নিতে আসব', $bookings['note']);
+        $sms = OtpPurpose::CookNewOrder->message('', ['title' => 'ভাত', 'plates' => '২', 'box' => 'x', 'buyer' => 'রাশেদ', 'note' => 'রাত ৯টায় নিতে আসব', 'receive' => 'ক্রেতা নিজে নেবেন।']);
+        $this->assertStringContainsString('ক্রেতা রাশেদ', $sms);
+        $this->assertStringContainsString('রাত ৯টায় নিতে আসব', $sms);
         $this->assertTrue($bookings['can_hand']);
 
         $this->actingAs($this->kitchen->user, 'sanctum')->postJson("/api/v1/my/orders/{$order->id}/handed")->assertOk();
         $this->assertSame(OrderStatus::Delivered, $order->fresh()->status);
         $this->assertTrue(app(Settlements::class)->cooksDue()->isEmpty());
         $this->assertTrue(app(Settlements::class)->shahidarCash()->isEmpty());
+    }
+
+    public function test_the_area_manager_of_the_box_gets_the_way_to_the_cooks_house(): void
+    {
+        $this->order()->assertCreated();
+        $row = $this->actingAs($this->shahidar, 'sanctum')->getJson('/api/v1/shahidar/today')->json('data.orders.0');
+        $this->assertStringContainsString('destination=23.806900,90.365400', $row['kitchen']['map_url']);
+        $this->assertStringContainsString('maps/search', $row['customer']['map_url']); // no pin: the address is searched
+        // Buyers never see it.
+        $this->assertStringNotContainsString('23.8069', $this->actingAs($this->buyer, 'sanctum')->getJson('/api/v1/orders')->getContent());
+    }
+
+    public function test_a_buyer_without_a_name_gives_it_once_with_the_order(): void
+    {
+        $nameless = User::factory()->create(['name' => null]);
+        $this->order([], $nameless)->assertUnprocessable()->assertJsonValidationErrors('name');
+        $this->order(['name' => 'তানিয়া'], $nameless)->assertCreated();
+        $this->assertSame('তানিয়া', $nameless->fresh()->name);
     }
 
     public function test_limits_and_refusals(): void

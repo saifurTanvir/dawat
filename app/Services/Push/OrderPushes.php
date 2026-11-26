@@ -29,7 +29,10 @@ class OrderPushes
                     "আপনার পোস্ট থেকে বক্স {$box} বুক হয়েছে। এলাকা ম্যানেজার ".($o->shahidar?->name ?? '').' নিতে আসবেন।', '/cook', "order-{$o->id}");
             }
             if ($purpose === OtpPurpose::CookNewOrder) {
-                Push::toUser($o->kitchen->user_id, "নতুন অর্ডার: {$plates} প্লেট", "{$title} · বক্স {$box}। ".($o->isSelfPickup() ? 'ক্রেতা নিজে নেবেন।' : 'এলাকা ম্যানেজার নিতে আসবেন।'), '/cook', "order-{$o->id}");
+                $who = trim((string) $recipient->name);
+                Push::toUser($o->kitchen->user_id, "নতুন অর্ডার: {$plates} প্লেট".($who ? " · {$who}" : ''),
+                    "{$title} · বক্স {$box}। ".($o->isSelfPickup() ? 'ক্রেতা নিজে নেবেন।' : 'এলাকা ম্যানেজার নিতে আসবেন।').($o->buyer_note ? " ক্রেতা লিখেছেন: “{$o->buyer_note}”" : ''),
+                    '/cook', "order-{$o->id}");
             }
 
             return;

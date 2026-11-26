@@ -60,6 +60,13 @@
                     <p v-if="err('address')" class="error-text">{{ err('address') }}</p>
                 </div>
 
+                <!-- The cook needs to know who is coming: asked once, when the account has no name -->
+                <div v-if="needName" class="mt-4">
+                    <label for="o-name" class="mb-1 block font-semibold">আপনার নাম</label>
+                    <input id="o-name" v-model="name" class="field" maxlength="60" autocomplete="name" placeholder="গৃহিণী জানবেন কার জন্য রাখছেন" />
+                    <p v-if="err('name')" class="error-text">{{ err('name') }}</p>
+                </div>
+
                 <div class="mt-4">
                     <label for="o-note" class="mb-1 block text-sm font-semibold">কিছু বলার থাকলে (ইচ্ছা হলে)</label>
                     <input id="o-note" v-model="note" class="field" maxlength="200" placeholder="যেমন: গেটে এসে ফোন দেবেন" />
@@ -81,6 +88,7 @@ import { computed, onMounted, ref } from 'vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
 import { taka } from '@/lib/format';
+import { useAuthStore } from '@/stores/auth';
 
 const props = defineProps({ post: { type: Object, required: true } });
 const emit = defineEmits(['close', 'ordered']);
@@ -89,6 +97,9 @@ const plates = ref(1);
 const receive = ref(props.post.order.delivery ? 'delivery' : 'self');
 const address = ref('');
 const note = ref('');
+const auth = useAuthStore();
+const needName = !auth.user?.name;
+const name = ref('');
 const busy = ref(false);
 const error = ref('');
 const errors = ref({});
@@ -121,8 +132,10 @@ async function submit() {
             receive: receive.value,
             address: receive.value === 'delivery' ? address.value : null,
             note: note.value || null,
+            ...(needName ? { name: name.value } : {}),
         });
         done.value = data;
+        if (needName && auth.user) auth.user.name = name.value.trim();
         emit('ordered', plates.value);
     } catch (e) {
         errors.value = e.response?.data?.errors ?? {};

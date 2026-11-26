@@ -70,11 +70,13 @@ enum OtpPurpose: string
                 $context['box'] ?? '',
             ),
             self::CookNewOrder => sprintf(
-                'দাওয়াত: নতুন অর্ডার — %s, %s প্লেট, বক্স %s। %s দিতে না পারলে ১০ মিনিটের মধ্যে অ্যাপে জানান।',
+                'দাওয়াত: নতুন অর্ডার — %s, %s প্লেট, বক্স %s%s। %s%s দিতে না পারলে ১০ মিনিটের মধ্যে অ্যাপে জানান।',
                 $context['title'] ?? '',
                 $context['plates'] ?? '১',
                 $context['box'] ?? '',
+                filled($context['buyer'] ?? null) ? ', ক্রেতা '.$context['buyer'] : '',
                 $context['receive'] ?? '',
+                filled($context['note'] ?? null) ? ' ক্রেতা লিখেছেন: "'.$context['note'].'"।' : '',
             ),
             self::CookLateBooking => sprintf(
                 'দাওয়াত: নতুন নিয়মিত গ্রাহক — আজ %s আপনার পোস্ট থেকে %s প্লেট আলাদা রাখুন (বক্স %s)। এলাকা ম্যানেজার %s নিতে আসবেন।',

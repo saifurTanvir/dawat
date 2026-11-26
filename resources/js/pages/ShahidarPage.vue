@@ -148,6 +148,7 @@
                     <div>
                         <p class="font-semibold"><span class="text-leaf">{{ g.orders[0].meal_slot_label }}</span> · <RouterLink :to="{ name: 'shahidar-kitchen', params: { id: g.kitchen.id } }" class="underline decoration-rule underline-offset-4">{{ g.kitchen.name }}</RouterLink></p>
                         <p class="text-sm text-muted">{{ g.kitchen.address }}</p>
+                        <a v-if="g.kitchen.map_url" :href="g.kitchen.map_url" target="_blank" rel="noopener" class="text-sm font-semibold text-leaf"><span aria-hidden="true">🗺️</span> ম্যাপে পথ</a>
                     </div>
                     <CallButtons :phone="g.kitchen.phone" :contact="g.kitchen.contact" />
                 </div>
@@ -179,6 +180,7 @@
                     <div>
                         <p class="font-semibold">বক্স {{ o.code }} · {{ o.customer.name }}<span v-if="o.kind === 'oneoff'" class="ml-1 rounded-full bg-turmeric-soft px-2 text-xs font-normal">একবারের</span></p>
                         <p class="text-sm text-muted">{{ o.customer.address }}</p>
+                        <a v-if="o.customer.map_url" :href="o.customer.map_url" target="_blank" rel="noopener" class="text-sm font-semibold text-leaf"><span aria-hidden="true">🗺️</span> ম্যাপে পথ</a>
                         <p v-if="o.customer.note" class="text-sm">{{ o.customer.note }}</p>
                         <p class="mt-1 text-sm">
                             {{ bn(o.plates) }} প্লেট ·

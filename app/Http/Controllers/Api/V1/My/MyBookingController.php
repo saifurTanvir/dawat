@@ -66,7 +66,9 @@ class MyBookingController extends Controller
                 'orders' => $done->map(fn (Order $o) => [
                     'id' => $o->id,
                     'code' => $o->code(),
-                    'name' => $o->isOneOff() ? self::firstName($o->recipient()->name) : 'নিয়মিত গ্রাহক',
+                    // One-off buyers come to her door or are told her food: she sees who and what they wrote.
+                    'name' => $o->isOneOff() ? (trim((string) $o->recipient()->name) ?: 'ক্রেতা') : 'নিয়মিত গ্রাহক',
+                    'note' => $o->isOneOff() ? $o->buyer_note : null,
                     // F29: one-off feed orders; for self pickup the cook calls the buyer.
                     'kind' => $o->kind,
                     'receive' => $o->receive,
