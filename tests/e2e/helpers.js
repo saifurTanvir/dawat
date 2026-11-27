@@ -11,9 +11,17 @@ export const PHONES = {
 
 export const ADMIN = { email: 'admin@dawat.test', password: '123456' };
 
-/** Confirm dialogs (window.confirm) are accepted, like a user tapping "OK". */
+/** Browser dialogs (if any are left) are accepted, like a user tapping "OK". */
 export function acceptDialogs(page) {
     page.on('dialog', (d) => d.accept());
+}
+
+/** Answer the app's own yes/no question (AskDialog) with its yes button. */
+export async function answerYes(page) {
+    const dialog = page.getByRole('alertdialog');
+    await dialog.waitFor();
+    await dialog.getByRole('button').first().click();
+    await expect(dialog).toBeHidden();
 }
 
 /**
@@ -65,10 +73,10 @@ export async function expectFilamentNotification(page, text) {
     await expect(page.locator('.fi-no-notification').filter({ hasText: text }).first()).toBeVisible();
 }
 
-/** Latest SMS text the log driver wrote for a phone number (dummy SMS only). */
+/** The 4-digit delivery code in the latest booking SMS the log driver wrote for a phone (dummy SMS only). */
 export async function lastSmsCode(phone) {
     const { readFileSync } = await import('node:fs');
     const log = readFileSync('storage/logs/laravel.log', 'utf8').split('\n').reverse();
-    const line = log.find((l) => l.includes(`[OTP] ${phone}: `) && /বক্স/.test(l));
-    return line?.match(/\[OTP\] \d+: (\d{4}) /)?.[1] ?? null;
+    const line = log.find((l) => l.includes(` ${phone}: `) && /কোড বলবেন: \d{4}/.test(l));
+    return line?.match(/কোড বলবেন: (\d{4})/)?.[1] ?? null;
 }

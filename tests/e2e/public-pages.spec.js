@@ -24,12 +24,12 @@ test('লগইন ছাড়া "নিতে চাই" চাপলে ল�
     await expect(page).toHaveURL(/\/login\?next=.*p.*\d+/);
 });
 
-// Known issue (QA audit): the footer says Dawat is live only in Badda, then
-// lists North/Middle/South Badda under "যেসব এলাকায় শিগগিরই আসছি" (coming soon).
-test('জানা সমস্যা: "শিগগিরই আসছি" তালিকায় চালু বাড্ডার এলাকাগুলোও আছে', async ({ page }) => {
-    test.fail();
+// Fixed after the QA audit (F112): live areas and coming-soon areas are separate lists.
+test('ফুটার: উত্তর বাড্ডা "এখন চালু"-তে, "শিগগিরই আসছি"-তে নয়', async ({ page }) => {
     await page.goto('/');
-    const soon = page.getByText('যেসব এলাকায় শিগগিরই আসছি').locator('xpath=following-sibling::ul[1]');
-    await expect(soon.getByRole('link').first()).toBeVisible(); // list loaded
-    await expect(soon.getByRole('link', { name: 'উত্তর বাড্ডা', exact: true })).toHaveCount(0, { timeout: 3_000 });
+    const live = page.getByText('এখন চালু:', { exact: true }).locator('xpath=following-sibling::ul[1]');
+    await expect(live.getByRole('link', { name: 'উত্তর বাড্ডা', exact: true })).toBeVisible();
+    const soon = page.locator('details').filter({ hasText: 'যেসব এলাকায় শিগগিরই আসছি' });
+    await expect(soon.locator('a').first()).toBeAttached(); // list loaded (folded)
+    await expect(soon.locator('a', { hasText: /^উত্তর বাড্ডা$/ })).toHaveCount(0);
 });
