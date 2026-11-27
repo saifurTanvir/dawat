@@ -104,9 +104,10 @@ final class ContactHours
      *
      * @param  list<MealSlot>  $slotsToday
      */
-    public static function card(User $user, array $slotsToday = [], ?string $whatsappText = null): array
+    /** @param  bool  $atDoor  the area manager is on the way with (or for) this person's box: a call is always fine. */
+    public static function card(User $user, array $slotsToday = [], ?string $whatsappText = null, bool $atDoor = false): array
     {
-        $reason = self::reason($user, $slotsToday);
+        $reason = $atDoor ? 'meal' : self::reason($user, $slotsToday);
 
         return [
             'ok_now' => $reason !== null,

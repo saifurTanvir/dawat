@@ -6,6 +6,7 @@ use App\Enums\MealSlot;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\GuestMeal;
+use App\Models\Order;
 use App\Models\Post;
 use App\Services\Regular\GuestMeals;
 use App\Support\ContactHours;
@@ -91,10 +92,17 @@ class GuestMealController extends Controller
         abort_unless($kitchen && $guest->kitchen_id === $kitchen->id, 404);
         $data = $request->validate(['yes' => ['required', 'boolean']]);
         $this->guests->cookReply($guest, (bool) $data['yes'], $request->user());
+        $guest->refresh();
 
         return response()->json([
             'data' => $this->cookRows($request),
-            'message' => $data['yes'] ? 'ধন্যবাদ! পোস্টে এই প্লেটগুলো বাড়তি রাখবেন।' : 'ঠিক আছে, এলাকা ম্যানেজার অন্য ব্যবস্থা করবেন।',
+            // QA re-check: say what actually happened — a box made now, or booked when she posts.
+            'message' => match (true) {
+                ! $data['yes'] => 'ঠিক আছে, এলাকা ম্যানেজার অন্য ব্যবস্থা করবেন।',
+                $guest->order !== null => 'ধন্যবাদ! বক্স '.$guest->order->code().' তৈরি হয়েছে — '.Order::banglaDigits($guest->plates).' প্লেট বাড়তি রাঁধবেন, এলাকা ম্যানেজার অন্য বক্সের সাথে নিয়ে যাবেন।',
+                default => 'ধন্যবাদ! আজকের পোস্ট দিলে এই প্লেটগুলো নিজে থেকে বুক হয়ে যাবে।',
+            },
+            'booked' => $guest->order !== null,
         ]);
     }
 

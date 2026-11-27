@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\PublishPost;
 use App\Enums\MealSlot;
+use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Post\PostForCookRequest;
 use App\Models\Kitchen;
@@ -253,7 +254,7 @@ class ShahidarController extends Controller
             'handled' => $c->status === 'handled',
             'handled_note' => $c->handled_note,
             'handled_by' => $c->handler?->name,
-            'contact' => ContactHours::card($user, [$c->meal_slot], 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। আজ '.$c->meal_slot->label().'-এ কী খেতে চান জানতে ফোন করছি।'),
+            'contact' => ContactHours::card($user, [$c->meal_slot], 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। আজ '.$c->meal_slot->at().' কী খেতে চান জানতে ফোন করছি।'),
         ];
     }
 
@@ -354,7 +355,7 @@ class ShahidarController extends Controller
                 // Owner's decision: the area manager of the box gets the way to the cook's house.
                 'map_url' => OfficeRounds::mapUrl($o->kitchen->location, $o->kitchen->pickup_address ? $o->kitchen->pickup_address.', '.($o->kitchen->area?->name ?? 'ঢাকা') : null),
                 // F41: may they be called now, and a free WhatsApp link.
-                'contact' => ContactHours::card($o->kitchen->user, $todaySlots, 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। বক্স '.$o->code().' নিয়ে।'),
+                'contact' => ContactHours::card($o->kitchen->user, $todaySlots, 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। বক্স '.$o->code().' নিয়ে।', $o->status === OrderStatus::Booked),
             ],
             'customer' => [
                 'name' => $o->recipient()->name ?: 'ক্রেতা',
@@ -363,7 +364,8 @@ class ShahidarController extends Controller
                 'note' => $o->recipientNote(),
                 // …and to the customer's home pin (regular customers); else a search for the address.
                 'map_url' => OfficeRounds::mapUrl($o->customer?->location, $o->recipientAddress()),
-                'contact' => ContactHours::card($o->recipient(), $todaySlots, 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। আপনার বক্স '.$o->code().' নিয়ে।'),
+                // QA re-check: at the door with the box, he can always call (a 7am breakfast is outside "9am–9pm").
+                'contact' => ContactHours::card($o->recipient(), $todaySlots, 'আসসালামু আলাইকুম, দাওয়াত থেকে বলছি। আপনার বক্স '.$o->code().' নিয়ে।', $o->status === OrderStatus::PickedUp),
             ],
             'paid' => $o->paid_at !== null,
             'pays_by_bill' => (bool) $o->customer?->paysByBill(),

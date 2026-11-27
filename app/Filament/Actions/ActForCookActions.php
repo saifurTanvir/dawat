@@ -95,7 +95,7 @@ final class ActForCookActions
             ->action(function (Kitchen $record, array $data, Action $action) {
                 $slot = MealSlot::from($data['meal_slot']);
                 self::attempt($action, fn () => self::act()->run($record, auth()->user(), 'menu_notice',
-                    "আজ {$slot->label()}-এর রান্না জানানো হয়েছে: {$data['title']}",
+                    "আজ {$slot->of()} রান্না জানানো হয়েছে: {$data['title']}",
                     fn () => app(TodayMenu::class)->announce($record, $slot, $data['title'], 'admin', auth()->user())), 'গ্রাহককে জানানো হয়েছে');
             });
     }

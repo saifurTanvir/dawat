@@ -6,6 +6,7 @@ use App\Enums\KitchenStatus;
 use App\Filament\Actions\QuickAddActions;
 use App\Filament\Resources\Kitchens\KitchenResource;
 use App\Models\Kitchen;
+use App\Models\Order;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
@@ -22,7 +23,7 @@ class ListKitchens extends ListRecords
             QuickAddActions::cook(),
             Action::make('defaultPlates')
                 ->visible(fn () => (bool) auth()->user()?->isAdmin())
-                ->label(fn () => 'প্লেট অজানা '.Kitchen::query()->whereNull('daily_plates')->whereIn('status', [KitchenStatus::Approved, KitchenStatus::Pending])->count().' জনকে ১ প্লেট')
+                ->label(fn () => 'প্লেট অজানা '.Order::banglaDigits((string) Kitchen::query()->whereNull('daily_plates')->whereIn('status', [KitchenStatus::Approved, KitchenStatus::Pending])->count()).' জনকে ১ প্লেট')
                 ->icon(Heroicon::OutlinedSquare2Stack)
                 ->color('gray')
                 ->requiresConfirmation()

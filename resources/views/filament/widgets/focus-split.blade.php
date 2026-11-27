@@ -1,12 +1,13 @@
 @php($bn = fn ($n) => \App\Models\Order::banglaDigits((string) $n))
 @php($rows = [
-    ['গৃহিণী (অনুমোদিত)', 'cooks', 'cooks_today', 'আজ নতুন'],
-    ['পিন আছে', 'pinned', 'pins_today', 'আজ পিন দিয়েছেন'],
+    ['গৃহিণী (অনুমোদিত)', 'cooks', 'cooks_today', '+%s আজ নতুন'],
+    ['পিন আছে', 'pinned', 'pins_today', '+%s আজ পিন দিয়েছেন'],
     ['পিন নেই', 'pinless', null, null],
     ['দিনে প্লেট (পিন আছে এমন)', 'plates', null, null],
-    ['অনুমোদনের অপেক্ষায়', 'pending', 'signups_today', 'আজ যোগ দিয়েছেন'],
-    ['গ্রাহক', 'customers', 'customers_today', 'আজ নতুন'],
-    ['এলাকা ম্যানেজার আবেদন', 'managers', 'managers_today', 'আজ নতুন'],
+    {{-- Part of the number, not added to it (QA re-check: "২ +৮" read as ten). --}}
+    ['অনুমোদনের অপেক্ষায়', 'pending', 'pending_today', 'এর মধ্যে %s জন আজ যোগ দিয়েছেন'],
+    ['গ্রাহক', 'customers', 'customers_today', '+%s আজ নতুন'],
+    ['এলাকা ম্যানেজার আবেদন', 'managers', 'managers_today', '+%s আজ নতুন'],
 ])
 <x-filament-widgets::widget>
     <x-filament::section heading="বাড্ডা বনাম বাকি ঢাকা" description="এখন সব ফোকাস বাড্ডায় (উত্তর, মধ্য, দক্ষিণ, মেরুল বাড্ডা, শাহজাদপুর)। হিসাব তাঁদের বেছে নেওয়া এলাকা ধরে।">
@@ -30,7 +31,7 @@
                                 <td class="{{ $side === 'badda' ? 'badda' : '' }}">
                                     <span class="n">{{ $bn($c[$side][$key]) }}</span>
                                     @if ($todayKey && $c[$side][$todayKey])
-                                        <span class="sub">+{{ $bn($c[$side][$todayKey]) }} {{ $todayLabel }}</span>
+                                        <span class="sub">{{ sprintf($todayLabel, $bn($c[$side][$todayKey])) }}</span>
                                     @endif
                                 </td>
                             @endforeach

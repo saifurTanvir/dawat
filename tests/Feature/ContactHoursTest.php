@@ -86,6 +86,11 @@ class ContactHoursTest extends TestCase
         $this->assertArrayHasKey('contact', $row['kitchen']);
         $this->assertStringNotContainsString('"lat"', json_encode($row));
         $this->assertStringNotContainsString('"location"', json_encode($row));
+
+        // On the way to the door with the box: the call is open whatever the hour.
+        Order::query()->update(['status' => OrderStatus::PickedUp]);
+        $row = $this->actingAs($shahidar, 'sanctum')->getJson('/api/v1/shahidar/today')->json('data.orders.0');
+        $this->assertTrue($row['customer']['contact']['ok_now']);
     }
 
     public function test_admin_sees_call_status_on_the_customer(): void

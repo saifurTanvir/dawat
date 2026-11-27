@@ -6,7 +6,7 @@
             <p class="font-semibold">{{ g.when }} · {{ bn(g.plates) }} প্লেট বাড়তি</p>
             <p v-if="g.note" class="text-sm">“{{ g.note }}”</p>
             <template v-if="g.can_reply">
-                <p class="mt-1 text-sm text-muted">পারবেন? পারলে পোস্টে এই প্লেটগুলো বাড়তি রাখবেন।</p>
+                <p class="mt-1 text-sm text-muted">পারবেন? পারলে এই প্লেটগুলো বাড়তি রাঁধবেন — এলাকা ম্যানেজার নিয়ে যাবেন।</p>
                 <div class="mt-2 grid grid-cols-2 gap-2">
                     <button type="button" class="min-h-11 rounded-xl bg-leaf px-3 font-semibold text-white disabled:opacity-50" :disabled="busy" @click="reply(g, true)">পারব</button>
                     <button type="button" class="min-h-11 rounded-xl border border-chili bg-plate px-3 font-semibold text-chili disabled:opacity-50" :disabled="busy" @click="reply(g, false)">পারব না</button>
@@ -24,6 +24,7 @@ import { onMounted, ref } from 'vue';
 import { api, errorMessage } from '@/lib/api';
 import { bn } from '@/lib/bn';
 
+const emit = defineEmits(['booked']);
 const rows = ref([]);
 const busy = ref(false);
 const error = ref('');
@@ -38,6 +39,8 @@ async function reply(g, yes) {
         const { data } = await api.post(`/my/guest-meals/${g.id}/reply`, { yes });
         rows.value = data.data;
         message.value = data.message;
+        // The new box shows in "আজকের অর্ডার" without a reload.
+        if (data.booked) emit('booked');
     } catch (e) {
         error.value = errorMessage(e);
     } finally {

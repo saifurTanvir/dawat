@@ -136,10 +136,13 @@ class GuestMealTest extends TestCase
     {
         $post = $this->livePost(1); // the regular box takes the only plate: sold out
         $this->assertSame(0, $post->plates_left);
+        // She already told the area manager the meal is ready.
+        $this->actingAs($this->kitchen->user, 'sanctum')->postJson('/api/v1/my/bookings/ready', ['meal_slot' => $post->meal_slot->value, 'note' => 'গেটে দারোয়ান'])->assertOk();
         $this->ask(2)->assertOk();
         $guest = GuestMeal::first();
 
-        $this->actingAs($this->kitchen->user, 'sanctum')->postJson("/api/v1/my/guest-meals/{$guest->id}/reply", ['yes' => true])->assertOk();
+        $this->actingAs($this->kitchen->user, 'sanctum')->postJson("/api/v1/my/guest-meals/{$guest->id}/reply", ['yes' => true])
+            ->assertOk()->assertJsonPath('booked', true)->assertJsonPath('data.0.status', 'arranged');
 
         $guest->refresh();
         $this->assertSame('arranged', $guest->status);
@@ -147,6 +150,9 @@ class GuestMealTest extends TestCase
         $this->assertSame(24000, $guest->order->food_paisa);
         $this->assertSame($post->id, $guest->order->post_id);
         $this->assertSame(0, $post->fresh()->plates_left); // cooked on top, not taken from the post
+        // The new box is ready too, so the area manager does not wait for a second "ready".
+        $this->assertNotNull($guest->order->ready_at);
+        $this->assertSame('গেটে দারোয়ান', $guest->order->ready_note);
     }
 
     public function test_a_yes_without_a_post_is_followed_up_after_half_an_hour(): void

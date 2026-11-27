@@ -51,7 +51,7 @@ class DashboardTest extends TestCase
 
         Livewire::test(DawatStats::class)
             ->assertSee('আজকের যোগাযোগ')
-            ->assertSee('মেসেজ 1 · কল 0');
+            ->assertSee('মেসেজ ১ · কল ০');
     }
 
     public function test_chart_groups_by_dhaka_day_and_rejects_odd_filters(): void

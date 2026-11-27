@@ -11,7 +11,7 @@
             আজকের দুপুর আর রাতের রান্না দেখুন, অ্যাপেই অর্ডার করুন — এলাকা ম্যানেজার বাসায় বা অফিসে পৌঁছে দেন,
             টাকা দেবেন খাবার হাতে পেয়ে। প্রতিদিন দুপুরের লাঞ্চও বুক করা যায়।
         </p>
-        <p class="mt-3 rounded-[var(--radius-plate)] bg-plate p-3 text-sm">{{ config('dawat.launch.notice') }}</p>
+        <p class="mt-3 rounded-[var(--radius-plate)] bg-plate p-3 text-sm">{{ \App\Models\Area::launchNotice() }}</p>
         @include('seo.footer')
     </main>
 </div>

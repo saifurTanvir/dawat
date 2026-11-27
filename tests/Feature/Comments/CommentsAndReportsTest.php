@@ -5,6 +5,7 @@ namespace Tests\Feature\Comments;
 use App\Enums\CommentStatus;
 use App\Enums\ContactType;
 use App\Enums\PostStatus;
+use App\Models\AppNotification;
 use App\Models\Comment;
 use App\Models\ContactEvent;
 use App\Models\Post;
@@ -109,6 +110,12 @@ class CommentsAndReportsTest extends TestCase
             ->assertJsonPath('data.author.name', $this->post->kitchen->display_name);
 
         $this->assertSame(1, ContactEvent::count()); // only the buyer's same-day question
+
+        // The cook heard of the question, and the buyer of her answer.
+        $cookNote = AppNotification::where('user_id', $this->post->kitchen->user_id)->latest('id')->first();
+        $this->assertStringContainsString('নতুন কমেন্ট', $cookNote->title);
+        $this->assertSame("/p/{$this->post->id}#comments", $cookNote->url);
+        $this->assertStringContainsString('উত্তর দিয়েছেন', AppNotification::where('user_id', $this->buyer->id)->latest('id')->value('title'));
     }
 
     public function test_comments_off_means_no_comments(): void

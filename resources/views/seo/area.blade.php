@@ -6,7 +6,7 @@
         {{ $area->name }} আর আশেপাশের গৃহিণীরা নিজের বাসার রান্না থেকে কয়েক প্লেট বিক্রি করেন।
         দাওয়াতে আজকের রান্না দেখে "নিতে চাই" চাপলেই অর্ডার — এলাকা ম্যানেজার পৌঁছে দেন, টাকা দেবেন খাবার হাতে পেয়ে।
     </p>
-    <p class="mt-4 rounded-[var(--radius-plate)] bg-plate p-3">{{ config('dawat.launch.notice') }}</p>
+    <p class="mt-4 rounded-[var(--radius-plate)] bg-plate p-3">{{ \App\Models\Area::launchNotice() }}</p>
 
     <section class="mt-8" aria-labelledby="today">
         <h2 id="today" class="font-serif text-xl font-bold">{{ \App\Support\Seo::in($area->name) }} আজকের রান্না</h2>

@@ -1,7 +1,7 @@
 {{-- F31: links that let search engines (and people) reach every public page. --}}
 <footer class="mt-14 border-t border-rule pt-6 pb-10 text-sm text-muted">
-    <p class="font-semibold text-ink">দাওয়াত এখন শুধু বাড্ডায়</p>
-    <p class="mt-1">{{ config('dawat.launch.notice') }}</p>
+    <p class="font-semibold text-ink">দাওয়াত কোথায় চালু</p>
+    <p class="mt-1">{{ \App\Models\Area::launchNotice() }}</p>
     @php([$serving, $soon] = collect($areas)->partition(fn ($a) => $a->for_customers))
     @if ($serving->isNotEmpty())
         <p class="mt-2">এখন চালু:</p>

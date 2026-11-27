@@ -25,6 +25,24 @@ class Order extends Model
                 app(CookFees::class)->stamp($order);
             }
         });
+
+        // QA re-check: the cook already said this meal is ready, so a box made later (a guest, a late pairing)
+        // is ready too — otherwise she sees "জানানো হয়েছে" while the area manager sees "রেডি জানাননি".
+        static::creating(function (Order $order) {
+            if ($order->ready_at || ! $order->kitchen_id || ! $order->service_date || ! $order->meal_slot) {
+                return;
+            }
+            $ready = static::where('kitchen_id', $order->kitchen_id)
+                ->whereDate('service_date', $order->service_date)
+                ->where('meal_slot', $order->meal_slot)
+                ->whereNotNull('ready_at')
+                ->latest('ready_at')
+                ->first(['ready_at', 'ready_note']);
+            if ($ready) {
+                $order->ready_at = $ready->ready_at;
+                $order->ready_note = $ready->ready_note;
+            }
+        });
     }
 
     protected function casts(): array
