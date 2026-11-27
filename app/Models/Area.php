@@ -63,4 +63,14 @@ class Area extends Model
 
         return $query->orderBy('sort_order')->orderBy('name')->pluck('name', 'id')->all();
     }
+
+    public const LAUNCH_TAIL = 'অন্য এলাকায় ধাপে ধাপে আসছি; গৃহিণী বা গ্রাহক হিসেবে এখনই নাম দিয়ে রাখতে পারেন, আপনার এলাকায় চালু হলে আমরাই যোগাযোগ করব।';
+
+    /** QA re-check: "where Dawat runs" follows the areas ticked in admin (F111), not a fixed "only Badda". */
+    public static function launchNotice(): string
+    {
+        $names = self::active()->where('for_customers', true)->orderBy('sort_order')->orderBy('name')->pluck('name');
+
+        return ($names->isEmpty() ? 'দাওয়াত এখন ঢাকার কয়েকটা এলাকায় চালু।' : 'দাওয়াত এখন চালু: '.$names->join(', ', ' আর ').'।').' '.self::LAUNCH_TAIL;
+    }
 }

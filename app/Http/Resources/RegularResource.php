@@ -49,6 +49,7 @@ class RegularResource extends JsonResource
                 'id' => $o->id,
                 'code' => $o->code(),
                 'meal_slot_label' => $o->meal_slot->label(),
+                'meal_food' => $o->meal_slot->food(),
                 'title' => $o->title,
                 'plates' => $o->plates,
                 'total_paisa' => $o->totalPaisa(),

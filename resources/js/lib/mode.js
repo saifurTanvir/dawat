@@ -47,6 +47,7 @@ export function homeAfterLogin(user) {
     const roles = user?.roles ?? [];
     if (roles.includes('shahidar')) return '/shahidar';
     if (roles.includes('cook') || user?.kitchen) return '/cook';
+    if (user?.is_regular) return '/regular';
     return '/';
 }
 

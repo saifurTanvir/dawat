@@ -24,6 +24,7 @@ use App\Services\Posts\PostForCook;
 use App\Services\Regular\TodayMenu;
 use App\Services\Reviews\BoxReviews;
 use App\Services\Reviews\Sales;
+use App\Support\BnDate;
 use App\Support\ContactHours;
 use App\Support\DhakaTime;
 use Illuminate\Http\JsonResponse;
@@ -221,7 +222,7 @@ class ShahidarKitchenController extends Controller
         $this->allow($request, $kitchen);
         $slot = MealSlot::tryFrom($slot) ?? abort(404);
         $data = MyMenuNoticeController::validateTitle($request);
-        $this->act->run($kitchen, $request->user(), 'menu_notice', "আজ {$slot->label()}-এর রান্না জানানো হয়েছে: {$data['title']}",
+        $this->act->run($kitchen, $request->user(), 'menu_notice', "আজ {$slot->of()} রান্না জানানো হয়েছে: {$data['title']}",
             fn () => $menu->announce($kitchen, $slot, $data['title'], ActForCook::role($request->user()), $request->user()));
 
         return response()->json(['data' => MyMenuNoticeController::rows($kitchen), 'message' => 'গ্রাহককে জানানো হয়েছে।']);
@@ -260,7 +261,7 @@ class ShahidarKitchenController extends Controller
 
         return response()->json([
             'data' => $payouts->forShahidar($request->user()),
-            'message' => $kitchen->display_name.'-কে ৳'.number_format(intdiv($s->amount_paisa, 100)).' দেওয়া লেখা হলো — উনি অ্যাপে নিশ্চিত করবেন।',
+            'message' => $kitchen->display_name.'-কে '.BnDate::taka($s->amount_paisa).' দেওয়া লেখা হলো — উনি অ্যাপে নিশ্চিত করবেন।',
         ]);
     }
 }

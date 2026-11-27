@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Kitchen;
 
+use App\Enums\CustomerStatus;
 use App\Enums\KitchenStatus;
+use App\Models\Customer;
 use App\Models\Kitchen;
 use App\Models\User;
 use App\Support\Roles;
@@ -48,6 +50,17 @@ class KitchenRegistrationTest extends TestCase
         $approved = Kitchen::factory()->approved()->create(['daily_plates' => 1]);
         $this->actingAs($approved->user, 'sanctum')->patchJson('/api/v1/kitchen', ['daily_plates' => 2])->assertUnprocessable();
         $this->assertSame(1, $approved->fresh()->daily_plates);
+    }
+
+    public function test_me_says_who_is_a_regular_customer(): void
+    {
+        $plain = User::factory()->create();
+        $this->actingAs($plain, 'sanctum')->getJson('/api/v1/me')->assertJsonPath('data.is_regular', false);
+
+        $customer = Customer::factory()->create();
+        $this->actingAs($customer->user, 'sanctum')->getJson('/api/v1/me')->assertJsonPath('data.is_regular', true);
+        $customer->update(['status' => CustomerStatus::Stopped]);
+        $this->actingAs($customer->user->fresh(), 'sanctum')->getJson('/api/v1/me')->assertJsonPath('data.is_regular', false);
     }
 
     public function test_a_user_cannot_register_twice(): void

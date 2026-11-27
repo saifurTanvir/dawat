@@ -8,6 +8,7 @@ use App\Models\OfficeDrop;
 use App\Models\RoundStop;
 use App\Services\Regular\OfficeDrops;
 use App\Services\Regular\OfficeRounds;
+use App\Support\BnDate;
 use App\Support\Geo\GeoPoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -71,7 +72,7 @@ class ShahidarDropController extends Controller
     {
         abort_unless($stop->office_drop_id === $drop->id && $stop->shahidar_id === $request->user()->id && $stop->isReturn(), 404);
         $stop = $rounds->returned($stop, $request->user());
-        $paid = $stop->paid_paisa ? ' আর ৳'.number_format(intdiv($stop->paid_paisa, 100)) : '';
+        $paid = $stop->paid_paisa ? ' আর '.BnDate::taka($stop->paid_paisa) : '';
 
         return response()->json([
             'data' => $rounds->forShahidar($drop, $request->user(), OfficeRounds::RETURN),

@@ -99,8 +99,8 @@ class PairingSuggester
             return 'দূরত্ব জানা নেই';
         }
         $text = $metres < 1000
-            ? max(100, (int) (round($metres / 100) * 100)).' মিটার'
-            : rtrim(rtrim(number_format(round($metres / 1000, 1), 1), '0'), '.').' কিমি';
+            ? Order::banglaDigits((string) max(100, (int) (round($metres / 100) * 100))).' মিটার'
+            : Order::banglaDigits(rtrim(rtrim(number_format(round($metres / 1000, 1), 1), '0'), '.')).' কিমি';
 
         return 'প্রায় '.Order::banglaDigits($text);
     }

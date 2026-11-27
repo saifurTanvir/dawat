@@ -7,6 +7,7 @@ use App\Models\Kitchen;
 use App\Models\Order;
 use App\Models\Settlement;
 use App\Models\User;
+use App\Support\BnDate;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -187,7 +188,7 @@ class Settlements
             $paid = (int) $payouts->sum('amount_paisa');
             $net = $cash - $paid;
             if ($net < 0) {
-                $note = trim(($note ? $note.' · ' : '').'দাওয়াত এলাকা ম্যানেজারকে ৳'.number_format(intdiv(-$net, 100)).' ফেরত দেবে');
+                $note = trim(($note ? $note.' · ' : '').'দাওয়াত এলাকা ম্যানেজারকে '.BnDate::taka(-$net).' ফেরত দেবে');
             }
 
             $settlement = Settlement::create([

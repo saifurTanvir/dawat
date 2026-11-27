@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\CustomerStatus;
 use App\Models\User;
 use App\Services\Admin\Impersonate;
 use App\Support\ContactHours;
@@ -31,6 +32,8 @@ class MeResource extends JsonResource
             ] : null,
             // F41: when they may be called.
             'contact' => ContactHours::forMe($this->resource),
+            // QA re-check: a regular customer opens on today's box and delivery code, not the feed.
+            'is_regular' => $this->customer !== null && $this->customer->status !== CustomerStatus::Stopped,
             'kitchen' => $kitchen ? [
                 'id' => $kitchen->id,
                 'status' => $kitchen->status->value,

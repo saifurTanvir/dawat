@@ -61,7 +61,7 @@
                 </div>
                 <template v-for="o in booking.today" :key="`code-${o.id}`">
                     <p v-if="o.delivery_code" class="mt-3 rounded-lg bg-steel/60 p-3 text-sm">
-                        {{ o.meal_slot_label }}-এর খাবার হাতে পেলে এলাকা ম্যানেজারকে এই কোডটা বলবেন: <strong class="text-lg tracking-widest">{{ bn(o.delivery_code) }}</strong>
+                        {{ o.meal_food }} হাতে পেলে এলাকা ম্যানেজারকে এই কোডটা বলবেন: <strong class="text-lg tracking-widest">{{ bn(o.delivery_code) }}</strong>
                     </p>
                 </template>
                 <!-- Delivered: what matters now is how it was -->

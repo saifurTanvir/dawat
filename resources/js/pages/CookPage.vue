@@ -110,7 +110,7 @@
                 <p v-if="bookingNotice" class="mt-3 rounded-lg bg-leaf-soft p-3 text-sm" role="status">{{ bookingNotice }}</p>
             </section>
             <template v-if="kitchen.can_post">
-                <CookGuestRequests />
+                <CookGuestRequests @booked="loadBookings" />
                 <RouterLink :to="{ name: 'new-post' }" class="btn-primary">আজকের রান্না পোস্ট করুন</RouterLink>
                 <RouterLink :to="{ name: 'my-posts' }" class="btn-quiet mt-2 w-full border border-rule">আমার পোস্ট ও প্লেট বাকি</RouterLink>
                 <RouterLink :to="{ name: 'sales' }" class="btn-quiet mt-2 mb-6 w-full border border-rule">যা বিক্রি করেছি · পাওনা · রিভিউ</RouterLink>

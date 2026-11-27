@@ -53,6 +53,7 @@ class FocusSplit
                 // Approved ones only, matching the row it sits in ("গৃহিণী (অনুমোদিত)"); new sign-ups waiting are in "অপেক্ষায়".
                 'cooks_today' => $approved->filter(fn ($x) => $x->created_at >= $today)->count(),
                 'signups_today' => $k->filter(fn ($x) => $x->created_at >= $today)->count(),
+                'pending_today' => $k->where('status', KitchenStatus::Pending)->filter(fn ($x) => $x->created_at >= $today)->count(),
                 'pins_today' => $approved->filter(fn ($x) => $pinnedToday->has($x->id))->count(),
                 'customers' => $c->count(),
                 'customers_today' => $c->filter(fn ($x) => $x->created_at >= $today)->count(),

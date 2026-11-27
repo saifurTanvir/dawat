@@ -43,7 +43,7 @@
             পাড়ার গৃহিণীদের ঘরের রান্না — খান, রোজ নিন, বা রেঁধে আয় করুন
         </h1>
         <p class="mt-2 text-muted">
-            এখন চালু শুধু বাড্ডায়।
+            <template v-if="servingNames">এখন চালু: {{ servingNames }}।</template>
             আপনি কী করতে এসেছেন?
         </p>
 
@@ -140,12 +140,18 @@ import { useAuthStore } from '@/stores/auth';
 
 const auth = useAuthStore();
 
-defineProps({
+const props = defineProps({
     areas: { type: Array, default: () => [] },
     // A returning visitor who already picked a place: headline and doors only.
     compact: { type: Boolean, default: false },
 });
 defineEmits(['find-food']);
+
+// Where delivery runs now, as ticked in admin (F111).
+const servingNames = computed(() => {
+    const names = props.areas.filter((a) => a.serving).map((a) => a.name);
+    return names.length > 1 ? `${names.slice(0, -1).join(', ')} আর ${names.at(-1)}` : (names[0] ?? '');
+});
 
 const Chevron = () => h('svg', { viewBox: '0 0 24 24', class: 'size-5 shrink-0 text-leaf', fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'aria-hidden': 'true' }, [h('path', { d: 'M9 6l6 6-6 6' })]);
 

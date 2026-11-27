@@ -10,10 +10,12 @@ use App\Http\Resources\CommentResource;
 use App\Models\Comment;
 use App\Models\ContactEvent;
 use App\Models\Post;
+use App\Services\Push\Push;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 
 /** F17: public comments under a post. */
 class CommentController extends Controller
@@ -64,6 +66,7 @@ class CommentController extends Controller
         if (! $isCook) {
             ContactEvent::create(['post_id' => $post->id, 'viewer_id' => $user->id, 'type' => ContactType::Comment]);
         }
+        $this->tell($post, $comment, $isCook);
 
         return CommentResource::make($comment->load(['user:id,name', 'post.kitchen']))
             ->response()
@@ -91,5 +94,26 @@ class CommentController extends Controller
         }
 
         return response()->json(['message' => 'এই কমেন্টটি আপনি সরাতে পারবেন না।'], 403);
+    }
+
+    /**
+     * QA re-check: a question on a sold-out post went unanswered because nobody heard of it.
+     * A buyer's comment reaches the cook; her answer reaches everyone who asked on that post.
+     */
+    private function tell(Post $post, Comment $comment, bool $isCook): void
+    {
+        $url = "/p/{$post->id}#comments";
+        $text = Str::limit($comment->body, 120);
+
+        if (! $isCook) {
+            Push::toUser($post->kitchen->user_id, "নতুন কমেন্ট: {$post->title}", "{$text} — উত্তর দিন।", $url, "comment-{$post->id}");
+
+            return;
+        }
+
+        $askers = $post->comments()->where('user_id', '!=', $comment->user_id)->distinct()->pluck('user_id');
+        foreach ($askers as $askerId) {
+            Push::toUser((int) $askerId, "{$post->kitchen->display_name} উত্তর দিয়েছেন", $text, $url, "comment-{$post->id}");
+        }
     }
 }

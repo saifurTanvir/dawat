@@ -227,7 +227,7 @@ class TodayMenu
     private function alert(MealChoice $c): void
     {
         $name = $c->customer->user->name ?: $c->customer->user->phone;
-        $title = "{$name} আজ {$c->meal_slot->label()}-এর খাবার খাবেন না";
+        $title = "{$name} আজ {$c->meal_slot->food()} খাবেন না";
         $body = ($c->menu_title ? "রান্না: {$c->menu_title}। " : '')."চান: {$c->wish}। ফোন করে অন্য খাবারের ব্যবস্থা করুন।";
 
         Push::toUser($c->shahidar_id, $title, $body, '/shahidar', 'meal-choice-'.$c->id);
